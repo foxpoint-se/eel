@@ -20,7 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'gnss = aalen.gnss:main'
+            'gnss = aalen.gnss:main',
+            'imu = aalen.imu:main',
         ],
     },
 )
