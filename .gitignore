@@ -1,0 +1,7 @@
+# ros2 build folders
+build
+install
+log
+
+# python virtual environment
+.venv
