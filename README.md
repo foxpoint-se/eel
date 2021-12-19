@@ -12,9 +12,7 @@ In case you haven't already, do this:
 1. Source ROS2 workspace and activate python environment: `source source_me.sh`
 
 
-## How to create a simple python package
-
-## How to create a simple Python node
+## How to create a simple Python package
 
 1. `cd src`
 1. `ros2 pkg create my_py_pkg --build-type ament_python --dependencies rclpy`
