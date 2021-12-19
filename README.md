@@ -12,6 +12,11 @@ In case you haven't already, do this:
 1. Build ROS2 packages: `colcon build`
 1. Source again, to make ROS2 packages available: `source source_me.sh`
 
+Then start the Aalen application with:
+```
+ros2 launch aalen_bringup aalen.launch.py 
+```
+
 
 ## How to create a simple Python package
 
