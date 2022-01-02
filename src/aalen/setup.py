@@ -22,6 +22,7 @@ setup(
         'console_scripts': [
             'gnss = aalen.gnss:main',
             'imu = aalen.imu:main',
+            'radio = aalen.radio:main',
         ],
     },
 )
