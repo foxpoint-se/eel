@@ -1,3 +1,7 @@
 pyserial==3.5
 pynmea2==1.18.0
 catkin-pkg==0.4.24
+wheel==0.37.1
+empy==3.3.4
+lark==1.0.0
+numpy==1.22.0
