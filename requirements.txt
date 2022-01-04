@@ -5,3 +5,4 @@ wheel==0.37.1
 empy==3.3.4
 lark==1.0.0
 numpy==1.22.0
+adafruit-circuitpython-bno055==5.3.2

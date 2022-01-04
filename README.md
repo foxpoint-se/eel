@@ -8,7 +8,7 @@ In case you haven't already, do this:
 
 1. Initialize virtual environment: `python3 -m venv .venv`
 1. Activate python environment: `source source_me.sh`
-1. Install python packages: `python -m pip install -r requirements.txt`
+1. Install python packages: `python -m pip install -r requirements.txt` or `make install-py`
 1. Build ROS2 packages: `colcon build`
 1. Source again, to make ROS2 packages available: `source source_me.sh`
 
