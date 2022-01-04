@@ -50,15 +50,10 @@ class Radio(Node):
         self.send(message="{}{}".format(IMU_KEY, json.dumps(data)))
 
     def handle_gnss_update(self, msg):
-        # self.send(message="{}{}".format(LAT_KEY, msg.lat))
-        # self.send(message="{}{}".format(LON_KEY, msg.lon))
-        # self.send(message="aaabbbcccdddeeefffggghhhiiijjjkkklllmmmnnnooopppqqqrrrssstttuuuvvvwwwxxxyyyzzzåååäääööö aaabbbcccdddeeefffggghhhiiijjjkkklllmmmnnnooopppqqqrrrssstttuuuvvvwwwxxxyyyzzzåååäääööö aaabbbcccdddeeefffggghhhiiijjjkkklllmmmnnnooopppqqqrrrssstttuuuvvvwwwxxxyyyzzzåååäääööö")
         data = {
             "lat": msg.lat,
             "lon": msg.lon,
         }
-
-        # print(stri)
 
         self.send(message="{}{}".format(GNSS_KEY, json.dumps(data)))
 

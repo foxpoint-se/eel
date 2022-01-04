@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
-from example_interfaces.msg import String
-import serial
-import adafruit_bno055
-import board
+import adafruit_bno055 # TODO: pip install adafruit-circuitpython-bno055 ??
+import board # TODO: pip install board ??
 from aalen_interfaces.msg import ImuStatus
 
 IMU_STATUS_TOPIC = '/imu_status'
@@ -17,39 +15,15 @@ class ImuNode(Node):
         self.imu_poller = self.create_timer(1.0, self.publish_imu)
         self.get_logger().info("IMU status publisher has been started.")
 
-        # self.hc12_serial = serial.Serial('/dev/ttyS0', 9600)
-
         self.i2c = board.I2C()
         self.sensor = adafruit_bno055.BNO055_I2C(self.i2c)
 
-    # def send(self, message=None):
-    #     if message:
-    #         self.hc12_serial.write(bytes(message, encoding='utf-8'))
 
     def publish_imu(self):
         msg = ImuStatus()
-        # val = "temp: {}  euler: {}  grav: {}".format(self.sensor.temperature, self.sensor.euler, self.sensor.gravity)
-        
-
-
-
-        # heading, roll, pitch = self.sensor.euler
         heading, roll, pitch = self.sensor.euler
-        # heading = self.sensor.euler.heading
-
-
-        # self.get_logger().info("heading: {}".format(heading))
-        # print(heading)
-        # print(heading)
-        # print(self.sensor, dir(self.sensor))
         sys, gyro, accel, mag = self.sensor.calibration_status
         is_calibrated = self.sensor.calibrated
-        # print('is calibrated: {}, sys: {}, gyro: {}, accel: {}, mag: {}'.format(is_calibrated, sys, gyro, accel, mag))
-        # message = "HE,{}\n".format(heading)
-        # self.send(message)
-        # print(message)
-
-        # print(heading, type(heading))
 
         msg.is_calibrated = is_calibrated or False
         msg.sys = sys or 0

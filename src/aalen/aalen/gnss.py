@@ -12,32 +12,22 @@ class GNSS(Node):
         super().__init__("gnss")
         self.publisher = self.create_publisher(GnssStatus, GNSS_STATUS_TOPIC, 10)
         self.gnss_poller = self.create_timer(0.1, self.publish)
-        self.serial_source = serial.Serial("/dev/ttyUSB0", 9600, timeout=2)
-
-        # self.hc12_serial = serial.Serial('/dev/ttyS0', 9600)
-
+        # TODO: remove this comment if we don't seem to have problem with timeout=0
+        self.serial_source = serial.Serial("/dev/ttyUSB0", 9600, timeout=0)
         self.get_logger().info("GNSS status publisher has been started.")
-
-    # def send(self, message=None):
-    #     if message:
-    #         self.hc12_serial.write(bytes(message, encoding='utf-8'))
 
     def publish(self):
         line = self.serial_source.readline()
         decoded = line.decode('utf-8')
 
+        # TODO: remove this comment if GGA seems to work instead of GPRMC
         if "GGA" in decoded:
-        # if "GPRMC" in decoded:
             parsed = pynmea2.parse(decoded)
-            # print(parsed.latitude, parsed.longitude, parsed.timestamp, parsed.timestamp.tzinfo, parsed.timestamp.tzname(), parsed.timestamp.utcoffset())
-            
+
+            # TODO: wrap in debug if statement
             self.get_logger().info("lat: {}, lon: {}".format(parsed.latitude, parsed.longitude))
             
-            # self.send("LA,{}\n".format(parsed.latitude))
-            # self.send("LT,{}\n".format(parsed.longitude))
-
             msg = GnssStatus()
-
             msg.lat = float(parsed.latitude or 0)
             msg.lon = float(parsed.longitude or 0)
 
