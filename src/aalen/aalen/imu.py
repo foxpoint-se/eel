@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
-import adafruit_bno055 # TODO: pip install adafruit-circuitpython-bno055 ??
-import board # TODO: pip install board ??
+import adafruit_bno055
+import board
 from aalen_interfaces.msg import ImuStatus
 
 IMU_STATUS_TOPIC = '/imu_status'
