@@ -4,9 +4,10 @@ from rclpy.node import Node
 from aalen_interfaces.msg import GnssStatus
 from .gnss_sensor import GnssSensor
 
-GNSS_STATUS_TOPIC = '/gnss_status'
-SIMULATE_PARAM='simulate'
-DEBUG_PARAM='debug'
+GNSS_STATUS_TOPIC = "/gnss_status"
+SIMULATE_PARAM = "simulate"
+DEBUG_PARAM = "debug"
+
 
 class GNSS(Node):
     def __init__(self):

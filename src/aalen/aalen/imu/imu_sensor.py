@@ -4,9 +4,10 @@ class ImuSensor:
         if not simulate:
             import adafruit_bno055
             import board
+
             i2c = board.I2C()
             self.sensor = adafruit_bno055.BNO055_I2C(i2c)
-    
+
     def get_heading(self):
         if self.simulate:
             return float(180)
@@ -19,7 +20,7 @@ class ImuSensor:
             return False
 
         return self.sensor.calibrated or False
-    
+
     def get_calibration_status(self):
         if self.simulate:
             return 1, 1, 1, 1

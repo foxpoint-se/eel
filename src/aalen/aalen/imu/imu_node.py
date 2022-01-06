@@ -4,8 +4,9 @@ from rclpy.node import Node
 from aalen_interfaces.msg import ImuStatus
 from .imu_sensor import ImuSensor
 
-IMU_STATUS_TOPIC = '/imu_status'
-SIMULATE_PARAM='simulate'
+IMU_STATUS_TOPIC = "/imu_status"
+SIMULATE_PARAM = "simulate"
+
 
 class ImuNode(Node):
     def __init__(self):
@@ -15,8 +16,11 @@ class ImuNode(Node):
         self.declare_parameter(SIMULATE_PARAM, False)
         self.should_simulate = self.get_parameter(SIMULATE_PARAM).value
         self.imu = ImuSensor(self.should_simulate)
-        self.get_logger().info("IMU status publisher has been started." + " SIMULATE" if self.should_simulate else "")
-
+        self.get_logger().info(
+            "IMU status publisher has been started." + " SIMULATE"
+            if self.should_simulate
+            else ""
+        )
 
     def publish_imu(self):
         heading = self.imu.get_heading()
