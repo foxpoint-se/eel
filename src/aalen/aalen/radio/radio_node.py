@@ -45,7 +45,9 @@ class Radio(Node):
         )
 
         self.get_logger().info(
-            "Radio node has been started. Port: {}".format(serial_port)
+            "{}Radio node started. Port: {}".format(
+                "SIMULATE " if self.should_simulate else "", serial_port
+            )
         )
 
     def send(self, message=None):

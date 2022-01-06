@@ -14,7 +14,12 @@ In case you haven't already, do this:
 
 Then start the Aalen application with:
 ```
-ros2 launch aalen_bringup aalen.launch.py 
+ros2 launch aalen_bringup aalen.launch.py
+```
+
+Or, start in simulation mode:
+```
+ros2 launch aalen_bringup aalen.launch.py simulate:=true
 ```
 
 

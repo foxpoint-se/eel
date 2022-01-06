@@ -17,9 +17,7 @@ class ImuNode(Node):
         self.should_simulate = self.get_parameter(SIMULATE_PARAM).value
         self.imu = ImuSensor(self.should_simulate)
         self.get_logger().info(
-            "IMU status publisher has been started." + " SIMULATE"
-            if self.should_simulate
-            else ""
+            "{}IMU node started.".format("SIMULATE " if self.should_simulate else "")
         )
 
     def publish_imu(self):

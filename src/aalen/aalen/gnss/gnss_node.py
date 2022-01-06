@@ -19,7 +19,9 @@ class GNSS(Node):
         self.declare_parameter(DEBUG_PARAM, False)
         self.debug = self.get_parameter(DEBUG_PARAM).value
         self.gnss = GnssSensor(self.should_simulate)
-        self.get_logger().info("GNSS status publisher has been started.")
+        self.get_logger().info(
+            "{}GNSS node started.".format("SIMULATE " if self.should_simulate else "")
+        )
 
     def publish(self):
         lat, lon = self.gnss.get_current_position()
