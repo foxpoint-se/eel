@@ -21,7 +21,7 @@ setup(
     entry_points={
         'console_scripts': [
             'gnss = aalen.gnss:main',
-            'imu = aalen.imu:main',
+            'imu = aalen.imu.imu_node:main',
             'radio = aalen.radio:main',
         ],
     },
