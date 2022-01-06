@@ -1,6 +1,5 @@
-import serial
 import pynmea2
-from .serial_reader import SerialReader
+from ..utils.serial_helpers import SerialReaderWriter
 
 class GnssSensor:
     def __init__(self, simulate=False):
@@ -9,19 +8,17 @@ class GnssSensor:
         self.simulate = simulate
         if not simulate:
             # TODO: remove this comment if we don't seem to have problem with timeout=0
-            self.serial_source = serial.Serial("/dev/ttyUSB0", 9600, timeout=0)
-            self.reader = SerialReader(self.__handle_readline, self.serial_source)
-            self.reader.start()
+            self.serial = SerialReaderWriter("/dev/ttyUSB0", on_message=self.handle_message)
 
-    def __handle_readline(self, decoded_line):
+    def handle_message(self, message):
         # TODO: remove this comment if GGA seems to work instead of GPRMC
-        if 'GGA' in decoded_line:
-            parsed = pynmea2.parse(decoded_line)
+        if 'GGA' in message:
+            parsed = pynmea2.parse(message)
             lat = parsed.latitude
             lon = parsed.longitude
-            self.__update_current_position(lat, lon)
+            self.update_current_position(lat, lon)
 
-    def __update_current_position(self, lat, lon):
+    def update_current_position(self, lat, lon):
         self.current_lat = lat
         self.current_lon = lon
     
