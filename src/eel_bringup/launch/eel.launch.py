@@ -17,21 +17,21 @@ def generate_launch_description():
     )
 
     gnss_node = Node(
-        package="aalen",
+        package="eel",
         executable="gnss",
         name="gnss_node",
         parameters=[{SIMULATE_PARAM: LaunchConfiguration(SIMULATE_PARAM)}],
     )
 
     imu_node = Node(
-        package="aalen",
+        package="eel",
         executable="imu",
         name="imu_node",
         parameters=[{SIMULATE_PARAM: LaunchConfiguration(SIMULATE_PARAM)}],
     )
 
     radio_node = Node(
-        package="aalen",
+        package="eel",
         executable="radio",
         name="radio_node",
         parameters=[{SIMULATE_PARAM: LaunchConfiguration(SIMULATE_PARAM)}],

@@ -2,7 +2,7 @@
 import rclpy
 from rclpy.node import Node
 import json
-from aalen_interfaces.msg import GnssStatus, ImuStatus
+from eel_interfaces.msg import GnssStatus, ImuStatus
 from ..utils.serial_helpers import SerialReaderWriter
 
 IMU_STATUS_TOPIC = "imu_status"

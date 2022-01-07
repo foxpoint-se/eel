@@ -12,14 +12,14 @@ In case you haven't already, do this:
 1. Build ROS2 packages: `colcon build`
 1. Source again, to make ROS2 packages available: `source source_me.sh`
 
-Then start the Aalen application with:
+Then start the Eel application with:
 ```
-ros2 launch aalen_bringup aalen.launch.py
+ros2 launch eel_bringup eel.launch.py
 ```
 
 Or, start in simulation mode:
 ```
-ros2 launch aalen_bringup aalen.launch.py simulate:=true
+ros2 launch eel_bringup eel.launch.py simulate:=true
 ```
 
 

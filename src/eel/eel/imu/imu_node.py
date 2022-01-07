@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
-from aalen_interfaces.msg import ImuStatus
+from eel_interfaces.msg import ImuStatus
 from .imu_sensor import ImuSensor
 
 IMU_STATUS_TOPIC = "/imu_status"

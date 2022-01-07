@@ -1,6 +1,6 @@
 from setuptools import setup
 
-package_name = "aalen"
+package_name = "eel"
 
 setup(
     name=package_name,
@@ -19,9 +19,9 @@ setup(
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "gnss = aalen.gnss.gnss_node:main",
-            "imu = aalen.imu.imu_node:main",
-            "radio = aalen.radio.radio_node:main",
+            "gnss = eel.gnss.gnss_node:main",
+            "imu = eel.imu.imu_node:main",
+            "radio = eel.radio.radio_node:main",
         ],
     },
 )

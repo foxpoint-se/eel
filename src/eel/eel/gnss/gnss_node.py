@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
-from aalen_interfaces.msg import GnssStatus
+from eel_interfaces.msg import GnssStatus
 from .gnss_sensor import GnssSensor
 
 GNSS_STATUS_TOPIC = "/gnss_status"
