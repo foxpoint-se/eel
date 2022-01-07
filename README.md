@@ -1,6 +1,4 @@
-# Ålen
-
-This repo contains everything to run Ålen.
+# Eel
 
 ## Get started
 
