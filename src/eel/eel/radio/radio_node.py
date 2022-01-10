@@ -9,26 +9,24 @@ IMU_STATUS_TOPIC = "imu_status"
 GNSS_STATUS_TOPIC = "gnss_status"
 SIMULATE_PARAM = "simulate"
 
-STATE_KEY = "ST,"
-LAT_KEY = "LA,"
-LON_KEY = "LT,"
-HEADING_KEY = "HE,"
-DISTANCE_KEY = "DT,"
-OKAY_KEY = "OK,"
-SYSTEM_KEY = "SY,"
-GYRO_KEY = "GY,"
-MAGNETO_KEY = "MA,"
-ACCEL_KEY = "AC,"
-IS_CALIBRATED_KEY = "IC,"
-GNSS_KEY = "GNSS,"
-IMU_KEY = "IMU,"
-
 
 class Radio(Node):
     def __init__(self):
         super().__init__("radio_node")
         self.declare_parameter(SIMULATE_PARAM, False)
         self.should_simulate = self.get_parameter(SIMULATE_PARAM).value
+        self.state = {
+            "heading": 0,
+            "isCalibrated": False,
+            "system": 0,
+            "gyro": 0,
+            "accelerometer": 0,
+            "magnetometer": 0,
+            "lat": 0,
+            "lon": 0,
+        }
+
+        self.send_timer = self.create_timer(1.0, self.send_state)
 
         self.imu_subscription = self.create_subscription(
             ImuStatus, IMU_STATUS_TOPIC, self.handle_imu_update, 10
@@ -54,26 +52,33 @@ class Radio(Node):
         if message:
             self.reader_writer.send(message)
 
+    def send_state(self):
+        self.send(message=json.dumps(self.state))
+
+    def update_state(self, data):
+        self.state = {**self.state, **data}
+
     def handle_incoming_message(self, message):
         self.get_logger().info("INCOMING: {}".format(message))
 
     def handle_imu_update(self, msg):
         data = {
             "heading": msg.euler_heading,
-            "is_calibrated": msg.is_calibrated,
+            "isCalibrated": msg.is_calibrated,
             "system": msg.sys,
             "gyro": msg.gyro,
             "accelerometer": msg.accel,
             "magnetometer": msg.mag,
         }
-        self.send(message="{}{}".format(IMU_KEY, json.dumps(data)))
+        self.update_state(data)
 
     def handle_gnss_update(self, msg):
         data = {
             "lat": msg.lat,
             "lon": msg.lon,
         }
-        self.send(message="{}{}".format(GNSS_KEY, json.dumps(data)))
+
+        self.update_state(data)
 
 
 def main(args=None):
