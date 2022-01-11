@@ -52,8 +52,16 @@ class Radio(Node):
         if message:
             self.reader_writer.send(message)
 
+    # TODO: Either we validate the state kind of like this, or perhaps
+    # we have a state variable that determines if the state has changed.
+    # Or something else. In any case, this prevents the initial zeros
+    # from being sent.
+    def should_send_state(self):
+        return self.state.get("lat") != 0 and self.state.get("lon") != 0
+
     def send_state(self):
-        self.send(message=json.dumps(self.state))
+        if self.should_send_state():
+            self.send(message=json.dumps(self.state))
 
     def update_state(self, data):
         self.state = {**self.state, **data}
