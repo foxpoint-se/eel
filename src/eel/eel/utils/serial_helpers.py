@@ -1,35 +1,37 @@
+import atexit
+import sys
 import serial
-import threading
-import time
 from typing import Callable
+from serial.threaded import LineReader, ReaderThread
 
 
-class SerialReader(threading.Thread):
-    def __init__(self, on_message: Callable[[], str], serial: str):
-        super(SerialReader, self).__init__()
-        self.daemon = True
-        self.ser = serial
-        self.on_message = on_message
-        self.should_run = True
-        self.start()
+class ReaderWrapper(LineReader):
+    def __init__(self):
+        super(ReaderWrapper, self).__init__()
+        self.on_message = None
+        self.on_disconnected = None
+        self.unhandled_messages = []
 
-    def run(self):
-        self.readlines()
+    TERMINATOR = b"\n"
 
-    def pause(self):
-        self.should_run = False
+    def connection_made(self, transport):
+        super(ReaderWrapper, self).connection_made(transport)
+        sys.stdout.write("Port opened.\n")
 
-    def resume(self):
-        self.should_run = True
+    def handle_line(self, data):
+        if self.on_message:
+            self.on_message(data)
+        else:
+            self.unhandled_messages.append(data)
 
-    def readlines(self):
-        while True:
-            if self.should_run and self.on_message:
-                line = self.ser.readline()
-                if line:
-                    message = line.decode("utf-8").strip()
-                    self.on_message(message)
-                time.sleep(0.01)
+    def connection_lost(self, exc):
+        reason = None
+        if exc:
+            sys.stdout.write("{}\n".format(exc))
+            reason = exc
+        sys.stdout.write("Port closed.\n")
+        if self.on_disconnected:
+            self.on_disconnected(reason)
 
 
 class SerialReaderWriter:
@@ -37,13 +39,34 @@ class SerialReaderWriter:
         self,
         port: str,
         baudrate: int = 9600,
-        timeout: int = 0,
-        on_message: Callable[[], str] = None,
+        timeout: int = 1,
+        on_message: Callable[[str], None] = None,
+        on_connected: Callable[[], None] = None,
+        on_disconnected: Callable[[Exception], None] = None,
     ) -> None:
-        self.serial = serial.Serial(port=port, baudrate=baudrate, timeout=timeout)
-        if on_message:
-            self.reader = SerialReader(on_message, self.serial)
+        self.ser = serial.serial_for_url(port, baudrate=baudrate, timeout=timeout)
+        t = ReaderThread(self.ser, ReaderWrapper)
+        t.start()
+        transport, protocol = t.connect()
+        if on_connected:
+            on_connected()
+        self.protocol = protocol
+        self.protocol.on_message = on_message
+        self.protocol.on_connected = on_connected
+        self.protocol.on_disconnected = on_disconnected
 
-    def send(self, message) -> str:
+        # Workaround, since `on_message` is set after `t.connect()`, but we need `protocol`
+        # to be able to set `on_message` handler. This will get those messages.
+        count = len(protocol.unhandled_messages)
+        if on_message and count > 0:
+            sys.stdout.write(
+                "Handling unhandled messages right after connection: {}\n".format(count)
+            )
+            for m in protocol.unhandled_messages:
+                on_message(m)
+
+        atexit.register(t.close)
+
+    def send(self, message):
         if message:
-            self.serial.write(bytes("{}\n".format(message), encoding="utf-8"))
+            self.protocol.write_line(message)
