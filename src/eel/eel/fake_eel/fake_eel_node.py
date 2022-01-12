@@ -34,7 +34,7 @@ class FakeEel(Node):
         self.current_position = data[self.current_index]
         self.current_heading = 0.0
 
-        self.move_timer = self.create_timer(3.0, self.move)
+        self.move_timer = self.create_timer(1.0, self.move)
         self.imu_publisher = self.create_publisher(ImuStatus, IMU_STATUS_TOPIC, 10)
         self.gnss_publisher = self.create_publisher(GnssStatus, GNSS_STATUS_TOPIC, 10)
         self.imu_publisher_timer = self.create_timer(1.0, self.publish_imu)
