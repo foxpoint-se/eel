@@ -11,3 +11,6 @@ log
 
 # vscode stuff
 .vscode
+
+# pycharm stuff
+.idea
