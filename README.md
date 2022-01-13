@@ -17,6 +17,8 @@ colcon build --symlink-install
 make install-py
 ```
 
+(The last command might be complaining about `invalid command 'bdist_wheel'`. You should be fine though. Run `make install-py` again to verify that everything seems okay.)
+
 Now you can either start everything in dev mode, or in production mode. Let's go with dev mode first.
 
 ### Start in dev mode
@@ -41,65 +43,13 @@ source source_me.sh
 ros2 launch eel_bringup eel.launch.py
 ```
 
-## Get started
-
-In case you haven't already, do this:
-
-1. Initialize virtual environment: `python3 -m venv .venv`
-1. Activate python environment: `source source_me.sh`
-1. Install python packages: `python -m pip install -r requirements.txt` or `make install-py`
-1. Build ROS2 packages: `colcon build`
-1. Source again, to make ROS2 packages available: `source source_me.sh`
-
-Then start the Eel application with:
-
-```
-ros2 launch eel_bringup eel.launch.py
-```
-
-Or, start in simulation mode:
-
-```
-ros2 launch eel_bringup eel.launch.py simulate:=true
-```
-
-## How to create a simple Python package
-
-1. `cd src`
-1. `ros2 pkg create my_py_pkg --build-type ament_python --dependencies rclpy`
-1. Create a Python file: `touch my_py_pkg/my_py_pkg/my_first_node.py`
-1. Paste contents from `templates/node_template.py`
-1. Make the file executable: `chmod +x the_python_file.py`. Then you can execute by running `./the_python_file.py`
-1. Add your node to `src/my_py_pkg/setup.py`
-   ```python
-   entry_points={
-       'console_scripts': [
-           'py_node = my_py_pkg.my_first_node:main' # <-- this line
-       ],
-   },
-   ```
-1. Go to the root of your workspace.
-1. Build your package: `colcon build --packages-select my_py_pkg --symlink-install`
-1. Source again: `source source_me.sh`
-1. (Run your node manually: `./install/my_py_pkg/lib/my_py_pkg/py_node`)
-1. Run your node through ROS2 commands: `ros2 run my_py_pkg py_node`
-
-## Notes on running `imu`
-
-NOTE: Maybe we can install this instead: `sudo pip3 install adafruit-circuitpython-bno055`
+## Notes on running `imu` node
 
 Plug in the BNO055 module to some pins (not sure which ones..? Possibly like this: https://learn.adafruit.com/bno055-absolute-orientation-sensor-with-raspberry-pi-and-beaglebone-black/hardware)
 
-```
-cd /some/path/outside/this/folder
-git clone https://github.com/adafruit/Adafruit_CircuitPython_BNO055.git
-cd /path/to/cloned-repo
-sudo python3 setup.py install
-```
-
 Check that you have permission to run I2C stuff.
 
-Open a Python shell: `python3`
+Open a Python shell:
 
 ```python
 import adafruit_bno055
@@ -116,15 +66,11 @@ sudo apt install -y i2c-tools
 sudo usermod -a -G i2c ubuntu // if ubuntu is your user
 ```
 
-Should `adafruit_bno055` be listed in package dependencies? No idea on how to handle dependencies that are resolved locally like this.
-
-However, you should be able to run the `imu` node now:
+You should be able to run the `imu` node now:
 
 ```
-cd /path/to/this/project
-colcon build --packages-select rpi_test
 source source_me.sh
-ros2 run rpi_test imu
+ros2 run eel imu
 ```
 
 ## Notes on running `gnss` node
