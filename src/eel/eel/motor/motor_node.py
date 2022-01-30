@@ -15,6 +15,8 @@ class Motor(Node):
             Float32, MOTOR_TOPIC, self.handle_motor_msg, 10
         )
 
+        self.get_logger().info("Rudder node started.")
+
     def handle_motor_msg(self, msg):
         self.get_logger().info("MOTOR NODE SAYS {}".format(msg))
 

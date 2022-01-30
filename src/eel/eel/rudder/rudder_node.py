@@ -15,6 +15,8 @@ class Rudder(Node):
             Float32, RUDDER_TOPIC, self.handle_rudder_msg, 10
         )
 
+        self.get_logger().info("Rudder node started.")
+
     def handle_rudder_msg(self, msg):
         self.get_logger().info("RUDDER NODE SAYS {}".format(msg))
 
