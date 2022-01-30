@@ -3,11 +3,19 @@ import rclpy
 from rclpy.node import Node
 import json
 from eel_interfaces.msg import GnssStatus, ImuStatus
+from std_msgs.msg import String, Float32
 from ..utils.serial_helpers import SerialReaderWriter
 
 IMU_STATUS_TOPIC = "imu_status"
 GNSS_STATUS_TOPIC = "gnss_status"
+RADIO_OUT_TOPIC = "radio_out"
+RADIO_IN_TOPIC = "radio_in"
+RUDDER_TOPIC = "rudder"
+MOTOR_TOPIC = "motor"
 SIMULATE_PARAM = "simulate"
+
+RUDDER_KEY = "rudder"
+MOTOR_KEY = "motor"
 
 
 class Radio(Node):
@@ -35,6 +43,11 @@ class Radio(Node):
             GnssStatus, GNSS_STATUS_TOPIC, self.handle_gnss_update, 10
         )
 
+        self.radio_out_publisher = self.create_publisher(String, RADIO_OUT_TOPIC, 10)
+        self.radio_in_publisher = self.create_publisher(String, RADIO_IN_TOPIC, 10)
+        self.rudder_publisher = self.create_publisher(Float32, RUDDER_TOPIC, 10)
+        self.motor_publisher = self.create_publisher(Float32, MOTOR_TOPIC, 10)
+
         serial_port = (
             "/tmp/virtual_serial_eel" if self.should_simulate else "/dev/ttyS0"
         )
@@ -51,6 +64,9 @@ class Radio(Node):
     def send(self, message=None):
         if message:
             self.reader_writer.send(message)
+            radio_out_msg = String()
+            radio_out_msg.data = message
+            self.radio_out_publisher.publish(radio_out_msg)
 
     # TODO: Either we validate the state kind of like this, or perhaps
     # we have a state variable that determines if the state has changed.
@@ -67,7 +83,23 @@ class Radio(Node):
         self.state = {**self.state, **data}
 
     def handle_incoming_message(self, message):
-        self.get_logger().info("INCOMING: {}".format(message))
+        radio_in_msg = String()
+        radio_in_msg.data = message
+        self.radio_in_publisher.publish(radio_in_msg)
+        data = None
+        try:
+            data = json.loads(message)
+        except:
+            self.get_logger().warning(
+                "Could not parse json, incoming radio message: {}".format(message)
+            )
+
+        if data:
+            if data.get(RUDDER_KEY) is not None:
+                self.handle_rudder_msg(data.get(RUDDER_KEY))
+
+            if data.get(MOTOR_KEY) is not None:
+                self.handle_motor_msg(data.get(MOTOR_KEY))
 
     def handle_imu_update(self, msg):
         data = {
@@ -87,6 +119,34 @@ class Radio(Node):
         }
 
         self.update_state(data)
+
+    def handle_rudder_msg(self, rudder_msg_value):
+        rudder_value = None
+        try:
+            rudder_value = float(rudder_msg_value)
+        except:
+            self.get_logger().warning(
+                "Could not parse float, value {}".format(rudder_msg_value)
+            )
+
+        if rudder_value is not None:
+            topic_msg = Float32()
+            topic_msg.data = rudder_value
+            self.rudder_publisher.publish(topic_msg)
+
+    def handle_motor_msg(self, motor_msg_value):
+        motor_value = None
+        try:
+            motor_value = float(motor_msg_value)
+        except:
+            self.get_logger().warning(
+                "Could not parse float, value {}".format(motor_msg_value)
+            )
+
+        if motor_value is not None:
+            topic_msg = Float32()
+            topic_msg.data = motor_value
+            self.motor_publisher.publish(topic_msg)
 
 
 def main(args=None):
