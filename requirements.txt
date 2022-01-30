@@ -8,3 +8,6 @@ numpy==1.22.0
 adafruit-circuitpython-bno055==5.3.2
 black==21.12b0
 fabric==2.6.0
+gpiozero==1.6.2
+pigpio==1.78
+RPi.GPIO==0.7.0
