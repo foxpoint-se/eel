@@ -2,11 +2,20 @@
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float32
-from .motor_control import MotorControl
 
 
 MOTOR_TOPIC = "motor"
 SIMULATE_PARAM = "simulate"
+FAKE_EEL_MOTOR_TOPIC = "/fake_eel_motor"
+
+
+def clamp(value, minimum, maximum):
+    if value < minimum:
+        return minimum
+    elif value > maximum:
+        return maximum
+    else:
+        return value
 
 
 class Motor(Node):
@@ -19,23 +28,33 @@ class Motor(Node):
             Float32, MOTOR_TOPIC, self.handle_motor_msg, 10
         )
 
-        # TODO: pass in self.should_simulate
-        self.motor_control = MotorControl(simulate=True, logger=self.get_logger())
+        if self.should_simulate:
+            self.fake_eel_linear_publisher = self.create_publisher(
+                Float32, FAKE_EEL_MOTOR_TOPIC, 10
+            )
+        else:
+            from .motor_control import MotorControl
+
+            self.motor_control = MotorControl()
 
         self.get_logger().info(
             "{}Motor node started.".format("SIMULATE " if self.should_simulate else "")
         )
 
     def handle_motor_msg(self, msg):
-        self.get_logger().info("MOTOR NODE SAYS {}".format(msg))
-        new_value = msg.data
-        if new_value >= -1 and new_value <= 1:
-            if new_value == 0:
+        motor_value = clamp(msg.data, -1, 1)
+
+        if not self.should_simulate:
+            if motor_value == 0:
                 self.motor_control.stop()
-            elif new_value > 0:
-                self.motor_control.forward(speed=new_value * 100)
-            elif new_value < 0:
-                self.motor_control.backward(speed=abs(new_value) * 100)
+            elif motor_value > 0:
+                self.motor_control.forward(speed=motor_value * 100)
+            elif motor_value < 0:
+                self.motor_control.backward(speed=abs(motor_value) * 100)
+        else:
+            fake_eel_msg = Float32()
+            fake_eel_msg.data = motor_value
+            self.fake_eel_linear_publisher.publish(fake_eel_msg)
 
 
 def main(args=None):

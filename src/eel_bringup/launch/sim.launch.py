@@ -24,12 +24,14 @@ def generate_launch_description():
         package="eel",
         executable="rudder",
         name="rudder_node",
+        parameters=[{SIMULATE_PARAM: True}],
     )
 
     motor_node = Node(
         package="eel",
         executable="motor",
         name="motor_node",
+        parameters=[{SIMULATE_PARAM: True}],
     )
 
     ld.add_action(fake_eel_node)

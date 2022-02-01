@@ -9,6 +9,16 @@ from .rudder_servo import RudderServo
 
 RUDDER_TOPIC = "rudder"
 SIMULATE_PARAM = "simulate"
+FAKE_EEL_RUDDER_TOPIC = "/fake_eel_rudder"
+
+
+def clamp(value, minimum, maximum):
+    if value < minimum:
+        return minimum
+    elif value > maximum:
+        return maximum
+    else:
+        return value
 
 
 class Rudder(Node):
@@ -22,8 +32,12 @@ class Rudder(Node):
             Float32, RUDDER_TOPIC, self.handle_rudder_msg, 10
         )
 
-        # TODO: pass in self.should_simulate
-        self.servo = RudderServo(simulate=True, logger=self.get_logger())
+        if self.should_simulate:
+            self.fake_eel_angular_publisher = self.create_publisher(
+                Float32, FAKE_EEL_RUDDER_TOPIC, 10
+            )
+        if not self.should_simulate:
+            self.servo = RudderServo()
 
         self.get_logger().info(
             "{}Rudder node started.".format("SIMULATE " if self.should_simulate else "")
@@ -31,14 +45,19 @@ class Rudder(Node):
 
     def shutdown(self):
         self.get_logger().info("Rudder node shutting down...")
-        self.servo.detach()
+        if not self.should_simulate:
+            self.servo.detach()
 
     def handle_rudder_msg(self, msg):
-        self.get_logger().info("RUDDER NODE SAYS {}".format(msg))
+        rudder_value = clamp(msg.data, -1, 1)
 
-        new_value = msg.data
-        if new_value >= -1 and new_value <= 1:
-            self.servo.set_value(new_value)
+        if self.should_simulate:
+            fake_eel_msg = Float32()
+            fake_eel_msg.data = rudder_value
+            self.fake_eel_angular_publisher.publish(fake_eel_msg)
+
+        else:
+            self.servo.set_value(rudder_value)
 
 
 def main(args=None):
@@ -48,6 +67,7 @@ def main(args=None):
     # TODO: remove? test if we need this
     rclpy.get_default_context().on_shutdown(node.shutdown)
 
+    # TODO: remove probably
     # rclpy.spin(node)
 
     try:
@@ -60,6 +80,7 @@ def main(args=None):
         node.shutdown()
         rclpy.try_shutdown()
 
+    # TODO: remove probably
     # rclpy.shutdown()
 
 
