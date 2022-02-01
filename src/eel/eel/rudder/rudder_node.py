@@ -64,12 +64,6 @@ def main(args=None):
     rclpy.init(args=args)
     node = Rudder()
 
-    # TODO: remove? test if we need this
-    rclpy.get_default_context().on_shutdown(node.shutdown)
-
-    # TODO: remove probably
-    # rclpy.spin(node)
-
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
@@ -79,9 +73,6 @@ def main(args=None):
     finally:
         node.shutdown()
         rclpy.try_shutdown()
-
-    # TODO: remove probably
-    # rclpy.shutdown()
 
 
 if __name__ == "__main__":
