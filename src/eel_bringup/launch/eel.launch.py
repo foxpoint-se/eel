@@ -37,9 +37,23 @@ def generate_launch_description():
         parameters=[{SIMULATE_PARAM: LaunchConfiguration(SIMULATE_PARAM)}],
     )
 
+    rudder_node = Node(
+        package="eel",
+        executable="rudder",
+        name="rudder_node",
+    )
+
+    motor_node = Node(
+        package="eel",
+        executable="motor",
+        name="motor_node",
+    )
+
     ld.add_action(should_simulate_arg)
     ld.add_action(gnss_node)
     ld.add_action(imu_node)
     ld.add_action(radio_node)
+    ld.add_action(rudder_node)
+    ld.add_action(motor_node)
 
     return ld

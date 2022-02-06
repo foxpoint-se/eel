@@ -2,11 +2,14 @@
 import rclpy
 from rclpy.node import Node
 from eel_interfaces.msg import ImuStatus, GnssStatus
+from std_msgs.msg import Float32
 import math
 from .fake_route import data
 
 GNSS_STATUS_TOPIC = "/gnss_status"
 IMU_STATUS_TOPIC = "/imu_status"
+FAKE_EEL_RUDDER_TOPIC = "fake_eel_rudder"
+FAKE_EEL_MOTOR_TOPIC = "fake_eel_motor"
 
 
 def to_degrees(angle):
@@ -40,6 +43,17 @@ class FakeEel(Node):
         self.imu_publisher_timer = self.create_timer(1.0, self.publish_imu)
         self.gnss_publisher_timer = self.create_timer(1.0, self.publish_gnss)
 
+        self.angular_subscription = self.create_subscription(
+            Float32, FAKE_EEL_RUDDER_TOPIC, self.handle_rudder_msg, 10
+        )
+
+        self.linear_subscription = self.create_subscription(
+            Float32, FAKE_EEL_MOTOR_TOPIC, self.handle_motor_msg, 10
+        )
+
+        self.speed = 1.0
+        self.angle = 0.0
+
         self.get_logger().info(
             "Fake eel node started. Publishing to: {}, {}".format(
                 GNSS_STATUS_TOPIC, IMU_STATUS_TOPIC
@@ -47,17 +61,21 @@ class FakeEel(Node):
         )
 
     def move(self):
-        next_index = (self.current_index + 1) % len(self.location_list)
-        next_pos = self.location_list[next_index]
-        next_heading = get_heading(
-            self.current_position["lat"],
-            self.current_position["lon"],
-            next_pos["lat"],
-            next_pos["lon"],
-        )
-        self.current_index = next_index
-        self.current_position = next_pos
-        self.current_heading = next_heading
+        if self.speed > 0:
+            next_index = (self.current_index + 1) % len(self.location_list)
+            next_pos = self.location_list[next_index]
+            next_heading = (
+                get_heading(
+                    self.current_position["lat"],
+                    self.current_position["lon"],
+                    next_pos["lat"],
+                    next_pos["lon"],
+                )
+                + self.angle
+            )
+            self.current_index = next_index
+            self.current_position = next_pos
+            self.current_heading = next_heading
 
     def publish_imu(self):
         msg = ImuStatus()
@@ -76,6 +94,12 @@ class FakeEel(Node):
         msg.lon = self.current_position["lon"]
 
         self.gnss_publisher.publish(msg)
+
+    def handle_rudder_msg(self, msg):
+        self.angle = msg.data * 90
+
+    def handle_motor_msg(self, msg):
+        self.speed = msg.data
 
 
 def main(args=None):
