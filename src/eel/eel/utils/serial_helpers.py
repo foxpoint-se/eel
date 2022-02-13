@@ -12,7 +12,8 @@ class ReaderWrapper(LineReader):
         self.on_disconnected = None
         self.unhandled_messages = []
 
-    TERMINATOR = b"\n"
+    # default is \r\n
+    #TERMINATOR = b"\n"
 
     def connection_made(self, transport):
         super(ReaderWrapper, self).connection_made(transport)

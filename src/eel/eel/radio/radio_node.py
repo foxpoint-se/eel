@@ -52,7 +52,7 @@ class Radio(Node):
             "/tmp/virtual_serial_eel" if self.should_simulate else "/dev/ttyS0"
         )
         self.reader_writer = SerialReaderWriter(
-            serial_port, on_message=self.handle_incoming_message
+            serial_port, on_message=self.handle_incoming_message, timeout=None
         )
 
         self.get_logger().info(
@@ -73,7 +73,8 @@ class Radio(Node):
     # Or something else. In any case, this prevents the initial zeros
     # from being sent.
     def should_send_state(self):
-        return self.state.get("lat") != 0 and self.state.get("lon") != 0
+        #return self.state.get("lat") != 0 and self.state.get("lon") != 0
+        return False
 
     def send_state(self):
         if self.should_send_state():
