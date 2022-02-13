@@ -14,3 +14,7 @@ log
 
 # pycharm stuff
 .idea
+
+# pigpio stuff
+pigpio-master
+master.zip

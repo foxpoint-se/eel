@@ -20,3 +20,19 @@ install-py:		## setup venv and install py dependencies
 # /tmp/virtual_serial_connect on the other (where you run ground-control application)
 virtual-serial:		## /tmp/virtual_serial_eel <-> /tmp/virtual_serial_connect
 	socat -d -d pty,raw,echo=0,link=/tmp/virtual_serial_eel pty,raw,echo=0,link=/tmp/virtual_serial_connect
+
+start-pigpio:		## start pigpio
+	sudo pigpiod
+
+stop-pigpio:		## stop pigpio
+	sudo killall pigpiod
+
+# Stolen from https://abyz.me.uk/rpi/pigpio/download.html 
+install-pigpio:		## install pigpio in this folder
+	( \
+		wget https://github.com/joan2937/pigpio/archive/master.zip; \
+		unzip master.zip; \
+		cd pigpio-master; \
+		make; \
+		sudo make install; \
+	)
