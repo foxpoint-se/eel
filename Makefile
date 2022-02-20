@@ -36,3 +36,12 @@ install-pigpio:		## install pigpio in this folder
 		make; \
 		sudo make install; \
 	)
+
+install-i2c:		## install i2c stuff
+	( \
+		sudo apt update; \
+		sudo apt upgrade -y; \
+		sudo apt install -y i2c-tools; \
+		sudo usermod -a -G i2c ubuntu; \
+		echo "now restart your rpi"; \
+	)
