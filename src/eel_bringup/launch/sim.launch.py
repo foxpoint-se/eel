@@ -34,9 +34,17 @@ def generate_launch_description():
         parameters=[{SIMULATE_PARAM: True}],
     )
 
+    imu_node = Node(
+        package="eel",
+        executable="imu",
+        name="imu_node",
+        parameters=[{SIMULATE_PARAM: True}],
+    )
+
     ld.add_action(fake_eel_node)
     ld.add_action(radio_node)
     ld.add_action(rudder_node)
     ld.add_action(motor_node)
+    ld.add_action(imu_node)
 
     return ld

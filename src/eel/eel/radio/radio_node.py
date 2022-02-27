@@ -73,8 +73,8 @@ class Radio(Node):
     # Or something else. In any case, this prevents the initial zeros
     # from being sent.
     def should_send_state(self):
-        #return self.state.get("lat") != 0 and self.state.get("lon") != 0
-        return False
+        return self.state.get("lat") != 0 and self.state.get("lon") != 0
+        # return False
 
     def send_state(self):
         if self.should_send_state():
