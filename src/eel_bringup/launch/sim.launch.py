@@ -7,11 +7,11 @@ SIMULATE_PARAM = "simulate"
 def generate_launch_description():
     ld = LaunchDescription()
 
-    fake_eel_node = Node(
-        package="eel",
-        executable="fake_eel",
-        name="fake_eel",
-    )
+    # fake_eel_node = Node(
+    #     package="eel",
+    #     executable="fake_eel",
+    #     name="fake_eel",
+    # )
 
     radio_node = Node(
         package="eel",
@@ -41,10 +41,18 @@ def generate_launch_description():
         parameters=[{SIMULATE_PARAM: True}],
     )
 
-    ld.add_action(fake_eel_node)
+    gnss_node = Node(
+        package="eel",
+        executable="gnss",
+        name="gnss_node",
+        parameters=[{SIMULATE_PARAM: True}],
+    )
+
+    # ld.add_action(fake_eel_node)
     ld.add_action(radio_node)
     ld.add_action(rudder_node)
     ld.add_action(motor_node)
     ld.add_action(imu_node)
+    ld.add_action(gnss_node)
 
     return ld

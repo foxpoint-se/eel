@@ -5,6 +5,7 @@ from rclpy.node import Node
 from eel_interfaces.msg import ImuStatus
 from std_msgs.msg import Float32
 from .imu_sensor import ImuSensor
+from ..utils.translate import translate_from_range_to_range
 
 IMU_STATUS_TOPIC = "/imu_status"
 SIMULATE_PARAM = "simulate"
@@ -34,10 +35,13 @@ class ImuNode(Node):
         )
 
     def publish_fake_imu(self):
-        if self.current_rudder_angle > 0:
-            self.current_heading = (self.current_heading + 20) % 360
-        elif self.current_rudder_angle < 0:
-            self.current_heading = (self.current_heading - 20) % 360
+        # if self.current_rudder_angle > 0:
+        #     self.current_heading = (self.current_heading + 20) % 360
+        # elif self.current_rudder_angle < 0:
+        #     self.current_heading = (self.current_heading - 20) % 360
+        self.current_heading += translate_from_range_to_range(
+            self.current_rudder_angle, -90.0, 90.0, -10.0, 10.0
+        )
 
         heading = self.current_heading
         msg = ImuStatus()
