@@ -10,7 +10,6 @@ from .rudder_sim import RudderSimulator
 
 RUDDER_TOPIC = "rudder"
 SIMULATE_PARAM = "simulate"
-FAKE_EEL_RUDDER_TOPIC = "/fake_eel_rudder"
 
 
 def clamp(value, minimum, maximum):
