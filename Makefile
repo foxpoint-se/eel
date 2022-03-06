@@ -45,3 +45,9 @@ install-i2c:		## install i2c stuff
 		sudo usermod -a -G i2c ubuntu; \
 		echo "now restart your rpi"; \
 	)
+
+start:		## start eel
+	ros2 launch eel_bringup eel.launch.py
+
+start-sim:		## start eel in simulation mode
+	ros2 launch eel_bringup sim.launch.py

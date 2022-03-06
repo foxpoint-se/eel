@@ -17,7 +17,7 @@ class ImuNode(Node):
         self.status_publisher = self.create_publisher(ImuStatus, IMU_STATUS_TOPIC, 10)
 
         if not self.should_simulate:
-            sensor = ImuSensor(self.should_simulate)
+            sensor = ImuSensor()
             self.get_heading = sensor.get_heading
             self.get_calibration_status = sensor.get_calibration_status
             self.get_is_calibrated = sensor.get_is_calibrated
