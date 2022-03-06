@@ -2,11 +2,11 @@
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float32
+from .motor_sim import MotorSimulator
 
 
 MOTOR_TOPIC = "motor"
 SIMULATE_PARAM = "simulate"
-FAKE_EEL_MOTOR_TOPIC = "/fake_eel_motor"
 
 
 def clamp(value, minimum, maximum):
@@ -29,13 +29,17 @@ class Motor(Node):
         )
 
         if self.should_simulate:
-            self.fake_eel_linear_publisher = self.create_publisher(
-                Float32, FAKE_EEL_MOTOR_TOPIC, 10
-            )
+            simulator = MotorSimulator()
+            self.stop = simulator.stop
+            self.forward = simulator.forward
+            self.backward = simulator.backward
         else:
             from .motor_control import MotorControl
 
-            self.motor_control = MotorControl()
+            motor_control = MotorControl()
+            self.stop = motor_control.stop
+            self.forward = motor_control.forward
+            self.backward = motor_control.backward
 
         self.get_logger().info(
             "{}Motor node started.".format("SIMULATE " if self.should_simulate else "")
@@ -43,18 +47,12 @@ class Motor(Node):
 
     def handle_motor_msg(self, msg):
         motor_value = clamp(msg.data, -1, 1)
-
-        if not self.should_simulate:
-            if motor_value == 0:
-                self.motor_control.stop()
-            elif motor_value > 0:
-                self.motor_control.forward(speed=motor_value * 100)
-            elif motor_value < 0:
-                self.motor_control.backward(speed=abs(motor_value) * 100)
-        else:
-            fake_eel_msg = Float32()
-            fake_eel_msg.data = motor_value
-            self.fake_eel_linear_publisher.publish(fake_eel_msg)
+        if motor_value == 0:
+            self.stop()
+        elif motor_value > 0:
+            self.forward(speed=motor_value * 100)
+        elif motor_value < 0:
+            self.backward(speed=abs(motor_value) * 100)
 
 
 def main(args=None):

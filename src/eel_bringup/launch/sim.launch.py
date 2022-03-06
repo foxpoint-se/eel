@@ -7,12 +7,6 @@ SIMULATE_PARAM = "simulate"
 def generate_launch_description():
     ld = LaunchDescription()
 
-    # fake_eel_node = Node(
-    #     package="eel",
-    #     executable="fake_eel",
-    #     name="fake_eel",
-    # )
-
     radio_node = Node(
         package="eel",
         executable="radio",
@@ -48,7 +42,6 @@ def generate_launch_description():
         parameters=[{SIMULATE_PARAM: True}],
     )
 
-    # ld.add_action(fake_eel_node)
     ld.add_action(radio_node)
     ld.add_action(rudder_node)
     ld.add_action(motor_node)

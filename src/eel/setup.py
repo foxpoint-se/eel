@@ -22,7 +22,6 @@ setup(
             "gnss = eel.gnss.gnss_node:main",
             "imu = eel.imu.imu_node:main",
             "radio = eel.radio.radio_node:main",
-            "fake_eel = eel.fake_eel.fake_eel_node:main",
             "rudder = eel.rudder.rudder_node:main",
             "motor = eel.motor.motor_node:main",
         ],

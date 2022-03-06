@@ -5,11 +5,11 @@ from rclpy.executors import ExternalShutdownException
 from std_msgs.msg import Float32
 import sys
 from .rudder_servo import RudderServo
+from .rudder_sim import RudderSimulator
 
 
 RUDDER_TOPIC = "rudder"
 SIMULATE_PARAM = "simulate"
-FAKE_EEL_RUDDER_TOPIC = "/fake_eel_rudder"
 
 
 def clamp(value, minimum, maximum):
@@ -27,17 +27,17 @@ class Rudder(Node):
 
         self.declare_parameter(SIMULATE_PARAM, False)
         self.should_simulate = self.get_parameter(SIMULATE_PARAM).value
-
         self.rudder_subscription = self.create_subscription(
             Float32, RUDDER_TOPIC, self.handle_rudder_msg, 10
         )
-
         if self.should_simulate:
-            self.fake_eel_angular_publisher = self.create_publisher(
-                Float32, FAKE_EEL_RUDDER_TOPIC, 10
-            )
+            simulator = RudderSimulator()
+            self.detach = simulator.detach
+            self.set_value = simulator.set_value
         if not self.should_simulate:
-            self.servo = RudderServo()
+            servo = RudderServo()
+            self.detach = servo.detach
+            self.set_value = servo.set_value
 
         self.get_logger().info(
             "{}Rudder node started.".format("SIMULATE " if self.should_simulate else "")
@@ -45,19 +45,11 @@ class Rudder(Node):
 
     def shutdown(self):
         self.get_logger().info("Rudder node shutting down...")
-        if not self.should_simulate:
-            self.servo.detach()
+        self.detach()
 
     def handle_rudder_msg(self, msg):
         rudder_value = clamp(msg.data, -1, 1)
-
-        if self.should_simulate:
-            fake_eel_msg = Float32()
-            fake_eel_msg.data = rudder_value
-            self.fake_eel_angular_publisher.publish(fake_eel_msg)
-
-        else:
-            self.servo.set_value(rudder_value)
+        self.set_value(rudder_value)
 
 
 def main(args=None):
