@@ -16,6 +16,12 @@ def generate_launch_description():
         description="Set to false to disable hardware. However, you'll have to run `make serial-sim` to make radio node work.",
     )
 
+    navigation_node = Node(
+        package="eel",
+        executable="navigation",
+        name="navigation_node",
+    )
+
     gnss_node = Node(
         package="eel",
         executable="gnss",
@@ -49,6 +55,7 @@ def generate_launch_description():
         name="motor_node",
     )
 
+    ld.add_action(navigation_node)
     ld.add_action(should_simulate_arg)
     ld.add_action(gnss_node)
     ld.add_action(imu_node)

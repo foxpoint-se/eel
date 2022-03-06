@@ -19,6 +19,7 @@ setup(
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
+            "navigation = eel.navigation.navigation_node:main",
             "gnss = eel.gnss.gnss_node:main",
             "imu = eel.imu.imu_node:main",
             "radio = eel.radio.radio_node:main",
