@@ -51,3 +51,6 @@ start:		## start eel
 
 start-sim:		## start eel in simulation mode
 	ros2 launch eel_bringup sim.launch.py
+
+build-sym:		## build with symlink
+	colcon build --symlink-install
