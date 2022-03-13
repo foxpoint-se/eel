@@ -12,8 +12,10 @@ class RudderServo:
             max_pulse_width=2.2 / 1000,
         )
 
+    # We want -1 to be left and 1 to be right, but for some reason it has been
+    # flipped on the servo. So we just flip it back by setting it to its inverse.
     def set_value(self, value):
-        self.servo.value = value
+        self.servo.value = -value
 
     def detach(self):
         self.servo.detach()

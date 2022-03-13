@@ -75,6 +75,7 @@ class Radio(Node):
     def should_send_state(self):
         return self.state.get("lat") != 0 and self.state.get("lon") != 0
         # return False
+        # return True
 
     def send_state(self):
         if self.should_send_state():
