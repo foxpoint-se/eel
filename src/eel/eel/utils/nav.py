@@ -13,11 +13,15 @@ def calc_distance(pos_1, pos_2):
     pos_1_lat_rad = pos_1.get("latitude") * (math.pi / 180.0)
     pos_2_lat_rad = pos_2.get("latitude") * (math.pi / 180.0)
     delta_lat_rad = (pos_1.get("latitude") - pos_2.get("latitude")) * (math.pi / 180.0)
-    delta_long_rad = (pos_1.get("longitude") - pos_2.get("longitude")) * (math.pi / 180.0)
+    delta_long_rad = (pos_1.get("longitude") - pos_2.get("longitude")) * (
+        math.pi / 180.0
+    )
 
-    a = math.sin(delta_lat_rad / 2.0) * math.sin(delta_lat_rad / 2.0) + \
-        math.cos(pos_1_lat_rad) * math.cos(pos_2_lat_rad) * math.sin(delta_long_rad / 2.0) * \
-        math.sin(delta_long_rad / 2.0)
+    a = math.sin(delta_lat_rad / 2.0) * math.sin(delta_lat_rad / 2.0) + math.cos(
+        pos_1_lat_rad
+    ) * math.cos(pos_2_lat_rad) * math.sin(delta_long_rad / 2.0) * math.sin(
+        delta_long_rad / 2.0
+    )
 
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
     distance = EARTH_RADIUS * c
@@ -34,11 +38,14 @@ def calc_bearing(pos_1, pos_2):
     """
     pos_1_lat_rad = pos_1.get("latitude") * (math.pi / 180.0)
     pos_2_lat_rad = pos_2.get("latitude") * (math.pi / 180.0)
-    delta_long_rad = (pos_1.get("longitude") - pos_2.get("longitude")) * (math.pi / 180.0)
+    delta_long_rad = (pos_1.get("longitude") - pos_2.get("longitude")) * (
+        math.pi / 180.0
+    )
 
     y = math.sin(delta_long_rad) * math.cos(pos_2_lat_rad)
-    x = math.cos(pos_1_lat_rad) * math.sin(pos_2_lat_rad) - math.sin(pos_1_lat_rad) * math.cos(pos_2_lat_rad) * \
-        math.cos(delta_long_rad)
+    x = math.cos(pos_1_lat_rad) * math.sin(pos_2_lat_rad) - math.sin(
+        pos_1_lat_rad
+    ) * math.cos(pos_2_lat_rad) * math.cos(delta_long_rad)
 
     bearing = math.atan2(y, x) * (180.0 / math.pi)
     true_bearing = bearing * -1 if bearing < 0 else 360.0 - bearing
