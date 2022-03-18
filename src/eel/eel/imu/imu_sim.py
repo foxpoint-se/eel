@@ -5,7 +5,7 @@ RUDDER_TOPIC = "rudder"
 MOTOR_TOPIC = "motor"
 
 # hertz (updates per second)
-UPDATE_FREQUENCY = 2
+UPDATE_FREQUENCY = 1
 
 # hertz (degrees per second)
 ANGULAR_VELOCITY = 10.0
