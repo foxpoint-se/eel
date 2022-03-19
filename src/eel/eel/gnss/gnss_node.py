@@ -4,10 +4,8 @@ from rclpy.node import Node
 from eel_interfaces.msg import GnssStatus
 from .gnss_sensor import GnssSensor
 from .gnss_sim import GnssSimulator
-
-GNSS_STATUS_TOPIC = "/gnss_status"
-SIMULATE_PARAM = "simulate"
-DEBUG_PARAM = "debug"
+from ..utils.constants import SIMULATE_PARAM
+from ..utils.topics import GNSS_STATUS
 
 # hertz (updates per second)
 UPDATE_FREQUENCY = 10
@@ -16,11 +14,9 @@ UPDATE_FREQUENCY = 10
 class GNSS(Node):
     def __init__(self):
         super().__init__("gnss_node")
-        self.publisher = self.create_publisher(GnssStatus, GNSS_STATUS_TOPIC, 10)
+        self.publisher = self.create_publisher(GnssStatus, GNSS_STATUS, 10)
         self.declare_parameter(SIMULATE_PARAM, False)
         self.should_simulate = self.get_parameter(SIMULATE_PARAM).value
-        self.declare_parameter(DEBUG_PARAM, False)
-        self.debug = self.get_parameter(DEBUG_PARAM).value
 
         if not self.should_simulate:
             sensor = GnssSensor()
@@ -36,9 +32,6 @@ class GNSS(Node):
 
     def publish(self):
         lat, lon = self.get_current_position()
-
-        if self.debug:
-            self.get_logger().info("lat: {}, lon: {}".format(lat, lon))
 
         if isinstance(lat, float) and isinstance(lon, float):
             msg = GnssStatus()

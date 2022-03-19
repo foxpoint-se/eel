@@ -4,9 +4,8 @@ from rclpy.node import Node
 from eel_interfaces.msg import ImuStatus
 from .imu_sensor import ImuSensor
 from .imu_sim import ImuSimulator
-
-IMU_STATUS_TOPIC = "/imu_status"
-SIMULATE_PARAM = "simulate"
+from ..utils.constants import SIMULATE_PARAM
+from ..utils.topics import IMU_STATUS
 
 # hertz (publications per second)
 UPDATE_FREQUENCY = 10
@@ -17,7 +16,7 @@ class ImuNode(Node):
         super().__init__("imu_node")
         self.declare_parameter(SIMULATE_PARAM, False)
         self.should_simulate = self.get_parameter(SIMULATE_PARAM).value
-        self.status_publisher = self.create_publisher(ImuStatus, IMU_STATUS_TOPIC, 10)
+        self.status_publisher = self.create_publisher(ImuStatus, IMU_STATUS, 10)
 
         if not self.should_simulate:
             sensor = ImuSensor()

@@ -8,11 +8,7 @@ from ..utils.nav import (
     get_relative_bearing_in_degrees,
     get_closest_turn_direction,
 )
-
-GNSS_STATUS_TOPIC = "gnss_status"
-IMU_STATUS_TOPIC = "imu_status"
-MOTOR_TOPIC = "motor"
-RUDDER_TOPIC = "rudder"
+from ..utils.topics import RUDDER_CMD, MOTOR_CMD, IMU_STATUS, GNSS_STATUS
 
 
 class NavigationNode(Node):
@@ -34,14 +30,14 @@ class NavigationNode(Node):
         self.current_heading = 0.0
 
         self.gnss_subscription = self.create_subscription(
-            GnssStatus, GNSS_STATUS_TOPIC, self.handle_gnss_update, 10
+            GnssStatus, GNSS_STATUS, self.handle_gnss_update, 10
         )
         self.imu_subscription = self.create_subscription(
-            ImuStatus, IMU_STATUS_TOPIC, self.handle_imu_update, 10
+            ImuStatus, IMU_STATUS, self.handle_imu_update, 10
         )
 
-        self.motor_publisher = self.create_publisher(Float32, MOTOR_TOPIC, 10)
-        self.rudder_publisher = self.create_publisher(Float32, RUDDER_TOPIC, 10)
+        self.motor_publisher = self.create_publisher(Float32, MOTOR_CMD, 10)
+        self.rudder_publisher = self.create_publisher(Float32, RUDDER_CMD, 10)
 
     def handle_imu_update(self, msg):
         self.current_heading = msg.euler_heading

@@ -5,14 +5,16 @@ import json
 from eel_interfaces.msg import GnssStatus, ImuStatus
 from std_msgs.msg import String, Float32
 from ..utils.serial_helpers import SerialReaderWriter
+from ..utils.topics import (
+    RUDDER_CMD,
+    MOTOR_CMD,
+    IMU_STATUS,
+    GNSS_STATUS,
+    RADIO_IN,
+    RADIO_OUT,
+)
+from ..utils.constants import SIMULATE_PARAM
 
-IMU_STATUS_TOPIC = "imu_status"
-GNSS_STATUS_TOPIC = "gnss_status"
-RADIO_OUT_TOPIC = "radio_out"
-RADIO_IN_TOPIC = "radio_in"
-RUDDER_TOPIC = "rudder"
-MOTOR_TOPIC = "motor"
-SIMULATE_PARAM = "simulate"
 
 RUDDER_KEY = "rudder"
 MOTOR_KEY = "motor"
@@ -37,16 +39,16 @@ class Radio(Node):
         self.send_timer = self.create_timer(1.0, self.send_state)
 
         self.imu_subscription = self.create_subscription(
-            ImuStatus, IMU_STATUS_TOPIC, self.handle_imu_update, 10
+            ImuStatus, IMU_STATUS, self.handle_imu_update, 10
         )
         self.gnss_subscription = self.create_subscription(
-            GnssStatus, GNSS_STATUS_TOPIC, self.handle_gnss_update, 10
+            GnssStatus, GNSS_STATUS, self.handle_gnss_update, 10
         )
 
-        self.radio_out_publisher = self.create_publisher(String, RADIO_OUT_TOPIC, 10)
-        self.radio_in_publisher = self.create_publisher(String, RADIO_IN_TOPIC, 10)
-        self.rudder_publisher = self.create_publisher(Float32, RUDDER_TOPIC, 10)
-        self.motor_publisher = self.create_publisher(Float32, MOTOR_TOPIC, 10)
+        self.radio_out_publisher = self.create_publisher(String, RADIO_OUT, 10)
+        self.radio_in_publisher = self.create_publisher(String, RADIO_IN, 10)
+        self.rudder_publisher = self.create_publisher(Float32, RUDDER_CMD, 10)
+        self.motor_publisher = self.create_publisher(Float32, MOTOR_CMD, 10)
 
         serial_port = (
             "/tmp/virtual_serial_eel" if self.should_simulate else "/dev/ttyS0"

@@ -3,9 +3,7 @@ from std_msgs.msg import Float32
 from geopy import distance
 from eel_interfaces.msg import ImuStatus
 from ..utils.sim import LINEAR_VELOCITY
-
-MOTOR_TOPIC = "motor"
-IMU_STATUS_TOPIC = "imu_status"
+from ..utils.topics import MOTOR_CMD, IMU_STATUS
 
 
 def calculate_position_delta(velocity_in_mps, time_in_s):
@@ -20,10 +18,10 @@ class GnssSimulator:
         self.current_position = {"lat": 59.309406850903784, "lon": 17.9742443561554}
 
         self.motor_subscription = parent_node.create_subscription(
-            Float32, MOTOR_TOPIC, self._handle_motor_msg, 10
+            Float32, MOTOR_CMD, self._handle_motor_msg, 10
         )
         self.imu_subscription = parent_node.create_subscription(
-            ImuStatus, IMU_STATUS_TOPIC, self._handle_imu_msg, 10
+            ImuStatus, IMU_STATUS, self._handle_imu_msg, 10
         )
 
     def _handle_motor_msg(self, msg):

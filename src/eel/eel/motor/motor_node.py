@@ -3,10 +3,8 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float32
 from .motor_sim import MotorSimulator
-
-
-MOTOR_TOPIC = "motor"
-SIMULATE_PARAM = "simulate"
+from ..utils.topics import MOTOR_CMD
+from ..utils.constants import SIMULATE_PARAM
 
 
 def clamp(value, minimum, maximum):
@@ -25,7 +23,7 @@ class Motor(Node):
         self.should_simulate = self.get_parameter(SIMULATE_PARAM).value
 
         self.motor_subscription = self.create_subscription(
-            Float32, MOTOR_TOPIC, self.handle_motor_msg, 10
+            Float32, MOTOR_CMD, self.handle_motor_msg, 10
         )
 
         if self.should_simulate:

@@ -1,9 +1,7 @@
 from time import time
 from std_msgs.msg import Float32
 from ..utils.sim import ANGULAR_VELOCITY
-
-RUDDER_TOPIC = "rudder"
-MOTOR_TOPIC = "motor"
+from ..utils.topics import RUDDER_STATUS, MOTOR_CMD
 
 
 def calculate_angle_delta(angular_velocity, time_in_s):
@@ -17,10 +15,10 @@ class ImuSimulator:
         self.speed = 0
         self.last_updated_at = time()
         self.rudder_subscription = parent_node.create_subscription(
-            Float32, RUDDER_TOPIC, self._handle_rudder_msg, 10
+            Float32, RUDDER_STATUS, self._handle_rudder_msg, 10
         )
         self.motor_subscription = parent_node.create_subscription(
-            Float32, MOTOR_TOPIC, self._handle_motor_msg, 10
+            Float32, MOTOR_CMD, self._handle_motor_msg, 10
         )
 
     def _handle_rudder_msg(self, msg):
