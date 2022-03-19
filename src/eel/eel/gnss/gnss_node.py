@@ -9,6 +9,9 @@ GNSS_STATUS_TOPIC = "/gnss_status"
 SIMULATE_PARAM = "simulate"
 DEBUG_PARAM = "debug"
 
+# hertz (updates per second)
+UPDATE_FREQUENCY = 10
+
 
 class GNSS(Node):
     def __init__(self):
@@ -26,7 +29,7 @@ class GNSS(Node):
             simulator = GnssSimulator(self)
             self.get_current_position = simulator.get_current_position
 
-        self.poller = self.create_timer(1.0, self.publish)
+        self.poller = self.create_timer(1.0 / UPDATE_FREQUENCY, self.publish)
         self.get_logger().info(
             "{}GNSS node started.".format("SIMULATE " if self.should_simulate else "")
         )
