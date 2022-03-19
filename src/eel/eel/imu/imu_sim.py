@@ -1,34 +1,45 @@
+from time import time
 from std_msgs.msg import Float32
-from ..utils.translate import translate_from_range_to_range
+from ..utils.sim import ANGULAR_VELOCITY
 
 RUDDER_TOPIC = "rudder"
 MOTOR_TOPIC = "motor"
 
 
+def calculate_angle_delta(angular_velocity, time_in_s):
+    return angular_velocity * time_in_s
+
+
 class ImuSimulator:
     def __init__(self, parent_node=None) -> None:
-        self.current_rudder_angle = float(0)
+        self.current_rudder_status = float(0)
         self.current_heading = float(0)
         self.speed = 0
+        self.last_updated_at = time()
         self.rudder_subscription = parent_node.create_subscription(
-            Float32, RUDDER_TOPIC, self.handle_rudder_msg, 10
+            Float32, RUDDER_TOPIC, self._handle_rudder_msg, 10
         )
         self.motor_subscription = parent_node.create_subscription(
-            Float32, MOTOR_TOPIC, self.handle_motor_msg, 10
+            Float32, MOTOR_TOPIC, self._handle_motor_msg, 10
         )
-        self.imu_updater = parent_node.create_timer(1.0, self.update_imu)
 
-    def handle_rudder_msg(self, msg):
-        self.current_rudder_angle = msg.data * 90
+    def _handle_rudder_msg(self, msg):
+        self.current_rudder_status = msg.data
+        self._update_imu()
 
-    def handle_motor_msg(self, msg):
+    def _handle_motor_msg(self, msg):
         self.speed = msg.data
+        self._update_imu()
 
-    def update_imu(self):
+    def _update_imu(self):
         if self.speed > 0:
-            self.current_heading += translate_from_range_to_range(
-                self.current_rudder_angle, -90.0, 90.0, -10.0, 10.0
-            )
+            now = time()
+            time_delta = now - self.last_updated_at
+            angle_delta = calculate_angle_delta(ANGULAR_VELOCITY, time_delta)
+            to_add = self.current_rudder_status * angle_delta
+            self.current_heading = (self.current_heading + to_add) % 360
+
+        self.last_updated_at = time()
 
     def get_calibration_status(self):
         sys = 3
