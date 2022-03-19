@@ -19,15 +19,24 @@ def clamp(value, minimum, maximum):
         return value
 
 
+SIM_CALIBRATION_TERM = 0.0
+CALIBRATION_TERM = 0.0
+
+
 class Rudder(Node):
     def __init__(self):
         super().__init__("rudder_node")
 
         self.declare_parameter(SIMULATE_PARAM, False)
         self.should_simulate = self.get_parameter(SIMULATE_PARAM).value
+        self.rudder_calibration_term = (
+            SIM_CALIBRATION_TERM if self.should_simulate else CALIBRATION_TERM
+        )
         self.rudder_cmd_subscription = self.create_subscription(
             Float32, RUDDER_CMD, self.handle_rudder_msg, 10
         )
+        self.rudder_status_publisher = self.create_publisher(Float32, RUDDER_STATUS, 10)
+
         if self.should_simulate:
             simulator = RudderSimulator()
             self.detach = simulator.detach
@@ -46,8 +55,12 @@ class Rudder(Node):
         self.detach()
 
     def handle_rudder_msg(self, msg):
-        rudder_value = clamp(msg.data, -1, 1)
+        new_value = msg.data + self.rudder_calibration_term
+        rudder_value = clamp(new_value, -1, 1)
         self.set_value(rudder_value)
+        status_msg = Float32()
+        status_msg.data = float(rudder_value)
+        self.rudder_status_publisher.publish(status_msg)
 
 
 def main(args=None):
