@@ -6,10 +6,8 @@ from std_msgs.msg import Float32
 import sys
 from .rudder_servo import RudderServo
 from .rudder_sim import RudderSimulator
-
-
-RUDDER_TOPIC = "rudder"
-SIMULATE_PARAM = "simulate"
+from ..utils.topics import RUDDER_CMD, RUDDER_STATUS
+from ..utils.constants import SIMULATE_PARAM
 
 
 def clamp(value, minimum, maximum):
@@ -27,8 +25,8 @@ class Rudder(Node):
 
         self.declare_parameter(SIMULATE_PARAM, False)
         self.should_simulate = self.get_parameter(SIMULATE_PARAM).value
-        self.rudder_subscription = self.create_subscription(
-            Float32, RUDDER_TOPIC, self.handle_rudder_msg, 10
+        self.rudder_cmd_subscription = self.create_subscription(
+            Float32, RUDDER_CMD, self.handle_rudder_msg, 10
         )
         if self.should_simulate:
             simulator = RudderSimulator()
