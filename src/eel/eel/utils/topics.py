@@ -14,3 +14,6 @@ IMU_STATUS = "imu/status"
 # Radio
 RADIO_IN = "radio/in"
 RADIO_OUT = "radio/out"
+
+# Navigation
+NAVIGATION_STATUS = "nav/status"

@@ -1,0 +1,3 @@
+float32 meters_to_target
+float32 tolerance_in_meters
+Coordinate[] next_target

@@ -1,14 +1,22 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
-from eel_interfaces.msg import GnssStatus, ImuStatus
+from eel_interfaces.msg import GnssStatus, ImuStatus, NavigationStatus, Coordinate
 from std_msgs.msg import Float32
 from ..utils.nav import (
     get_distance_in_meters,
     get_relative_bearing_in_degrees,
     get_closest_turn_direction,
 )
-from ..utils.topics import RUDDER_CMD, MOTOR_CMD, IMU_STATUS, GNSS_STATUS
+from ..utils.topics import (
+    RUDDER_CMD,
+    MOTOR_CMD,
+    IMU_STATUS,
+    GNSS_STATUS,
+    NAVIGATION_STATUS,
+)
+
+TOLERANCE_IN_METERS = 5.0
 
 
 class NavigationNode(Node):
@@ -38,6 +46,9 @@ class NavigationNode(Node):
 
         self.motor_publisher = self.create_publisher(Float32, MOTOR_CMD, 10)
         self.rudder_publisher = self.create_publisher(Float32, RUDDER_CMD, 10)
+        self.nav_publisher = self.create_publisher(
+            NavigationStatus, NAVIGATION_STATUS, 10
+        )
 
     def handle_imu_update(self, msg):
         self.current_heading = msg.euler_heading
@@ -70,7 +81,7 @@ class NavigationNode(Node):
         rudder_angle = 1 if prop_diff > 0.1 else (prop_diff * 3)
         rudder_angle = rudder_angle * direction
 
-        if self.distance_to_target < 5.0:
+        if self.distance_to_target < TOLERANCE_IN_METERS:
             self.position_index += 1
             if self.position_index < len(self._travel_plan):
                 self.target = self._travel_plan[self.position_index]
@@ -83,6 +94,18 @@ class NavigationNode(Node):
         rudder_msg = Float32()
         rudder_msg.data = float(rudder_angle)
         self.rudder_publisher.publish(rudder_msg)
+
+        nav_msg = NavigationStatus()
+        nav_msg.meters_to_target = self.distance_to_target
+        nav_msg.tolerance_in_meters = TOLERANCE_IN_METERS
+        nav_msg.next_target = []
+        if self.target:
+            coordinate = Coordinate()
+            coordinate.lat = self.target["lat"]
+            coordinate.lon = self.target["lon"]
+            nav_msg.next_target.append(coordinate)
+
+        self.nav_publisher.publish(nav_msg)
 
 
 def main(args=None):
