@@ -8,15 +8,7 @@ from .rudder_servo import RudderServo
 from .rudder_sim import RudderSimulator
 from ..utils.topics import RUDDER_CMD, RUDDER_STATUS
 from ..utils.constants import SIMULATE_PARAM
-
-
-def clamp(value, minimum, maximum):
-    if value < minimum:
-        return minimum
-    elif value > maximum:
-        return maximum
-    else:
-        return value
+from ..utils.utils import clamp
 
 
 SIM_CALIBRATION_TERM = 0.0
