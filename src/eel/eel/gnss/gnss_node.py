@@ -8,7 +8,7 @@ from ..utils.constants import SIMULATE_PARAM
 from ..utils.topics import GNSS_STATUS
 
 # hertz (updates per second)
-UPDATE_FREQUENCY = 10
+UPDATE_FREQUENCY = 5
 
 
 class GNSS(Node):
