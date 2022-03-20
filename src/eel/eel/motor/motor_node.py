@@ -5,15 +5,7 @@ from std_msgs.msg import Float32
 from .motor_sim import MotorSimulator
 from ..utils.topics import MOTOR_CMD
 from ..utils.constants import SIMULATE_PARAM
-
-
-def clamp(value, minimum, maximum):
-    if value < minimum:
-        return minimum
-    elif value > maximum:
-        return maximum
-    else:
-        return value
+from ..utils.utils import clamp
 
 
 class Motor(Node):

@@ -2,7 +2,7 @@
 import rclpy
 from rclpy.node import Node
 import json
-from eel_interfaces.msg import GnssStatus, ImuStatus
+from eel_interfaces.msg import GnssStatus, ImuStatus, NavigationStatus
 from std_msgs.msg import String, Float32
 from ..utils.serial_helpers import SerialReaderWriter
 from ..utils.topics import (
@@ -12,6 +12,7 @@ from ..utils.topics import (
     GNSS_STATUS,
     RADIO_IN,
     RADIO_OUT,
+    NAVIGATION_STATUS,
 )
 from ..utils.constants import SIMULATE_PARAM
 
@@ -34,6 +35,7 @@ class Radio(Node):
             "magnetometer": 0,
             "lat": 0,
             "lon": 0,
+            "next_target": None,
         }
 
         self.send_timer = self.create_timer(1.0, self.send_state)
@@ -43,6 +45,9 @@ class Radio(Node):
         )
         self.gnss_subscription = self.create_subscription(
             GnssStatus, GNSS_STATUS, self.handle_gnss_update, 10
+        )
+        self.nav_subscription = self.create_subscription(
+            NavigationStatus, NAVIGATION_STATUS, self.handle_nav_update, 10
         )
 
         self.radio_out_publisher = self.create_publisher(String, RADIO_OUT, 10)
@@ -151,6 +156,20 @@ class Radio(Node):
             topic_msg = Float32()
             topic_msg.data = motor_value
             self.motor_publisher.publish(topic_msg)
+
+    def handle_nav_update(self, nav_msg):
+        next_target = None
+        if len(nav_msg.next_target) > 0:
+            coordinate = nav_msg.next_target[0]
+            next_target = {
+                "coordinate": {"lat": coordinate.lat, "lon": coordinate.lon},
+                "distance": nav_msg.meters_to_target,
+                "tolerance": nav_msg.tolerance_in_meters,
+            }
+        data = {
+            "nextTarget": next_target,
+        }
+        self.update_state(data)
 
 
 def main(args=None):

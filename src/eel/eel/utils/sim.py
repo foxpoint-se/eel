@@ -1,5 +1,7 @@
 # UNIT: Meters per second.
 # We can alter this one, to speed up simulation.
+# NOTE: When increasing the speed, you will probably have to increase the update
+# frequency in e. g. GNSS and IMU, so that it can react faster.
 LINEAR_VELOCITY = 3.0
 
 # UNIT: Degrees per second.

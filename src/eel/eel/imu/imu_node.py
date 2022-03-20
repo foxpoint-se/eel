@@ -8,7 +8,7 @@ from ..utils.constants import SIMULATE_PARAM
 from ..utils.topics import IMU_STATUS
 
 # hertz (publications per second)
-UPDATE_FREQUENCY = 10
+UPDATE_FREQUENCY = 5
 
 
 class ImuNode(Node):
