@@ -54,3 +54,14 @@ start-sim:		## start eel in simulation mode
 
 build-sym:		## build with symlink
 	colcon build --symlink-install
+
+install-depth-sensor:		## install stuff needed for depth senson
+	( \
+		wget https://github.com/bluerobotics/ms5837-python/archive/refs/heads/master.zip -O depth-lib.zip; \
+		unzip depth-lib.zip; \
+		source .venv/bin/activate; \
+		pip install ms5837-python-master/; \
+	)
+
+detect-i2c:		## detect i2c
+	sudo i2cdetect -y 1

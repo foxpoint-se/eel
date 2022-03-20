@@ -18,3 +18,7 @@ log
 # pigpio stuff
 pigpio-master
 master.zip
+
+# depth stuff
+depth-lib*
+ms5837-python-master

@@ -38,7 +38,7 @@ def get_next_rudder_turn(current_heading, target_heading):
 class NavigationNode(Node):
     def __init__(self):
         super().__init__("navigation")
-        self.should_navigate = True
+        self.should_navigate = False
         self._travel_plan = [
             {"lat": 59.30938741468102, "lon": 17.975370883941654},
             {"lat": 59.30978752690931, "lon": 17.97597169876099},
