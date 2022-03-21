@@ -35,7 +35,8 @@ class Radio(Node):
             "magnetometer": 0,
             "lat": 0,
             "lon": 0,
-            "next_target": None,
+            "nextTarget": None,
+            "autoModeEnabled": None,
         }
 
         self.send_timer = self.create_timer(1.0, self.send_state)
@@ -159,16 +160,14 @@ class Radio(Node):
 
     def handle_nav_update(self, nav_msg):
         next_target = None
-        if len(nav_msg.next_target) > 0:
+        if len(nav_msg.next_target) > 0 and nav_msg.auto_mode_enabled:
             coordinate = nav_msg.next_target[0]
             next_target = {
                 "coordinate": {"lat": coordinate.lat, "lon": coordinate.lon},
                 "distance": nav_msg.meters_to_target,
                 "tolerance": nav_msg.tolerance_in_meters,
             }
-        data = {
-            "nextTarget": next_target,
-        }
+        data = {"nextTarget": next_target, "autoModeEnabled": nav_msg.auto_mode_enabled}
         self.update_state(data)
 
 

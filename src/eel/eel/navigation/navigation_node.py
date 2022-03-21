@@ -48,7 +48,7 @@ class NavigationNode(Node):
         self.current_position = {"lat": None, "long": None}
         self.target = self._travel_plan[self.position_index]
 
-        self.distance_to_target = 9999999999.0
+        self.distance_to_target = 0.0
         self.bearing_to_target = 0.0
 
         self.current_heading = 0.0
@@ -81,6 +81,7 @@ class NavigationNode(Node):
 
     def publish_nav_status(self):
         nav_msg = NavigationStatus()
+        nav_msg.auto_mode_enabled = self.should_navigate
         nav_msg.next_target = []
         if self.target:
             nav_msg.meters_to_target = self.distance_to_target
