@@ -2,7 +2,7 @@
 import rclpy
 from rclpy.node import Node
 from eel_interfaces.msg import GnssStatus, ImuStatus, NavigationStatus, Coordinate
-from std_msgs.msg import Float32
+from std_msgs.msg import Float32, Bool
 from ..utils.nav import (
     get_distance_in_meters,
     get_relative_bearing_in_degrees,
@@ -14,6 +14,7 @@ from ..utils.topics import (
     IMU_STATUS,
     GNSS_STATUS,
     NAVIGATION_STATUS,
+    NAVIGATION_CMD,
 )
 
 TOLERANCE_IN_METERS = 5.0
@@ -60,11 +61,20 @@ class NavigationNode(Node):
             ImuStatus, IMU_STATUS, self.handle_imu_update, 10
         )
 
+        self.nav_cmd_subscriber = self.create_subscription(
+            Bool, NAVIGATION_CMD, self.handle_nav_cmd, 10
+        )
+
         self.motor_publisher = self.create_publisher(Float32, MOTOR_CMD, 10)
         self.rudder_publisher = self.create_publisher(Float32, RUDDER_CMD, 10)
         self.nav_publisher = self.create_publisher(
             NavigationStatus, NAVIGATION_STATUS, 10
         )
+
+    def handle_nav_cmd(self, msg):
+        self.should_navigate = msg.data
+        self.publish_motor_cmd(0.0)
+        self.publish_rudder_cmd(0.0)
 
     def handle_imu_update(self, msg):
         self.current_heading = msg.euler_heading

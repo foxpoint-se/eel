@@ -3,7 +3,7 @@ import rclpy
 from rclpy.node import Node
 import json
 from eel_interfaces.msg import GnssStatus, ImuStatus, NavigationStatus
-from std_msgs.msg import String, Float32
+from std_msgs.msg import String, Float32, Bool
 from ..utils.serial_helpers import SerialReaderWriter
 from ..utils.topics import (
     RUDDER_CMD,
@@ -13,12 +13,15 @@ from ..utils.topics import (
     RADIO_IN,
     RADIO_OUT,
     NAVIGATION_STATUS,
+    NAVIGATION_CMD,
 )
 from ..utils.constants import SIMULATE_PARAM
 
 
 RUDDER_KEY = "rudder"
 MOTOR_KEY = "motor"
+NAV_KEY = "nav"
+AUTO_MODE_KEY = "enable_auto_mode"
 
 
 class Radio(Node):
@@ -55,6 +58,7 @@ class Radio(Node):
         self.radio_in_publisher = self.create_publisher(String, RADIO_IN, 10)
         self.rudder_publisher = self.create_publisher(Float32, RUDDER_CMD, 10)
         self.motor_publisher = self.create_publisher(Float32, MOTOR_CMD, 10)
+        self.nav_publisher = self.create_publisher(Bool, NAVIGATION_CMD, 10)
 
         serial_port = (
             "/tmp/virtual_serial_eel" if self.should_simulate else "/dev/ttyS0"
@@ -110,6 +114,15 @@ class Radio(Node):
 
             if data.get(MOTOR_KEY) is not None:
                 self.handle_motor_msg(data.get(MOTOR_KEY))
+
+            if data.get(NAV_KEY) is not None:
+                self.handle_nav_radio_msg(data.get(NAV_KEY))
+
+    def handle_nav_radio_msg(self, msg):
+        if msg.get(AUTO_MODE_KEY) is not None:
+            nav_msg = Bool()
+            nav_msg.data = bool(msg.get(AUTO_MODE_KEY))
+            self.nav_publisher.publish(nav_msg)
 
     def handle_imu_update(self, msg):
         data = {
