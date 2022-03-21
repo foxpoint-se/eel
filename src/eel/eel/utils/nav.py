@@ -83,6 +83,29 @@ def get_closest_turn_direction(current_heading, target_heading):
     return -1 if diff > 180 else 1
 
 
+def get_next_rudder_turn(current_heading, target_heading):
+    """
+    Given current heading and target heading, get instructions for how to turn rudder.
+
+    :param current_heading: In degrees
+    :param target_heading: In degrees
+    :return: -1.0 for left and 1.0 for right, and all values in between.
+    """
+    closest_angle_offset = abs(target_heading - current_heading) % 360
+    closest_angle_offset = (
+        360 - closest_angle_offset
+        if closest_angle_offset > 180
+        else closest_angle_offset
+    )
+
+    proportional_offset = closest_angle_offset / 180.0
+    rudder_adjustment = (
+        1 if abs(proportional_offset) > 0.1 else (proportional_offset * 3)
+    )
+    direction = get_closest_turn_direction(current_heading, target_heading)
+    return rudder_adjustment * direction
+
+
 if __name__ == "__main__":
     sample_pos_1 = {"latitude": 59.30766069495403, "longitude": 17.97525523434028}
     sample_pos_2 = {"latitude": 59.31200312176195, "longitude": 17.975909693329726}

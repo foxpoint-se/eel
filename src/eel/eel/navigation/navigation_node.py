@@ -6,7 +6,7 @@ from std_msgs.msg import Float32, Bool
 from ..utils.nav import (
     get_distance_in_meters,
     get_relative_bearing_in_degrees,
-    get_closest_turn_direction,
+    get_next_rudder_turn,
 )
 from ..utils.topics import (
     RUDDER_CMD,
@@ -18,22 +18,6 @@ from ..utils.topics import (
 )
 
 TOLERANCE_IN_METERS = 5.0
-
-
-def get_next_rudder_turn(current_heading, target_heading):
-    closest_angle_offset = abs(target_heading - current_heading) % 360
-    closest_angle_offset = (
-        360 - closest_angle_offset
-        if closest_angle_offset > 180
-        else closest_angle_offset
-    )
-
-    proportional_offset = closest_angle_offset / 180.0
-    rudder_adjustment = (
-        1 if abs(proportional_offset) > 0.1 else (proportional_offset * 3)
-    )
-    direction = get_closest_turn_direction(current_heading, target_heading)
-    return rudder_adjustment * direction
 
 
 class NavigationNode(Node):
