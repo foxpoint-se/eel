@@ -7,9 +7,6 @@ from .imu_sim import ImuSimulator
 from ..utils.constants import SIMULATE_PARAM
 from ..utils.topics import IMU_STATUS
 
-# hertz (publications per second)
-UPDATE_FREQUENCY = 5
-
 
 class ImuNode(Node):
     def __init__(self):
@@ -17,6 +14,9 @@ class ImuNode(Node):
         self.declare_parameter(SIMULATE_PARAM, False)
         self.should_simulate = self.get_parameter(SIMULATE_PARAM).value
         self.status_publisher = self.create_publisher(ImuStatus, IMU_STATUS, 10)
+
+        # hertz (publications per second)
+        self.update_frequency = 5
 
         if not self.should_simulate:
             sensor = ImuSensor()
@@ -30,7 +30,7 @@ class ImuNode(Node):
             self.get_calibration_status = simulator.get_calibration_status
             self.get_is_calibrated = simulator.get_is_calibrated
 
-        self.updater = self.create_timer(1.0 / UPDATE_FREQUENCY, self.publish_imu)
+        self.updater = self.create_timer(1.0 / self.update_frequency, self.publish_imu)
 
         self.get_logger().info(
             "{}IMU node started.".format("SIMULATE " if self.should_simulate else "")
