@@ -32,6 +32,7 @@ install-pigpio:		## install pigpio in this folder
 	( \
 		wget https://github.com/joan2937/pigpio/archive/master.zip; \
 		unzip master.zip; \
+		touch pigpio-master/COLCON_IGNORE; \
 		cd pigpio-master; \
 		make; \
 		sudo make install; \
@@ -59,6 +60,7 @@ install-depth-sensor:		## install stuff needed for depth senson
 	( \
 		wget https://github.com/bluerobotics/ms5837-python/archive/refs/heads/master.zip -O depth-lib.zip; \
 		unzip depth-lib.zip; \
+		touch ms5837-python-master/COLCON_IGNORE; \
 		source .venv/bin/activate; \
 		pip install ms5837-python-master/; \
 	)
