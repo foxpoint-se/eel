@@ -68,6 +68,15 @@ class NavigationNode(Node):
             "lat": msg.lat,
             "lon": msg.lon,
         }
+
+        if self.target:
+            self.distance_to_target = get_distance_in_meters(
+                self.current_position["lat"],
+                self.current_position["lon"],
+                self.target["lat"],
+                self.target["lon"],
+            )
+
         if self.should_navigate and self.target:
             self.go_towards_target()
 
@@ -110,12 +119,6 @@ class NavigationNode(Node):
             self.target = None
 
     def go_towards_target(self):
-        self.distance_to_target = get_distance_in_meters(
-            self.current_position["lat"],
-            self.current_position["lon"],
-            self.target["lat"],
-            self.target["lon"],
-        )
         target_reached = self.distance_to_target < TOLERANCE_IN_METERS
         if target_reached:
             self.update_target()
