@@ -2,11 +2,11 @@
 import rclpy
 from rclpy.node import Node
 from eel_interfaces.msg import GnssStatus, ImuStatus, NavigationStatus, Coordinate
-from std_msgs.msg import Float32
+from std_msgs.msg import Float32, Bool
 from ..utils.nav import (
     get_distance_in_meters,
     get_relative_bearing_in_degrees,
-    get_closest_turn_direction,
+    get_next_rudder_turn,
 )
 from ..utils.topics import (
     RUDDER_CMD,
@@ -14,25 +14,10 @@ from ..utils.topics import (
     IMU_STATUS,
     GNSS_STATUS,
     NAVIGATION_STATUS,
+    NAVIGATION_CMD,
 )
 
 TOLERANCE_IN_METERS = 5.0
-
-
-def get_next_rudder_turn(current_heading, target_heading):
-    closest_angle_offset = abs(target_heading - current_heading) % 360
-    closest_angle_offset = (
-        360 - closest_angle_offset
-        if closest_angle_offset > 180
-        else closest_angle_offset
-    )
-
-    proportional_offset = closest_angle_offset / 180.0
-    rudder_adjustment = (
-        1 if abs(proportional_offset) > 0.1 else (proportional_offset * 3)
-    )
-    direction = get_closest_turn_direction(current_heading, target_heading)
-    return rudder_adjustment * direction
 
 
 class NavigationNode(Node):
@@ -48,7 +33,7 @@ class NavigationNode(Node):
         self.current_position = {"lat": None, "long": None}
         self.target = self._travel_plan[self.position_index]
 
-        self.distance_to_target = 9999999999.0
+        self.distance_to_target = 0.0
         self.bearing_to_target = 0.0
 
         self.current_heading = 0.0
@@ -60,11 +45,20 @@ class NavigationNode(Node):
             ImuStatus, IMU_STATUS, self.handle_imu_update, 10
         )
 
+        self.nav_cmd_subscriber = self.create_subscription(
+            Bool, NAVIGATION_CMD, self.handle_nav_cmd, 10
+        )
+
         self.motor_publisher = self.create_publisher(Float32, MOTOR_CMD, 10)
         self.rudder_publisher = self.create_publisher(Float32, RUDDER_CMD, 10)
         self.nav_publisher = self.create_publisher(
             NavigationStatus, NAVIGATION_STATUS, 10
         )
+
+    def handle_nav_cmd(self, msg):
+        self.should_navigate = msg.data
+        self.publish_motor_cmd(0.0)
+        self.publish_rudder_cmd(0.0)
 
     def handle_imu_update(self, msg):
         self.current_heading = msg.euler_heading
@@ -74,6 +68,15 @@ class NavigationNode(Node):
             "lat": msg.lat,
             "lon": msg.lon,
         }
+
+        if self.target:
+            self.distance_to_target = get_distance_in_meters(
+                self.current_position["lat"],
+                self.current_position["lon"],
+                self.target["lat"],
+                self.target["lon"],
+            )
+
         if self.should_navigate and self.target:
             self.go_towards_target()
 
@@ -81,6 +84,7 @@ class NavigationNode(Node):
 
     def publish_nav_status(self):
         nav_msg = NavigationStatus()
+        nav_msg.auto_mode_enabled = self.should_navigate
         nav_msg.next_target = []
         if self.target:
             nav_msg.meters_to_target = self.distance_to_target
@@ -115,12 +119,6 @@ class NavigationNode(Node):
             self.target = None
 
     def go_towards_target(self):
-        self.distance_to_target = get_distance_in_meters(
-            self.current_position["lat"],
-            self.current_position["lon"],
-            self.target["lat"],
-            self.target["lon"],
-        )
         target_reached = self.distance_to_target < TOLERANCE_IN_METERS
         if target_reached:
             self.update_target()

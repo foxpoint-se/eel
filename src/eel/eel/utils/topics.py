@@ -17,3 +17,4 @@ RADIO_OUT = "radio/out"
 
 # Navigation
 NAVIGATION_STATUS = "nav/status"
+NAVIGATION_CMD = "nav/cmd"

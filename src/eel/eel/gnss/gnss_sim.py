@@ -24,13 +24,15 @@ class GnssSimulator:
             ImuStatus, IMU_STATUS, self._handle_imu_msg, 10
         )
 
+        self.gnss_updater = parent_node.create_timer(
+            1.0 / (parent_node.update_frequency * 2), self._update_position
+        )
+
     def _handle_motor_msg(self, msg):
         self.speed = msg.data
-        self._update_position()
 
     def _handle_imu_msg(self, msg):
         self.current_heading = msg.euler_heading
-        self._update_position()
 
     def _update_position(self):
         if self.speed > 0:

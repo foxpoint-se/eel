@@ -21,13 +21,15 @@ class ImuSimulator:
             Float32, MOTOR_CMD, self._handle_motor_msg, 10
         )
 
+        self.imu_updater = parent_node.create_timer(
+            1.0 / (parent_node.update_frequency * 2), self._update_imu
+        )
+
     def _handle_rudder_msg(self, msg):
         self.current_rudder_status = msg.data
-        self._update_imu()
 
     def _handle_motor_msg(self, msg):
         self.speed = msg.data
-        self._update_imu()
 
     def _update_imu(self):
         if self.speed > 0:
