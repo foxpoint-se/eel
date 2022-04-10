@@ -57,15 +57,28 @@ while True:
         # print("diff", diff)
         # print("pressure", sensor.pressure(), "mbar", sensor.pressure(ms5837.UNITS_psi), "temp", sensor.temperature())
 
-        print(
-            "depth {} m (freshwater),  {} (saltwater)".format(
-                freshwaterDepth, saltwaterDepth
-            )
-        )
+        # sensor.setFluidDensity(ms5837.DENSITY_FRESHWATER)
+        # freshwaterDepth = sensor.depth()
+        # sensor.setFluidDensity(ms5837.DENSITY_SALTWATER)
+        # saltwaterDepth = sensor.depth()
+        # print(
+        #     "depth {} m (freshwater),  {} (saltwater)".format(
+        #         freshwaterDepth, saltwaterDepth
+        #     )
+        # )
+        # print("depth", freshwaterDepth)
+        # print(
+        #     ("Depth: %.3f m (freshwater)  %.3f m (saltwater)")
+        #     % (
+        #         freshwaterDepth,
+        #         saltwaterDepth,
+        #     )
+        # )
+
         # print("temp", sensor.temperature())
 
         # print("P: %0.1f mbar  %0.3f psi\tT: %0.2f C  %0.2f F") % (
-        # sensor.pressure(), # Default is mbar (no arguments)
+        print("pressure mbar", sensor.pressure())  # Default is mbar (no arguments)
         # sensor.pressure(ms5837.UNITS_psi), # Request psi
         # sensor.temperature(), # Default is degrees C (no arguments)
         # sensor.temperature(ms5837.UNITS_Farenheit)) # Request Farenheit
