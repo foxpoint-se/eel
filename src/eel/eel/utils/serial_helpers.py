@@ -13,7 +13,7 @@ class ReaderWrapper(LineReader):
         self.unhandled_messages = []
 
     # default is \r\n
-    #TERMINATOR = b"\n"
+    # TERMINATOR = b"\n"
 
     def connection_made(self, transport):
         super(ReaderWrapper, self).connection_made(transport)
@@ -24,6 +24,8 @@ class ReaderWrapper(LineReader):
             self.on_message(data)
         else:
             self.unhandled_messages.append(data)
+        # self.transport.flush()
+        # self.protocol.flush()
 
     def connection_lost(self, exc):
         reason = None
@@ -39,7 +41,8 @@ class SerialReaderWriter:
     def __init__(
         self,
         port: str,
-        baudrate: int = 9600,
+        # baudrate: int = 9600,
+        baudrate: int = 19200,
         timeout: int = 1,
         on_message: Callable[[str], None] = None,
         on_connected: Callable[[], None] = None,
@@ -52,21 +55,27 @@ class SerialReaderWriter:
         if on_connected:
             on_connected()
         self.protocol = protocol
-        self.protocol.on_message = on_message
+        # self.protocol.on_message2 = on_message
+        self.protocol.on_message = self.on_message
+        self.on_message2 = on_message
         self.protocol.on_connected = on_connected
         self.protocol.on_disconnected = on_disconnected
 
         # Workaround, since `on_message` is set after `t.connect()`, but we need `protocol`
         # to be able to set `on_message` handler. This will get those messages.
-        count = len(protocol.unhandled_messages)
-        if on_message and count > 0:
-            sys.stdout.write(
-                "Handling unhandled messages right after connection: {}\n".format(count)
-            )
-            for m in protocol.unhandled_messages:
-                on_message(m)
+        # count = len(protocol.unhandled_messages)
+        # if on_message and count > 0:
+        #     sys.stdout.write(
+        #         "Handling unhandled messages right after connection: {}\n".format(count)
+        #     )
+        #     for m in protocol.unhandled_messages:
+        #         on_message(m)
 
         atexit.register(t.close)
+
+    def on_message(self, message):
+        self.on_message2(message)
+        self.ser.flush()
 
     def send(self, message):
         if message:
