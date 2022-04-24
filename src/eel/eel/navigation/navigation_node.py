@@ -55,6 +55,8 @@ class NavigationNode(Node):
             NavigationStatus, NAVIGATION_STATUS, 10
         )
 
+        self.get_logger().info("Navigation node started.")
+
     def handle_nav_cmd(self, msg):
         self.should_navigate = msg.data
         self.publish_motor_cmd(0.0)
