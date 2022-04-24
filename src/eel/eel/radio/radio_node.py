@@ -3,7 +3,9 @@ import rclpy
 from rclpy.node import Node
 from eel_interfaces.msg import GnssStatus, ImuStatus, NavigationStatus
 from std_msgs.msg import String, Float32, Bool
-from ..utils.serial_helpers import SerialReaderWriter
+
+# from ..utils.serial_helpers import SerialReaderWriter
+from ..utils.serial_helpers2 import SerialReaderWriter
 from ..utils.radio_helpers.eel_side import (
     EelState,
     from_json_to_command,
