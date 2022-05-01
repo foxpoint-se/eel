@@ -49,6 +49,7 @@ time.sleep(5)
 
 start = time.time()
 
+sensor.setFluidDensity(ms5837.DENSITY_FRESHWATER)
 # Spew readings
 while True:
     if sensor.read():
@@ -57,8 +58,7 @@ while True:
         # print("diff", diff)
         # print("pressure", sensor.pressure(), "mbar", sensor.pressure(ms5837.UNITS_psi), "temp", sensor.temperature())
 
-        # sensor.setFluidDensity(ms5837.DENSITY_FRESHWATER)
-        # freshwaterDepth = sensor.depth()
+        freshwaterDepth = sensor.depth()
         # sensor.setFluidDensity(ms5837.DENSITY_SALTWATER)
         # saltwaterDepth = sensor.depth()
         # print(
@@ -77,8 +77,20 @@ while True:
 
         # print("temp", sensor.temperature())
 
+        our_depth = (freshwaterDepth - 200) / 10
+
         # print("P: %0.1f mbar  %0.3f psi\tT: %0.2f C  %0.2f F") % (
-        print("pressure mbar", sensor.pressure())  # Default is mbar (no arguments)
+        print(
+            "pressure mbar",
+            round(sensor.pressure(), 2),
+            "\t",
+            "depth m",
+            round(freshwaterDepth, 4),
+            "\t",
+            round(sensor.temperature(), 2),
+            "\t",
+            round(our_depth, 4),
+        )  # Default is mbar (no arguments)
         # sensor.pressure(ms5837.UNITS_psi), # Request psi
         # sensor.temperature(), # Default is degrees C (no arguments)
         # sensor.temperature(ms5837.UNITS_Farenheit)) # Request Farenheit
