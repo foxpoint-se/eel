@@ -3,7 +3,7 @@ import logging
 import serial
 import time
 
-logging.basicConfig(format="%(asctime)s %(message)s")
+logging.basicConfig(format="%(asctime)s %(message)s", level=logging.DEBUG)
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -40,25 +40,19 @@ sample_msg = (
     '{"n": {"c": {"lt": 59.0, "ln": 18.0}, "d": 100.0, "t": 5.0, "a": true}, "i": {"c": true, "s": 3, '
     '"g": 3, "a": 3, "m": 3, "h": 180.0}, "g": {"c": {"lt": 59.1, "ln": 18.1}}}\n'
 )
-# sample_msg = "korv\n"
 
 msg_counter = 1
 
 if args.s:
     while True:
-        # if hc_12.out_waiting():
-        #     logging.debug(f"{hc_12.out_waiting}")
         msg_counter += 1
         hc_12.write(bytes(sample_msg, "utf-8"))
-        print("sending", sample_msg)
+        logging.info("sending", sample_msg)
         time.sleep(SLEEP_TIME)
 
 if args.r:
     while True:
-        # if hc_12.inWaiting():
-        #     logging.debug(f"{hc_12.inWaiting()} number of bytes in input buffer.")
         msg = hc_12.readline()
-        print(msg)
         logging.info(msg)
 
 if args.d:
@@ -68,7 +62,7 @@ if args.d:
         msg = hc_12.readline()
         # hc_12.flushInput()
         hc_12.flush()
-        print(time.time(), msg)
+        logging.info(msg)
         later = time.time()
         possible_sleep_time = SLEEP_TIME - (later - now)
         sleep_time = possible_sleep_time if possible_sleep_time > 0 else 0
