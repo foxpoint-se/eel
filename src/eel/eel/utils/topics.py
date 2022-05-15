@@ -18,3 +18,7 @@ RADIO_OUT = "radio/out"
 # Navigation
 NAVIGATION_STATUS = "nav/status"
 NAVIGATION_CMD = "nav/cmd"
+
+# Tank
+TANK_STATUS = "tank/status"
+TANK_CMD = "tank/cmd"
