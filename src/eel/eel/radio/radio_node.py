@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import rclpy
+import json
 from rclpy.node import Node
 from eel_interfaces.msg import GnssStatus, ImuStatus, NavigationStatus
 from std_msgs.msg import String, Float32, Bool
@@ -22,7 +23,9 @@ from ..utils.topics import (
     NAVIGATION_CMD,
 )
 from ..utils.constants import SIMULATE_PARAM
+from ..utils.radio_helpers.ros2dict import ros2dict
 
+RADIO_OUT_2 = "radio2/out"
 
 UPDATE_FREQUENCY = 1
 
@@ -35,18 +38,21 @@ class Radio(Node):
 
         self.state = EelState()
 
+        self.latest_messages = {}
+
         self.sender = self.create_timer(1.0 / UPDATE_FREQUENCY, self.send_state)
 
         self.imu_subscription = self.create_subscription(
-            ImuStatus, IMU_STATUS, self.state.update_imu, 10
+            ImuStatus, IMU_STATUS, self.handle_imu_msg, 10
         )
         self.gnss_subscription = self.create_subscription(
-            GnssStatus, GNSS_STATUS, self.state.update_gnss, 10
+            GnssStatus, GNSS_STATUS, self.handle_gnss_msg, 10
         )
         self.nav_subscription = self.create_subscription(
-            NavigationStatus, NAVIGATION_STATUS, self.state.update_nav, 10
+            NavigationStatus, NAVIGATION_STATUS, self.handle_nav_msg, 10
         )
 
+        self.radio_out_2_publisher = self.create_publisher(String, RADIO_OUT_2, 10)
         self.radio_out_publisher = self.create_publisher(String, RADIO_OUT, 10)
         self.radio_in_publisher = self.create_publisher(String, RADIO_IN, 10)
         self.rudder_publisher = self.create_publisher(Float32, RUDDER_CMD, 10)
@@ -66,6 +72,21 @@ class Radio(Node):
             )
         )
 
+    def handle_gnss_msg(self, msg):
+        self.state.update_gnss(msg)  # TODO: remove
+        json_msg = ros2dict(msg)
+        self.latest_messages[GNSS_STATUS] = json_msg
+
+    def handle_imu_msg(self, msg):
+        self.state.update_imu(msg)  # TODO: remove
+        json_msg = ros2dict(msg)
+        self.latest_messages[IMU_STATUS] = json_msg
+
+    def handle_nav_msg(self, msg):
+        self.state.update_nav(msg)  # TODO: remove
+        json_msg = ros2dict(msg)
+        self.latest_messages[NAVIGATION_STATUS] = json_msg
+
     def send(self, message=None):
         if message:
             self.reader_writer.send(message)
@@ -73,8 +94,21 @@ class Radio(Node):
             radio_out_msg.data = message
             self.radio_out_publisher.publish(radio_out_msg)
 
+    def send2(self, message=None):
+        if message:
+            self.reader_writer.send(message)
+            radio_out_msg = String()
+            radio_out_msg.data = message
+            self.radio_out_2_publisher.publish(radio_out_msg)
+
     def send_state(self):
         self.send(message=from_state_to_json(self.state))
+
+        for topic, msg in self.latest_messages.items():
+            radio_msg_dict = {}
+            radio_msg_dict[topic] = msg
+            radio_msg = json.dumps(radio_msg_dict)
+            self.send2(radio_msg)
 
     def handle_incoming_message(self, message):
         radio_in_msg = String()
