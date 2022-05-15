@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
-from ..utils.constants import SIMULATE_PARAM
+from ..utils.constants import SIMULATE_PARAM, MOTOR_PIN_PARAM, DIRECTION_PIN_PARAM
+from .pump_motor_simulator import PumpMotorControlSimulator
 
 
 class TankNode(Node):
@@ -9,17 +10,27 @@ class TankNode(Node):
         super().__init__("tank_node")
 
         self.declare_parameter(SIMULATE_PARAM, False)
+        self.declare_parameter(MOTOR_PIN_PARAM, -1)
+        self.declare_parameter(DIRECTION_PIN_PARAM, -1)
         self.should_simulate = self.get_parameter(SIMULATE_PARAM).value
+        self.motor_pin = int(self.get_parameter(MOTOR_PIN_PARAM).value)
+        self.direction_pin = int(self.get_parameter(DIRECTION_PIN_PARAM).value)
 
         if self.should_simulate:
-            # simulator = RudderSimulator()
-            pass
+            pump_motor_control = PumpMotorControlSimulator()
         if not self.should_simulate:
-            # servo = RudderServo()
-            pass
+            from .pump_motor_control import PumpMotorControl
+
+            pump_motor_control = PumpMotorControl(
+                motor_pin=self.motor_pin, direction_pin=self.direction_pin
+            )
 
         self.get_logger().info(
-            "{}Tank node started.".format("SIMULATE " if self.should_simulate else "")
+            "{}Tank node started. Motor pin: {}, Direction pin: {}".format(
+                "SIMULATE " if self.should_simulate else "",
+                self.motor_pin,
+                self.direction_pin,
+            )
         )
 
 
