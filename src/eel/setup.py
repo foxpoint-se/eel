@@ -25,6 +25,7 @@ setup(
             "radio = eel.radio.radio_node:main",
             "rudder = eel.rudder.rudder_node:main",
             "motor = eel.motor.motor_node:main",
+            "tank = eel.tank.tank_node:main",
         ],
     },
 )
