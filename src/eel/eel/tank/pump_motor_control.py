@@ -1,16 +1,17 @@
 import RPi.GPIO as GPIO
+from .pump_state_control import PumpStateControl
+
+FILL_GPIO_LEVEL = GPIO.HIGH
+EMPTY_GPIO_LEVEL = GPIO.LOW
+
+RUN_GPIO_LEVEL = GPIO.HIGH
+STOP_GPIO_LEVEL = GPIO.LOW
 
 
-FORWARD_LEVEL = GPIO.HIGH
-BACKWARD_LEVEL = GPIO.LOW
-
-
-class PumpMotorControl:
+class PumpMotorControl(PumpStateControl):
     def __init__(self, motor_pin, direction_pin) -> None:
         self.motor_pin = motor_pin
         self.direction_pin = direction_pin
-        self.is_on = False
-        self.is_forward = False
 
         # Initialize PI pins
         GPIO.setmode(GPIO.BCM)
@@ -18,34 +19,28 @@ class PumpMotorControl:
         GPIO.setup(self.direction_pin, GPIO.OUT)
         GPIO.setup(self.motor_pin, GPIO.OUT)
 
-    def _set_forward(self):
-        GPIO.output(self.direction_pin, FORWARD_LEVEL)
-        self.is_forward = True
+    def _set_filling_up(self):
+        GPIO.output(self.direction_pin, FILL_GPIO_LEVEL)
 
-    def _set_backward(self):
-        GPIO.output(self.direction_pin, BACKWARD_LEVEL)
-        self.is_forward = False
+    def _set_emptying(self):
+        GPIO.output(self.direction_pin, EMPTY_GPIO_LEVEL)
 
-    def _start(self):
-        GPIO.output(self.motor_pin, FORWARD_LEVEL)
-        self.is_on = True
+    def _start_motor(self):
+        GPIO.output(self.motor_pin, RUN_GPIO_LEVEL)
 
-    # ====
+    def _stop_motor(self):
+        GPIO.output(self.motor_pin, STOP_GPIO_LEVEL)
 
     def stop(self):
-        GPIO.output(self.motor_pin, GPIO.LOW)
-        self.is_on = False
+        super().stop()
+        self._stop_motor()
 
     def fill(self):
-        self._set_forward()
-        self._start()
+        super().fill()
+        self._set_filling_up()
+        self._start_motor()
 
     def empty(self):
-        self._set_backward()
-        self._start()
-
-    def get_is_forward(self):
-        return self.is_forward
-
-    def get_is_on(self):
-        return self.is_on
+        super().empty()
+        self._set_emptying()
+        self._start_motor()
