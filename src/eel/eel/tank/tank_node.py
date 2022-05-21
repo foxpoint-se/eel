@@ -9,6 +9,8 @@ from ..utils.constants import (
     MOTOR_PIN_PARAM,
     DIRECTION_PIN_PARAM,
     DISTANCE_SENSOR_ADDRESS_PARAM,
+    CMD_TOPIC_PARAM,
+    STATUS_TOPIC_PARAM,
 )
 from .pump_motor_simulator import PumpMotorControlSimulator
 from .distance_sensor_simulator import DistanceSensorSimulator
@@ -82,6 +84,8 @@ class TankNode(Node):
     def __init__(self):
         super().__init__("tank_node")
         self.declare_parameter(SIMULATE_PARAM, False)
+        self.declare_parameter(CMD_TOPIC_PARAM)
+        self.declare_parameter(STATUS_TOPIC_PARAM)
         self.declare_parameter(MOTOR_PIN_PARAM, -1)
         self.declare_parameter(DIRECTION_PIN_PARAM, -1)
         self.declare_parameter(DISTANCE_SENSOR_ADDRESS_PARAM, -1)
@@ -95,10 +99,19 @@ class TankNode(Node):
         self.target_level = None
         self.target_status = NO_TARGET  # only used for passing information to frontend
 
+        self.cmd_topic = self.get_parameter(CMD_TOPIC_PARAM).value
+        self.status_topic = self.get_parameter(STATUS_TOPIC_PARAM).value
+        if not self.cmd_topic or not self.status_topic:
+            raise TypeError(
+                "Missing topic arguments ({}, {})".format(
+                    CMD_TOPIC_PARAM, STATUS_TOPIC_PARAM
+                )
+            )
+
         self.level_cmd_subscription = self.create_subscription(
-            Float32, TANK_CMD, self.handle_tank_cmd, 10
+            Float32, self.cmd_topic, self.handle_tank_cmd, 10
         )
-        self.publisher = self.create_publisher(TankStatus, TANK_STATUS, 10)
+        self.publisher = self.create_publisher(TankStatus, self.status_topic, 10)
 
         if self.should_simulate:
             self.pump_motor_control = PumpMotorControlSimulator()

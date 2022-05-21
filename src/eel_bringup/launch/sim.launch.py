@@ -5,6 +5,8 @@ SIMULATE_PARAM = "simulate"
 MOTOR_PIN_PARAM = "motor_pin"
 DIRECTION_PIN_PARAM = "direction_pin"
 DISTANCE_SENSOR_ADDRESS_PARAM = "distance_sensor_address"
+CMD_TOPIC_PARAM = "cmd_topic"
+STATUS_TOPIC_PARAM = "status_topic"
 
 
 def generate_launch_description():
@@ -52,12 +54,32 @@ def generate_launch_description():
     #     parameters=[{SIMULATE_PARAM: True}],
     # )
 
+    front_tank_cmd = "tank_front/cmd"
+    front_tank_status = "tank_front/status"
+    rear_tank_cmd = "tank_rear/cmd"
+    rear_tank_status = "tank_rear/status"
     front_tank_node = Node(
         package="eel",
         executable="tank",
         name="tank_node",
         parameters=[
             {SIMULATE_PARAM: True},
+            {CMD_TOPIC_PARAM: front_tank_cmd},
+            {STATUS_TOPIC_PARAM: front_tank_status},
+            {MOTOR_PIN_PARAM: "22"},
+            {DIRECTION_PIN_PARAM: "23"},
+            {DISTANCE_SENSOR_ADDRESS_PARAM: "56"},
+        ],
+    )
+
+    rear_tank_node = Node(
+        package="eel",
+        executable="tank",
+        name="tank_node",
+        parameters=[
+            {SIMULATE_PARAM: True},
+            {CMD_TOPIC_PARAM: rear_tank_cmd},
+            {STATUS_TOPIC_PARAM: rear_tank_status},
             {MOTOR_PIN_PARAM: "22"},
             {DIRECTION_PIN_PARAM: "23"},
             {DISTANCE_SENSOR_ADDRESS_PARAM: "56"},
@@ -71,5 +93,6 @@ def generate_launch_description():
     # ld.add_action(imu_node)
     # ld.add_action(gnss_node)
     ld.add_action(front_tank_node)
+    ld.add_action(rear_tank_node)
 
     return ld
