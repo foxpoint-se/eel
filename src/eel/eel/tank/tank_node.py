@@ -3,7 +3,6 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float32
 from eel_interfaces.msg import TankStatus
-from ..utils.topics import TANK_CMD, TANK_STATUS
 from ..utils.constants import (
     SIMULATE_PARAM,
     MOTOR_PIN_PARAM,
