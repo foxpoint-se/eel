@@ -32,7 +32,7 @@ class GnssSimulator:
         self.speed = msg.data
 
     def _handle_imu_msg(self, msg):
-        self.current_heading = msg.euler_heading
+        self.current_heading = msg.heading
 
     def _update_position(self):
         if self.speed > 0:

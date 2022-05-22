@@ -7,11 +7,7 @@ from std_msgs.msg import String, Float32, Bool
 
 # from ..utils.serial_helpers import SerialReaderWriter
 from ..utils.serial_helpers2 import SerialReaderWriter
-from ..utils.radio_helpers.eel_side import (
-    EelState,
-    from_json_to_command,
-    from_state_to_json,
-)
+from ..utils.radio_helpers.eel_side import from_json_to_command
 from ..utils.topics import (
     RUDDER_CMD,
     MOTOR_CMD,
@@ -25,7 +21,6 @@ from ..utils.topics import (
 from ..utils.constants import SIMULATE_PARAM
 from ..utils.radio_helpers.ros2dict import ros2dict
 
-RADIO_OUT_2 = "radio2/out"
 
 UPDATE_FREQUENCY = 1
 
@@ -35,8 +30,6 @@ class Radio(Node):
         super().__init__("radio_node")
         self.declare_parameter(SIMULATE_PARAM, False)
         self.should_simulate = self.get_parameter(SIMULATE_PARAM).value
-
-        self.state = EelState()
 
         self.latest_messages = {}
 
@@ -52,7 +45,6 @@ class Radio(Node):
             NavigationStatus, NAVIGATION_STATUS, self.handle_nav_msg, 10
         )
 
-        self.radio_out_2_publisher = self.create_publisher(String, RADIO_OUT_2, 10)
         self.radio_out_publisher = self.create_publisher(String, RADIO_OUT, 10)
         self.radio_in_publisher = self.create_publisher(String, RADIO_IN, 10)
         self.rudder_publisher = self.create_publisher(Float32, RUDDER_CMD, 10)
@@ -73,37 +65,25 @@ class Radio(Node):
         )
 
     def handle_gnss_msg(self, msg):
-        self.state.update_gnss(msg)  # TODO: remove
         json_msg = ros2dict(msg)
         self.latest_messages[GNSS_STATUS] = json_msg
 
     def handle_imu_msg(self, msg):
-        self.state.update_imu(msg)  # TODO: remove
         json_msg = ros2dict(msg)
         self.latest_messages[IMU_STATUS] = json_msg
 
     def handle_nav_msg(self, msg):
-        self.state.update_nav(msg)  # TODO: remove
         json_msg = ros2dict(msg)
         self.latest_messages[NAVIGATION_STATUS] = json_msg
-
-    def send(self, message=None):
-        if message:
-            self.reader_writer.send(message)
-            radio_out_msg = String()
-            radio_out_msg.data = message
-            self.radio_out_publisher.publish(radio_out_msg)
 
     def send2(self, message=None):
         if message:
             self.reader_writer.send(message)
             radio_out_msg = String()
             radio_out_msg.data = message
-            self.radio_out_2_publisher.publish(radio_out_msg)
+            self.radio_out_publisher.publish(radio_out_msg)
 
     def send_state(self):
-        self.send(message=from_state_to_json(self.state))
-
         for topic, msg in self.latest_messages.items():
             radio_msg_dict = {}
             radio_msg_dict[topic] = msg

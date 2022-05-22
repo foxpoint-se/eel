@@ -49,8 +49,8 @@ class ImuSimulator:
 
         return sys, gyro, accel, mag
 
-    def get_heading(self):
-        return self.current_heading
+    def get_euler(self):
+        return self.current_heading, 0.0, self._current_pitch
 
     def get_is_calibrated(self):
         return True

@@ -1,15 +1,15 @@
 import json
 from .utils import instance_to_str, to_json_filtered
 
-
+# TODO: remove this
 class ImuState:
-    def __init__(self, c=None, s=None, g=None, a=None, m=None, h=None) -> None:
+    def __init__(self, c=None, s=None, g=None, a=None, m=None, e=None) -> None:
         self.c = c  # is calibrated
         self.s = s  # system calibration value
         self.g = g  # gyro calibration value
         self.a = a  # accelerometer calibration value
         self.m = m  # magnetometer calibration value
-        self.h = h  # heading
+        self.e = e  # euler [heading, roll, pitch]
 
     def __str__(self) -> str:
         return instance_to_str(self)
@@ -56,7 +56,7 @@ class EelState:
         self.i.g = msg.gyro
         self.i.a = msg.accel
         self.i.m = msg.mag
-        self.i.h = msg.euler_heading
+        self.i.e = msg.euler
 
     def update_gnss(self, msg):
         self.g = self.g if self.g else GnssState()

@@ -20,13 +20,13 @@ class ImuNode(Node):
 
         if not self.should_simulate:
             sensor = ImuSensor()
-            self.get_heading = sensor.get_heading
+            self.get_euler = sensor.get_euler
             self.get_calibration_status = sensor.get_calibration_status
             self.get_is_calibrated = sensor.get_is_calibrated
 
         else:
             simulator = ImuSimulator(self)
-            self.get_heading = simulator.get_heading
+            self.get_euler = simulator.get_euler
             self.get_calibration_status = simulator.get_calibration_status
             self.get_is_calibrated = simulator.get_is_calibrated
 
@@ -37,7 +37,7 @@ class ImuNode(Node):
         )
 
     def publish_imu(self):
-        heading = self.get_heading()
+        heading, roll, pitch = self.get_euler()
         sys, gyro, accel, mag = self.get_calibration_status()
         is_calibrated = self.get_is_calibrated()
 
@@ -47,7 +47,9 @@ class ImuNode(Node):
         msg.gyro = gyro
         msg.accel = accel
         msg.mag = mag
-        msg.euler_heading = heading
+        msg.heading = heading
+        msg.roll = roll
+        msg.pitch = pitch
 
         self.status_publisher.publish(msg)
 

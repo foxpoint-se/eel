@@ -63,7 +63,7 @@ class NavigationNode(Node):
         self.publish_rudder_cmd(0.0)
 
     def handle_imu_update(self, msg):
-        self.current_heading = msg.euler_heading
+        self.current_heading = msg.heading
 
     def handle_gnss_update(self, msg):
         self.current_position = {
