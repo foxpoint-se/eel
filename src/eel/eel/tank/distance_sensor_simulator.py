@@ -1,35 +1,49 @@
 from time import time
 
-VELOCITY_IN_MM_PER_SECOND = 3
-
 
 def calculate_position_delta(linear_velocity, time_delta):
     return linear_velocity * time_delta
 
 
 class DistanceSensorSimulator:
-    def __init__(self, parent_node=None):
+    def __init__(
+        self,
+        initial_measurement_mm=None,
+        update_frequency_hz=None,
+        fill_velocity_mmps=None,
+        create_timer=None,
+        get_is_motor_filling_up=None,
+        get_is_motor_emptying=None,
+    ):
+        if None in [
+            initial_measurement_mm,
+            update_frequency_hz,
+            fill_velocity_mmps,
+            create_timer,
+            get_is_motor_filling_up,
+            get_is_motor_emptying,
+        ]:
+            raise TypeError("all arguments to distance sensor simulator are required")
+
         self.last_updated_at = time()
-        self.parent_node = parent_node
-        self.current_range = parent_node.RANGE_FLOOR
-        self.distance_updater = parent_node.create_timer(
-            1.0 / (parent_node.update_frequency * 2), self._update_range
+        self.current_range = initial_measurement_mm
+        self.fill_velocity_mmps = fill_velocity_mmps
+        self.get_is_motor_filling_up = get_is_motor_filling_up
+        self.get_is_motor_emptying = get_is_motor_emptying
+        self.distance_updater = create_timer(
+            1.0 / (update_frequency_hz), self._update_range
         )
 
     def get_range(self):
         return self.current_range
 
     def _update_range(self):
-        if self.parent_node.pump_motor_control.get_is_on():
-            is_forward = self.parent_node.pump_motor_control.get_is_forward()
-            now = time()
-            time_delta = now - self.last_updated_at
-            position_delta = calculate_position_delta(
-                VELOCITY_IN_MM_PER_SECOND, time_delta
-            )
-            if is_forward:
-                self.current_range = self.current_range + position_delta
-            else:
-                self.current_range = self.current_range - position_delta
+        now = time()
+        time_delta = now - self.last_updated_at
+        position_delta = calculate_position_delta(self.fill_velocity_mmps, time_delta)
+        if self.get_is_motor_filling_up():
+            self.current_range = self.current_range + position_delta
+        elif self.get_is_motor_emptying():
+            self.current_range = self.current_range - position_delta
 
         self.last_updated_at = time()
