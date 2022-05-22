@@ -50,8 +50,11 @@ install-i2c:		## install i2c stuff
 start:		## start eel
 	ros2 launch eel_bringup eel.launch.py
 
-start-sim:		## start eel in simulation mode
-	ros2 launch eel_bringup sim.launch.py
+sim-depth:		## start depth simulation
+	ros2 launch eel_bringup sim_depth.launch.py
+
+sim-nav:		## start navigation simulation
+	ros2 launch eel_bringup sim_navigation.launch.py
 
 build-sym:		## build with symlink
 	colcon build --symlink-install
