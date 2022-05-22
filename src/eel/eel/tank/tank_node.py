@@ -40,7 +40,10 @@ TARGET_CHECK_FREQUENCY = (
     else MINIMUM_UPDATE_FREQUENCY
 )
 
-STATUS_PUBLISH_FREQUENCY = 1
+# TODO: remove the varying publish frequency.
+# makes visualization less granular and maybe has other problems.
+# 5 times a second is simpler and perhaps better
+STATUS_PUBLISH_FREQUENCY = 5
 
 S_TO_NS = 1000 * 1000 * 1000
 
