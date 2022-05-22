@@ -26,6 +26,7 @@ setup(
             "rudder = eel.rudder.rudder_node:main",
             "motor = eel.motor.motor_node:main",
             "tank = eel.tank.tank_node:main",
+            "pressure = eel.pressure.pressure_node:main",
         ],
     },
 )

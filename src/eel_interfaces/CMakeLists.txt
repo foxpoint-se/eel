@@ -23,6 +23,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Coordinate.msg"
   "msg/NavigationStatus.msg"
   "msg/TankStatus.msg"
+  "msg/PressureStatus.msg"
 )
 
 ament_package()
