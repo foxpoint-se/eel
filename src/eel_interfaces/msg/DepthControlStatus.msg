@@ -1,0 +1,2 @@
+bool is_adjusting_depth
+bool is_adjusting_pitch

@@ -59,9 +59,16 @@ def generate_launch_description():
         parameters=[{SIMULATE_PARAM: True}],
     )
 
+    depth_control_node = Node(
+        package="eel",
+        executable="depth_control",
+        name="depth_control_node",
+    )
+
     ld.add_action(front_tank_node)
     ld.add_action(rear_tank_node)
     ld.add_action(pressure_node)
     ld.add_action(imu_node)
+    ld.add_action(depth_control_node)
 
     return ld

@@ -1,0 +1,2 @@
+float32 depth_target
+float32 pitch_target
