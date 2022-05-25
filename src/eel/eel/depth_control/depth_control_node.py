@@ -51,6 +51,44 @@ def is_within_accepted_target_boundaries(current_level, target_level, tolerance)
     return is_within_target
 
 
+class PidController:
+    def __init__(self, set_point, kP=0.0, kI=0.0, kD=0.0) -> None:
+        self.kP = kP  # proportional gain
+        self.kI = kI  # integral gain
+        self.kD = kD  # derivative gain
+        self.set_point = set_point
+        self.last_computed_at = None
+        self.cumulative_error = 0.0
+        self.last_error = 0.0
+
+    def compute(self, system_current_value):
+        now = time()
+
+        if self.last_computed_at is None:
+            self.last_computed_at = now
+
+        error = self.set_point - system_current_value
+        p = self.kP * error
+
+        time_delta = now - self.last_computed_at
+        self.cumulative_error += error * time_delta
+
+        i = self.cumulative_error * self.kI
+
+        error_delta = error - self.last_error
+
+        rate_of_error = 0.0
+        if time_delta > 0:
+            rate_of_error = error_delta / time_delta
+
+        d = rate_of_error * self.kD
+
+        self.last_error = error
+
+        self.last_computed_at = now
+        return p + i + d
+
+
 class DepthControlNode(Node):
     def __init__(self):
         super().__init__("depth_control_node")
@@ -65,6 +103,8 @@ class DepthControlNode(Node):
         self.last_depth = None
         self.current_front_tank_level = None
         self.current_rear_tank_level = None
+
+        self.pid_controller = None
 
         self.publisher = self.create_publisher(
             DepthControlStatus, DEPTH_CONTROL_STATUS, 10
@@ -191,7 +231,7 @@ class DepthControlNode(Node):
         self.front_tank_pub.publish(msg)
         self.rear_tank_pub.publish(msg)
 
-    def loop(self):
+    def loop2(self):
         now = time()
         if (
             self.depth_target is not None
@@ -216,6 +256,26 @@ class DepthControlNode(Node):
         status_msg.is_adjusting_depth = self.should_control_depth
         status_msg.is_adjusting_pitch = self.should_control_pitch
         self.publisher.publish(status_msg)
+
+    def loop(self):
+        if (
+            self.depth_target is not None
+            and self.should_control_depth
+            and self.current_depth is not None
+        ):
+            if not self.pid_controller:
+                self.pid_controller = PidController(
+                    self.depth_target, kP=0.5, kI=0.01, kD=3.0
+                )
+
+            controller_output = self.pid_controller.compute(self.current_depth)
+            next_tank_level = controller_output
+
+            msg = Float32()
+            msg.data = next_tank_level
+
+            self.front_tank_pub.publish(msg)
+            self.rear_tank_pub.publish(msg)
 
 
 def main(args=None):
