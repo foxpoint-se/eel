@@ -4,6 +4,7 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float32
 from time import time
+from simple_pid import PID
 from eel_interfaces.msg import (
     DepthControlStatus,
     DepthControlCmd,
@@ -105,6 +106,8 @@ class DepthControlNode(Node):
         self.current_rear_tank_level = None
 
         self.pid_controller = None
+
+        self.pid_lib_controller = None
 
         self.publisher = self.create_publisher(
             DepthControlStatus, DEPTH_CONTROL_STATUS, 10
@@ -257,7 +260,7 @@ class DepthControlNode(Node):
         status_msg.is_adjusting_pitch = self.should_control_pitch
         self.publisher.publish(status_msg)
 
-    def loop(self):
+    def loop3(self):
         if (
             self.depth_target is not None
             and self.should_control_depth
@@ -273,6 +276,25 @@ class DepthControlNode(Node):
 
             msg = Float32()
             msg.data = next_tank_level
+
+            self.front_tank_pub.publish(msg)
+            self.rear_tank_pub.publish(msg)
+
+    def loop(self):
+        if (
+            self.depth_target is not None
+            and self.should_control_depth
+            and self.current_depth is not None
+        ):
+            if not self.pid_lib_controller:
+                self.pid_lib_controller = PID(
+                    0.5, 0.01, 3.0, setpoint=self.depth_target
+                )
+
+            control = self.pid_lib_controller(self.current_depth)
+
+            msg = Float32()
+            msg.data = control
 
             self.front_tank_pub.publish(msg)
             self.rear_tank_pub.publish(msg)
