@@ -196,7 +196,7 @@ class TankNode(Node):
             self.target_status = TARGET_REACHED
 
         # Do we need these safety checks? Will they ever happen?
-        # I guess that they could, if the target check frequency is to low, so that the target is missed.
+        # I guess that they could if the target check frequency is to low, so that the target then is missed.
         if is_at_floor(current_level) and self.pump_motor_control.get_is_emptying():
             self.pump_motor_control.stop()
             self.stop_checking_against_target()
