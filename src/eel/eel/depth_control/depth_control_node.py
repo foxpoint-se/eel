@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 from ..utils.utils import clamp
+from ..utils.pid_tuning import get_simulation_pid_settings, lookup_zieglernichols_gains
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float32
 from time import time
+
+# TODO: remove and uninstall simple-pid?
 from simple_pid import PID
+
 from eel_interfaces.msg import (
     DepthControlStatus,
     DepthControlCmd,
@@ -53,7 +57,7 @@ def is_within_accepted_target_boundaries(current_level, target_level, tolerance)
 
 
 class PidController:
-    def __init__(self, set_point, kP=0.0, kI=0.0, kD=0.0) -> None:
+    def __init__(self, set_point, kP=0.0, kI=0.0, kD=0.0, on_log_error=None) -> None:
         self.kP = kP  # proportional gain
         self.kI = kI  # integral gain
         self.kD = kD  # derivative gain
@@ -61,6 +65,7 @@ class PidController:
         self.last_computed_at = None
         self.cumulative_error = 0.0
         self.last_error = 0.0
+        self.on_log_error = on_log_error
 
     def compute(self, system_current_value):
         now = time()
@@ -69,6 +74,10 @@ class PidController:
             self.last_computed_at = now
 
         error = self.set_point - system_current_value
+
+        if self.on_log_error:
+            self.on_log_error(error)
+
         p = self.kP * error
 
         time_delta = now - self.last_computed_at
@@ -105,6 +114,11 @@ class DepthControlNode(Node):
         self.current_front_tank_level = None
         self.current_rear_tank_level = None
 
+        # TODO: conditionally set pid settings, based on what we find when tuning hardware
+        Ku, Tu = get_simulation_pid_settings()
+        self.Ku = Ku
+        self.Tu = Tu
+
         self.pid_controller = None
 
         self.pid_lib_controller = None
@@ -112,6 +126,11 @@ class DepthControlNode(Node):
         self.publisher = self.create_publisher(
             DepthControlStatus, DEPTH_CONTROL_STATUS, 10
         )
+
+        # TODO: enable these conditionally, for use when tuning PID
+        self.pid_publisher = self.create_publisher(Float32, "pid_error", 10)
+        self.pid_publisher_base = self.create_publisher(Float32, "pid_error_target", 10)
+
         self.create_subscription(
             DepthControlCmd, DEPTH_CONTROL_CMD, self.handle_cmd_msg, 10
         )
@@ -158,6 +177,7 @@ class DepthControlNode(Node):
     def handle_pressure_msg(self, msg):
         self.current_depth = msg.depth
 
+    # TODO: remove
     def control_depth(self, target, current, time_passed, distance_traveled):
         # P
         # 0.5 is pretty good
@@ -234,6 +254,7 @@ class DepthControlNode(Node):
         self.front_tank_pub.publish(msg)
         self.rear_tank_pub.publish(msg)
 
+    # TODO: remove
     def loop2(self):
         now = time()
         if (
@@ -260,15 +281,34 @@ class DepthControlNode(Node):
         status_msg.is_adjusting_pitch = self.should_control_pitch
         self.publisher.publish(status_msg)
 
-    def loop3(self):
+    def log_pid_error(self, pid_error):
+        msg = Float32()
+        msg.data = pid_error
+        self.pid_publisher.publish(msg)
+        base_msg = Float32()
+        base_msg.data = 0.0
+        self.pid_publisher_base.publish(base_msg)
+
+    def loop(self):
         if (
             self.depth_target is not None
             and self.should_control_depth
             and self.current_depth is not None
         ):
+            # TODO: initialize settings in constructor
             if not self.pid_controller:
+                Kp, Ki, Kd = lookup_zieglernichols_gains(
+                    self.Ku, self.Tu, "no_overshoot"
+                )
+                self.logger.info("init pid with Kp {} Ki {} Kd {}".format(Kp, Ki, Kd))
+
+                # TODO: re-initialize pid controller when target changes
                 self.pid_controller = PidController(
-                    self.depth_target, kP=0.5, kI=0.01, kD=3.0
+                    self.depth_target,
+                    Kp,
+                    Ki,
+                    Kd,
+                    on_log_error=self.log_pid_error,
                 )
 
             controller_output = self.pid_controller.compute(self.current_depth)
@@ -280,7 +320,8 @@ class DepthControlNode(Node):
             self.front_tank_pub.publish(msg)
             self.rear_tank_pub.publish(msg)
 
-    def loop(self):
+    # TODO: remove
+    def loop3(self):
         if (
             self.depth_target is not None
             and self.should_control_depth
