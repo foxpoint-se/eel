@@ -14,3 +14,4 @@ RPi.GPIO==0.7.0
 geopy==2.2.0
 adafruit-circuitpython-vl53l0x==3.6.0
 adafruit-circuitpython-vl53l1x==1.0.2
+simple-pid==1.0.1
