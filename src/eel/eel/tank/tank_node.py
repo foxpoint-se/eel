@@ -11,6 +11,7 @@ from ..utils.constants import (
     CMD_TOPIC_PARAM,
     STATUS_TOPIC_PARAM,
 )
+from ..utils.utils import clamp
 from .pump_motor_simulator import PumpMotorControlSimulator
 from .distance_sensor_simulator import DistanceSensorSimulator
 
@@ -22,41 +23,34 @@ TANK_CEILING_MM = 65
 TANK_FILL_TIME_S = 22
 # change depending on how big of an error we accept
 TARGET_TOLERANCE = 0.03
-# change depending on how what we think is a good frequency
-WANTED_TARGET_CHECK_FREQUENCY = 5
 
 LEVEL_FLOOR = 0.0
 LEVEL_CEILING = 1.0
 
 TANK_RANGE_MM = TANK_CEILING_MM - TANK_FLOOR_MM
 TANK_FILL_VELOCITY_MMPS = TANK_RANGE_MM / TANK_FILL_TIME_S
-TARGET_TOLERANCE_MM = TARGET_TOLERANCE * TANK_RANGE_MM
 
-MINIMUM_UPDATE_FREQUENCY = TANK_FILL_VELOCITY_MMPS / TARGET_TOLERANCE_MM
-
-TARGET_CHECK_FREQUENCY = (
-    WANTED_TARGET_CHECK_FREQUENCY
-    if WANTED_TARGET_CHECK_FREQUENCY > MINIMUM_UPDATE_FREQUENCY
-    else MINIMUM_UPDATE_FREQUENCY
-)
-
-# TODO: remove the varying publish frequency.
-# makes visualization less granular and maybe has other problems.
-# 5 times a second is simpler and perhaps better
-STATUS_PUBLISH_FREQUENCY = 5
-
-S_TO_NS = 1000 * 1000 * 1000
-
+# Minimum update frequency should be higher than tank fill velocity divided by target tolerance.
+# Otherwise we might miss the target, since the pump has rushed past the target area before checking again.
+# Example:
+# tank floor: 30 mm
+# tank ceiling: 65 mm
+# tank fill time: 22 s
+# target tolerance: 0.03 (3%)
+# tank range: ceiling - floor = 65 - 30 = 35 mm
+# fill velocity: range / fill time = 35 / 22 = 1.6 mm/s
+# tolerance in mm: tolerance * range = 0.03 * 35 = 1.05 mm
+# This means that 1 update per second is not enough, since it will run 1.6 mm in a second, and therefore
+# miss the tolerance span of 1.05 mm.
+# Minimum update frequency: velocity / tolerance = 1.6 / 1.05 = 1.5 hz
+# UPDATE_FREQUENCY = 5 should therefore be plenty.
+UPDATE_FREQUENCY = 5
 
 TARGET_REACHED = "target_reached"
 CEILING_REACHED = "ceiling_reached"
 FLOOR_REACHED = "floor_reached"
 NO_TARGET = "no_target"
 ADJUSTING = "adjusting"
-
-
-def frequency_to_period_in_ns(frequency):
-    return (1 / frequency) * S_TO_NS
 
 
 def is_within_accepted_target_boundaries(current_level, target_level):
@@ -119,7 +113,7 @@ class TankNode(Node):
             self.pump_motor_control = PumpMotorControlSimulator()
             self.distance_sensor = DistanceSensorSimulator(
                 initial_measurement_mm=TANK_FLOOR_MM,
-                update_frequency_hz=TARGET_CHECK_FREQUENCY,
+                update_frequency_hz=UPDATE_FREQUENCY,
                 fill_velocity_mmps=TANK_FILL_VELOCITY_MMPS,
                 create_timer=self.create_timer,
                 get_is_motor_filling_up=self.pump_motor_control.get_is_filling_up,
@@ -138,13 +132,12 @@ class TankNode(Node):
         self.level_updater = self.init_timer()
 
         self.get_logger().info(
-            "{}Tank node started. Motor pin: {}, Direction pin: {}, Distance sensor address: {}, Target check frequency: {}, Status publish frequency: {}".format(
+            "{}Tank node started. Motor pin: {}, Direction pin: {}, Distance sensor address: {}, Update frequency: {}".format(
                 "SIMULATE " if self.should_simulate else "",
                 self.motor_pin,
                 self.direction_pin,
                 self.distance_sensor_address,
-                TARGET_CHECK_FREQUENCY,
-                STATUS_PUBLISH_FREQUENCY,
+                UPDATE_FREQUENCY,
             )
         )
 
@@ -152,39 +145,20 @@ class TankNode(Node):
         return self.target_level is not None and self.is_autocorrecting is True
 
     def init_timer(self):
-        frequency = (
-            TARGET_CHECK_FREQUENCY
-            if self.should_check_against_level()
-            else STATUS_PUBLISH_FREQUENCY
-        )
-        return self.create_timer(1.0 / frequency, self.loop)
+        return self.create_timer(1.0 / UPDATE_FREQUENCY, self.loop)
 
     def start_checking_against_target(self, target):
         self.target_level = target
         self.is_autocorrecting = True
-        self.level_updater.timer_period_ns = frequency_to_period_in_ns(
-            TARGET_CHECK_FREQUENCY
-        )
 
     def stop_checking_against_target(self):
         self.target_level = None
         self.is_autocorrecting = False
-        self.level_updater.timer_period_ns = frequency_to_period_in_ns(
-            STATUS_PUBLISH_FREQUENCY
-        )
 
     def handle_tank_cmd(self, msg):
-        target_level = msg.data
+        requested_target_level = msg.data
         current_level = self.get_level()
-
-        if is_at_ceiling(current_level) and should_fill(current_level, target_level):
-            self.stop_checking_against_target()
-            self.target_status = CEILING_REACHED
-            return
-        if is_at_floor(current_level) and should_empty(current_level, target_level):
-            self.stop_checking_against_target()
-            self.target_status = FLOOR_REACHED
-            return
+        target_level = clamp(requested_target_level, LEVEL_FLOOR, LEVEL_CEILING)
 
         if not is_within_accepted_target_boundaries(current_level, target_level):
             self.start_checking_against_target(target_level)
@@ -221,6 +195,8 @@ class TankNode(Node):
             self.stop_checking_against_target()
             self.target_status = TARGET_REACHED
 
+        # Do we need these safety checks? Will they ever happen?
+        # I guess that they could, if the target check frequency is to low, so that the target is missed.
         if is_at_floor(current_level) and self.pump_motor_control.get_is_emptying():
             self.pump_motor_control.stop()
             self.stop_checking_against_target()
