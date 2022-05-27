@@ -14,17 +14,21 @@ Get the code, build ROS and install python dependencies:
 ```
 git clone <this repo>
 cd path/to/project
-colcon build --symlink-install
 make install-py
+source source_me.sh
+make build-sym
 ```
 
-(The last command might be complaining about `invalid command 'bdist_wheel'`. You should be fine though. Run `make install-py` again to verify that everything seems okay.)
+This will be enough when running in simulation mode (without actual hardware). But when running in production mode (with actual hardware), you will have to install a few other things as well:
 
-Now you can either start everything in dev mode, or in production mode. Let's go with dev mode first.
+```
+make install-depth-sensor
+make install-pigpio
+```
 
-### Start in dev mode
+### Start in simulation mode
 
-Terminal 1:
+Terminal 1 (only required for navigation simulation):
 
 ```
 make virtual-serial
@@ -32,16 +36,26 @@ make virtual-serial
 
 Terminal 2:
 
+You can either start depth simulation or navigation simulation.
+
 ```
 source source_me.sh
-ros2 launch eel_bringup sim.launch.py
+make sim-nav
+```
+
+OR:
+
+```
+source source_me.sh
+make sim-depth
 ```
 
 ### Start in production mode
 
 ```
+make start-pigpio
 source source_me.sh
-ros2 launch eel_bringup eel.launch.py
+make start
 ```
 
 ## Notes on running `imu` node
