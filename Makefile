@@ -12,6 +12,7 @@ install-py:		## setup venv and install py dependencies
 		python3 -m venv .venv; \
 		touch .venv/COLCON_IGNORE; \
        	source .venv/bin/activate; \
+       	pip install wheel; \
        	python -m pip install -r requirements.txt; \
     )
 
