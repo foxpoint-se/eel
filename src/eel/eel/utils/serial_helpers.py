@@ -1,82 +1,55 @@
-import atexit
-import sys
 import serial
+import time
 from typing import Callable
-from serial.threaded import LineReader, ReaderThread
+import threading
 
-
-class ReaderWrapper(LineReader):
-    def __init__(self):
-        super(ReaderWrapper, self).__init__()
-        self.on_message = None
-        self.on_disconnected = None
-        self.unhandled_messages = []
-
-    # default is \r\n
-    # TERMINATOR = b"\n"
-
-    def connection_made(self, transport):
-        super(ReaderWrapper, self).connection_made(transport)
-        sys.stdout.write("Port opened.\n")
-
-    def handle_line(self, data):
-        if self.on_message:
-            self.on_message(data)
-        else:
-            self.unhandled_messages.append(data)
-        # self.transport.flush()
-        # self.protocol.flush()
-
-    def connection_lost(self, exc):
-        reason = None
-        if exc:
-            sys.stdout.write("{}\n".format(exc))
-            reason = exc
-        sys.stdout.write("Port closed.\n")
-        if self.on_disconnected:
-            self.on_disconnected(reason)
+SLEEP_TIME = 0.01
 
 
 class SerialReaderWriter:
     def __init__(
         self,
         port: str,
-        # baudrate: int = 9600,
         baudrate: int = 19200,
         timeout: int = 1,
         on_message: Callable[[str], None] = None,
-        on_connected: Callable[[], None] = None,
-        on_disconnected: Callable[[Exception], None] = None,
-    ) -> None:
-        self.ser = serial.serial_for_url(port, baudrate=baudrate, timeout=timeout)
-        t = ReaderThread(self.ser, ReaderWrapper)
-        t.start()
-        transport, protocol = t.connect()
-        if on_connected:
-            on_connected()
-        self.protocol = protocol
-        # self.protocol.on_message2 = on_message
-        self.protocol.on_message = self.on_message
-        self.on_message2 = on_message
-        self.protocol.on_connected = on_connected
-        self.protocol.on_disconnected = on_disconnected
-
-        # Workaround, since `on_message` is set after `t.connect()`, but we need `protocol`
-        # to be able to set `on_message` handler. This will get those messages.
-        # count = len(protocol.unhandled_messages)
-        # if on_message and count > 0:
-        #     sys.stdout.write(
-        #         "Handling unhandled messages right after connection: {}\n".format(count)
-        #     )
-        #     for m in protocol.unhandled_messages:
-        #         on_message(m)
-
-        atexit.register(t.close)
-
-    def on_message(self, message):
-        self.on_message2(message)
-        self.ser.flush()
+    ):
+        self._ser = serial.serial_for_url(port, baudrate=baudrate, timeout=timeout)
+        self._on_message = on_message
+        self._ser.flush()
+        self._ser.reset_input_buffer()
+        self._ser.reset_output_buffer()
+        self.thread = threading.Thread(target=self._loop, daemon=True)
+        self.thread.start()
 
     def send(self, message):
-        if message:
-            self.protocol.write_line(message)
+        self._write_one_message(message)
+
+    # TODO: remove or use? it could be interesting to see if there's ever anything in in_waiting or out_waiting
+    # def _flush_if_necessary(self):
+    #     in_waiting = self._ser.in_waiting
+    #     out_waiting = self._ser.out_waiting
+    #     if in_waiting > 0 or out_waiting > 0:
+    #         print("in_waiting", in_waiting, "out_waiting", out_waiting)
+    #         self._ser.flush()
+
+    def _write_one_message(self, message):
+        msg_line = "{}\n".format(message)
+        self._ser.write(bytes(msg_line, "utf-8"))
+        self._ser.flush()
+        # TODO: remove or use?
+        # self._flush_if_necessary()
+
+    def _loop(self):
+        while True:
+            msg = self._ser.readline()
+            if msg:
+                # try:
+                self._on_message(msg.decode("utf-8").strip())
+                # except:
+                #     print("json decode error. ignoring", msg)
+
+            self._ser.flush()
+            # TODO: remove or use?
+            # self._flush_if_necessary()
+            time.sleep(SLEEP_TIME)
