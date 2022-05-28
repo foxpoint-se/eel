@@ -42,28 +42,43 @@ class MotorControl:
 
 class DistanceSensor:
 
-    def __init__(self, address, timing_budget=500000):
+    def __init__(self, address, shut_pin, timing_budget=500000):
         self.address = address
+        self.shut_pin = shut_pin
         self.resolution = 0.0  # TODO Find sensor resolution, used to determine safe max/min limit
+
+        # GPIO setup
+        GPIO.setup(self.shut_pin, GPIO.OUT)
+        self.activate_sensor()
 
         # Instantiate i2c object
         i2c = busio.I2C(board.SCL, board.SDA)
         self.vl53 = adafruit_vl53l0x.VL53L0X(i2c)
         self.vl53.measurement_timing_budget = timing_budget
+        self.set_address(self.address)
 
     @property
     def resolution(self):
         return self.resolution
 
-    def set_address(self):
-        pass
+    @property
+    def address(self):
+        return self.address
+
+    def set_address(self, address):
+        self.vl53.set_address(address)
 
     def get_range(self):
         return self.vl53.range
 
+    def activate_sensor(self):
+        GPIO.output(self.shut_pin, GPIO.HIGH)
+
+    def deactivate_sensor(self):
+        GPIO.output(self.shut_pin, GPIO.LOW)
+
 
 class BallastTank:
-
     def __init__(self, motor, distance_sensor):
         self._motor = motor
         self._distance_sensor = distance_sensor
@@ -132,9 +147,10 @@ if __name__ == "__main__":
     DEFAULT_MOTOR_PIN = 22  # 27
     DEFAULT_DIR_PIN = 23  # 24
     DEFAULT_SENSOR_ADDRESS = 56
+    DEFAULT_SHUT_PIN = 20
 
     motor = MotorControl(DEFAULT_MOTOR_PIN, DEFAULT_DIR_PIN)
-    dist_sensor = DistanceSensor(DEFAULT_SENSOR_ADDRESS)
+    dist_sensor = DistanceSensor(DEFAULT_SENSOR_ADDRESS, DEFAULT_SHUT_PIN)
     ballast_tank = BallastTank(motor, dist_sensor)
 
     parser = argparse.ArgumentParser()
