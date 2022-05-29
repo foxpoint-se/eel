@@ -5,9 +5,7 @@ from rclpy.node import Node
 from eel_interfaces.msg import GnssStatus, ImuStatus, NavigationStatus
 from std_msgs.msg import String, Float32, Bool
 
-# from ..utils.serial_helpers import SerialReaderWriter
-from ..utils.serial_helpers2 import SerialReaderWriter
-from ..utils.radio_helpers.eel_side import from_json_to_command
+from ..utils.serial_helpers import SerialReaderWriter
 from ..utils.topics import (
     RUDDER_CMD,
     MOTOR_CMD,
@@ -76,7 +74,7 @@ class Radio(Node):
         json_msg = ros2dict(msg)
         self.latest_messages[NAVIGATION_STATUS] = json_msg
 
-    def send2(self, message=None):
+    def do_send(self, message=None):
         if message:
             self.reader_writer.send(message)
             radio_out_msg = String()
@@ -88,36 +86,35 @@ class Radio(Node):
             radio_msg_dict = {}
             radio_msg_dict[topic] = msg
             radio_msg = json.dumps(radio_msg_dict)
-            self.send2(radio_msg)
+            self.do_send(radio_msg)
+
+    def try_publish(self, topic, dict_msg):
+        if topic == RUDDER_CMD:
+            topic_msg = Float32()
+            topic_msg.data = float(dict_msg["data"])
+            self.rudder_publisher.publish(topic_msg)
+        elif topic == MOTOR_CMD:
+            topic_msg = Float32()
+            topic_msg.data = float(dict_msg["data"])
+            self.motor_publisher.publish(topic_msg)
+        elif topic == NAVIGATION_CMD:
+            topic_msg = Bool()
+            topic_msg.data = bool(dict_msg["data"])
+            self.nav_publisher.publish(topic_msg)
 
     def handle_incoming_message(self, message):
         radio_in_msg = String()
         radio_in_msg.data = message
         self.radio_in_publisher.publish(radio_in_msg)
-        cmd = from_json_to_command(message)
-        if cmd.r != None:
-            self.handle_rudder_cmd(cmd.r)
-        if cmd.m != None:
-            self.handle_motor_cmd(cmd.m)
-        if cmd.a != None:
-            self.handle_nav_radio_cmd(cmd.a)
+        msg_dict = None
+        try:
+            msg_dict = json.loads(message)
+        except Exception:
+            self._logger.warn("Line was not a json. Ignoring. Line: {}".format(message))
 
-    def handle_nav_radio_cmd(self, auto_mode_enabled):
-        nav_msg = Bool()
-        nav_msg.data = bool(auto_mode_enabled)
-        self.nav_publisher.publish(nav_msg)
-
-    def handle_rudder_cmd(self, rudder_msg_value):
-        rudder_value = float(rudder_msg_value)
-        topic_msg = Float32()
-        topic_msg.data = rudder_value
-        self.rudder_publisher.publish(topic_msg)
-
-    def handle_motor_cmd(self, motor_msg_value):
-        motor_value = float(motor_msg_value)
-        topic_msg = Float32()
-        topic_msg.data = motor_value
-        self.motor_publisher.publish(topic_msg)
+        if msg_dict:
+            for topic, msg in msg_dict.items():
+                self.try_publish(topic, msg)
 
 
 def main(args=None):
