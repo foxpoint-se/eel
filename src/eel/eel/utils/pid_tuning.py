@@ -45,14 +45,6 @@
 # ======================================================
 
 
-# TODO: remove
-# ======================================================
-# By just trial and error, these gains were decent
-# Kp = 0.5
-# Ki = 0.01
-# Kd = 3.0
-
-
 def get_simulation_pid_settings():
     depth_Ku = 10.0
     depth_Tu = 43.0
