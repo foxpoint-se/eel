@@ -115,9 +115,14 @@ class DepthControlNode(Node):
         self.current_rear_tank_level = None
 
         # TODO: conditionally set pid settings, based on what we find when tuning hardware
-        Ku, Tu = get_simulation_pid_settings()
-        self.Ku = Ku
-        self.Tu = Tu
+        depth_Ku, depth_Tu, pitch_Ku, pitch_Tu = get_simulation_pid_settings()
+        self.depth_Ku = depth_Ku
+        self.depth_Tu = depth_Tu
+        self.pitch_Ku = pitch_Ku
+        self.pitch_Tu = pitch_Tu
+
+        self.pitch_pid_controller = None
+        self.depth_pid_controller = None
 
         self.pid_controller = None
 
@@ -163,7 +168,29 @@ class DepthControlNode(Node):
         self.depth_target = msg.depth_target
         self.pitch_target = msg.pitch_target
         self.should_control_depth = True
-        self.should_control_pitch = False  # False for now
+        self.should_control_pitch = True
+
+        pitch_Kp, pitch_Ki, pitch_Kd = lookup_zieglernichols_gains(
+            self.pitch_Ku, self.pitch_Tu, msg.pitch_pid_type
+        )
+        self.logger.info(
+            "init pitch pid with Kp {} Ki {} Kd {}".format(pitch_Kp, pitch_Ki, pitch_Kd)
+        )
+
+        self.pitch_pid_controller = PidController(
+            self.pitch_target,
+            pitch_Kp,
+            pitch_Ki,
+            pitch_Kd,
+            on_log_error=self.log_pid_error,
+        )
+
+        depth_Kp, depth_Ki, depth_Kd = lookup_zieglernichols_gains(
+            self.depth_Ku, self.depth_Tu, msg.depth_pid_type
+        )
+        self.depth_pid_controller = PidController(
+            self.depth_target, depth_Kp, depth_Ki, depth_Kd
+        )
 
     def handle_imu_msg(self, msg):
         self.current_pitch = msg.pitch
@@ -290,6 +317,34 @@ class DepthControlNode(Node):
         self.pid_publisher_base.publish(base_msg)
 
     def loop(self):
+        if self.pitch_pid_controller and self.depth_pid_controller:
+            pitch_controller_output = self.pitch_pid_controller.compute(
+                self.current_pitch
+            )
+
+            pitch_front_tank = pitch_controller_output
+            pitch_rear_tank = -pitch_controller_output
+
+            depth_controller_output = self.depth_pid_controller.compute(
+                self.current_depth
+            )
+
+            next_front_tank_level = (0.1 * pitch_front_tank) + (
+                0.9 * depth_controller_output
+            )
+            next_rear_tank_level = (0.1 * pitch_rear_tank) + (
+                0.9 * depth_controller_output
+            )
+
+            front_msg = Float32()
+            front_msg.data = next_front_tank_level
+            rear_msg = Float32()
+            rear_msg.data = next_rear_tank_level
+
+            self.front_tank_pub.publish(front_msg)
+            self.rear_tank_pub.publish(rear_msg)
+
+    def loop_depth(self):
         if (
             self.depth_target is not None
             and self.should_control_depth
@@ -298,7 +353,7 @@ class DepthControlNode(Node):
             # TODO: initialize settings in constructor
             if not self.pid_controller:
                 Kp, Ki, Kd = lookup_zieglernichols_gains(
-                    self.Ku, self.Tu, "no_overshoot"
+                    self.depth_Ku, self.depth_Tu, "no_overshoot"
                 )
                 self.logger.info("init pid with Kp {} Ki {} Kd {}".format(Kp, Ki, Kd))
 
