@@ -32,9 +32,9 @@
 # Measured values in simulation mode
 # ======================================================
 # Depth
-# Kp = 10.0     Ki = 0      Kd = 0
+# Kp = 8.0     Ki = 0      Kd = 0
 # ------------------------------------------------------
-# Ku = 10.0
+# Ku = 8.0
 # Tu = 43.0
 # ======================================================
 # Pitch
@@ -46,7 +46,7 @@
 
 
 def get_simulation_pid_settings():
-    depth_Ku = 10.0
+    depth_Ku = 8.0
     depth_Tu = 43.0
     pitch_Ku = 0.5
     pitch_Tu = 28.0
