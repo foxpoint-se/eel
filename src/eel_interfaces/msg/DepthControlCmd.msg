@@ -1,2 +1,4 @@
 float32 depth_target
 float32 pitch_target
+string depth_pid_type
+string pitch_pid_type
