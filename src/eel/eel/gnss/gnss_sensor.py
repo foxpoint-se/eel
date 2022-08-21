@@ -7,7 +7,9 @@ class GnssSensor:
         self.current_lat = None
         self.current_lon = None
         # TODO: remove this comment if we don't seem to have problem with timeout=0
-        self.serial = SerialReaderWriter("/dev/ttyUSB0", on_message=self.handle_message)
+        self.serial = SerialReaderWriter(
+            "/dev/ttyUSB0", baudrate=9600, on_message=self.handle_message
+        )
 
     def handle_message(self, message):
         # TODO: remove this comment if GGA seems to work instead of GPRMC
