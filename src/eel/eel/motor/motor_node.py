@@ -40,9 +40,9 @@ class Motor(Node):
         if motor_value == 0:
             self.stop()
         elif motor_value > 0:
-            self.forward(speed=motor_value * 100)
+            self.forward(signal=motor_value)
         elif motor_value < 0:
-            self.backward(speed=abs(motor_value) * 100)
+            self.backward(signal=abs(motor_value))
 
 
 def main(args=None):
