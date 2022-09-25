@@ -1,0 +1,11 @@
+don't think we need this..???
+sudo apt-get install python3-smbus
+
+don't think we need this..???
+pip install adafruit-circuitpython-lis3dh
+
+this one though
+pip install adafruit-circuitpython-pca9685
+
+not sure about this..?
+pip install adafruit-circuitpython-servokit
