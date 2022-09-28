@@ -18,7 +18,7 @@ GPIO.setup(DEFAULT_DIR_PIN, GPIO.OUT)
 i2c = busio.I2C(board.SCL, board.SDA)
 
 pca = adafruit_pca9685.PCA9685(i2c, address=0x40)
-pca.frequency = 100
+pca.frequency = 1000
 
 vl53 = adafruit_vl53l0x.VL53L0X(i2c)
 vl53.measurement_timing_budget = 500000
@@ -41,11 +41,12 @@ distance_sample_rate = 1
 last_distance_sample = start_time
 drive_time = 3
 
-pca.channels[0].duty_cycle = 0xB8D3
+# pca.channels[0].duty_cycle = 0xB8D3
+pca.channels[0].duty_cycle = 0x0
 while ((now - start_time) < drive_time):
     if (now - last_distance_sample) > distance_sample_rate:
-        heading, roll, pitch = sensor.euler
-        print(float(heading or 0), float(roll or 0), float(pitch or 0))
+        # heading, roll, pitch = sensor.euler
+        # print(float(heading or 0), float(roll or 0), float(pitch or 0))
         # pca.channels[0].duty_cycle = 0x0
         # print("Will print here...")
         # print("range", vl53.range, "mm")        
