@@ -11,18 +11,18 @@ vl53.measurement_timing_budget = 500000
 
 
 while True:
-    print("range", vl53.range, "mm")        
+    print("range", vl53.range, "mm")
 
 # time.sleep(1)
 
-# print("range", vl53.range, "mm")        
+# print("range", vl53.range, "mm")
 
 # time.sleep(1)
 
-# print("range", vl53.range, "mm")        
+# print("range", vl53.range, "mm")
 
 # time.sleep(1)
 
-# print("range", vl53.range, "mm")        
+# print("range", vl53.range, "mm")
 
 # time.sleep(1)

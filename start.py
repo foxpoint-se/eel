@@ -19,6 +19,6 @@ GPIO.output(DEFAULT_DIR_PIN, FORWARD_LEVEL)
 i2c = busio.I2C(board.SCL, board.SDA)
 
 pca = adafruit_pca9685.PCA9685(i2c, address=0x40)
-pca.frequency = 1000
+pca.frequency = 1600
 
 pca.channels[0].duty_cycle = 0xB8D3
