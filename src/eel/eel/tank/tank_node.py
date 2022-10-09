@@ -10,15 +10,18 @@ from ..utils.constants import (
     DISTANCE_SENSOR_ADDRESS_PARAM,
     CMD_TOPIC_PARAM,
     STATUS_TOPIC_PARAM,
+    TANK_FLOOR_MM_PARAM,
+    TANK_CEILING_MM_PARAM,
+    XSHUT_PIN_PARAM,
 )
 from ..utils.utils import clamp
 from .pump_motor_simulator import PumpMotorControlSimulator
 from .distance_sensor_simulator import DistanceSensorSimulator
 
-# change depending on measured values
-TANK_FLOOR_MM = 30
-# change depending on measured values
-TANK_CEILING_MM = 65
+# # change depending on measured values
+# TANK_FLOOR_MM = 30
+# # change depending on measured values
+# TANK_CEILING_MM = 65
 # change depending on measured values
 TANK_FILL_TIME_S = 22
 # change depending on how big of an error we accept
@@ -27,8 +30,8 @@ TARGET_TOLERANCE = 0.03
 LEVEL_FLOOR = 0.0
 LEVEL_CEILING = 1.0
 
-TANK_RANGE_MM = TANK_CEILING_MM - TANK_FLOOR_MM
-TANK_FILL_VELOCITY_MMPS = TANK_RANGE_MM / TANK_FILL_TIME_S
+# TANK_RANGE_MM = TANK_CEILING_MM - TANK_FLOOR_MM
+# TANK_FILL_VELOCITY_MMPS = TANK_RANGE_MM / TANK_FILL_TIME_S
 
 # Minimum update frequency should be higher than tank fill velocity divided by target tolerance.
 # Otherwise we might miss the target, since the pump has rushed past the target area before checking again.
@@ -43,8 +46,8 @@ TANK_FILL_VELOCITY_MMPS = TANK_RANGE_MM / TANK_FILL_TIME_S
 # This means that 1 update per second is not enough, since it will run 1.6 mm in a second, and therefore
 # miss the tolerance span of 1.05 mm.
 # Minimum update frequency: velocity / tolerance = 1.6 / 1.05 = 1.5 hz
-# UPDATE_FREQUENCY = 5 should therefore be plenty.
-UPDATE_FREQUENCY = 5
+# UPDATE_FREQUENCY = 10 should therefore be plenty.
+UPDATE_FREQUENCY = 10
 
 TARGET_REACHED = "target_reached"
 CEILING_REACHED = "ceiling_reached"
@@ -58,6 +61,16 @@ def is_within_accepted_target_boundaries(current_level, target_level):
     high_threshold = target_level + (TARGET_TOLERANCE / 2)
     is_within_target = low_threshold <= current_level <= high_threshold
     return is_within_target
+
+
+def is_above_target(current_level, target_level):
+    high_threshold = target_level + (TARGET_TOLERANCE / 2)
+    return current_level > high_threshold
+
+
+def is_below_target(current_level, target_level):
+    low_threshold = target_level - (TARGET_TOLERANCE / 2)
+    return current_level < low_threshold
 
 
 def is_at_floor(current_level):
@@ -85,12 +98,23 @@ class TankNode(Node):
         self.declare_parameter(MOTOR_PIN_PARAM, -1)
         self.declare_parameter(DIRECTION_PIN_PARAM, -1)
         self.declare_parameter(DISTANCE_SENSOR_ADDRESS_PARAM, -1)
+        self.declare_parameter(TANK_FLOOR_MM_PARAM)
+        self.declare_parameter(TANK_CEILING_MM_PARAM)
+        self.declare_parameter(XSHUT_PIN_PARAM)
         self.should_simulate = self.get_parameter(SIMULATE_PARAM).value
         self.motor_pin = int(self.get_parameter(MOTOR_PIN_PARAM).value)
         self.direction_pin = int(self.get_parameter(DIRECTION_PIN_PARAM).value)
         self.distance_sensor_address = int(
             self.get_parameter(DISTANCE_SENSOR_ADDRESS_PARAM).value
         )
+        self.floor_mm = int(self.get_parameter(TANK_FLOOR_MM_PARAM).value)
+        self.ceiling_mm = int(self.get_parameter(TANK_CEILING_MM_PARAM).value)
+
+        self.tank_range_mm = self.ceiling_mm - self.floor_mm
+        self.fill_velocity_mmps = self.tank_range_mm / TANK_FILL_TIME_S
+
+        self.xshut_pin = int(self.get_parameter(XSHUT_PIN_PARAM).value)
+
         self.is_autocorrecting = False
         self.target_level = None
         self.target_status = NO_TARGET  # only used for passing information to frontend
@@ -112,9 +136,9 @@ class TankNode(Node):
         if self.should_simulate:
             self.pump_motor_control = PumpMotorControlSimulator()
             self.distance_sensor = DistanceSensorSimulator(
-                initial_measurement_mm=TANK_FLOOR_MM,
+                initial_measurement_mm=self.floor_mm,
                 update_frequency_hz=UPDATE_FREQUENCY,
-                fill_velocity_mmps=TANK_FILL_VELOCITY_MMPS,
+                fill_velocity_mmps=self.fill_velocity_mmps,
                 create_timer=self.create_timer,
                 get_is_motor_filling_up=self.pump_motor_control.get_is_filling_up,
                 get_is_motor_emptying=self.pump_motor_control.get_is_emptying,
@@ -127,7 +151,11 @@ class TankNode(Node):
                 motor_pin=self.motor_pin, direction_pin=self.direction_pin
             )
 
-            self.distance_sensor = DistanceSensor(address=self.distance_sensor_address)
+            self.distance_sensor = DistanceSensor(
+                address=self.distance_sensor_address,
+                xshut_pin=self.xshut_pin,
+                parent_node=self,
+            )
 
         self.level_updater = self.init_timer()
 
@@ -207,10 +235,27 @@ class TankNode(Node):
             self.stop_checking_against_target()
             self.target_status = CEILING_REACHED
 
+        if self.pump_motor_control.get_is_filling_up() and is_above_target(
+            current_level, target_level
+        ):
+            self.pump_motor_control.empty()
+
+        if self.pump_motor_control.get_is_emptying() and is_below_target(
+            current_level, target_level
+        ):
+            self.pump_motor_control.fill()
+
     def get_level(self):
         range = self.distance_sensor.get_range()
-        level = (range - TANK_FLOOR_MM) / (TANK_CEILING_MM - TANK_FLOOR_MM)
-        return level
+
+        range_level = (range - self.floor_mm) / (self.ceiling_mm - self.floor_mm)
+        level_filled = 1 - range_level
+        self.get_logger().info(
+            "Getting range: {} - Range level: {} - Floor: {} - Ceiling: {} - Filled: {}".format(
+                range, range_level, self.floor_mm, self.ceiling_mm, level_filled
+            )
+        )
+        return level_filled
 
 
 def main(args=None):

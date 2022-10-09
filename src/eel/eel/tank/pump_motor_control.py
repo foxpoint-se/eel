@@ -7,6 +7,8 @@ EMPTY_GPIO_LEVEL = GPIO.LOW
 RUN_GPIO_LEVEL = GPIO.HIGH
 STOP_GPIO_LEVEL = GPIO.LOW
 
+PWM_FREQUENCY = 4096
+
 
 class PumpMotorControl(PumpStateControl):
     def __init__(self, motor_pin, direction_pin) -> None:
@@ -19,6 +21,8 @@ class PumpMotorControl(PumpStateControl):
         GPIO.setup(self.direction_pin, GPIO.OUT)
         GPIO.setup(self.motor_pin, GPIO.OUT)
 
+        self.pwm_output = GPIO.PWM(self.motor_pin, PWM_FREQUENCY)
+
     def _set_filling_up(self):
         GPIO.output(self.direction_pin, FILL_GPIO_LEVEL)
 
@@ -26,10 +30,12 @@ class PumpMotorControl(PumpStateControl):
         GPIO.output(self.direction_pin, EMPTY_GPIO_LEVEL)
 
     def _start_motor(self):
-        GPIO.output(self.motor_pin, RUN_GPIO_LEVEL)
+        # GPIO.output(self.motor_pin, RUN_GPIO_LEVEL)
+        self.pwm_output.start(80)
 
     def _stop_motor(self):
-        GPIO.output(self.motor_pin, STOP_GPIO_LEVEL)
+        # GPIO.output(self.motor_pin, STOP_GPIO_LEVEL)
+        self.pwm_output.stop()
 
     def stop(self):
         super().stop()
