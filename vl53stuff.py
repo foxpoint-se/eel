@@ -24,25 +24,25 @@ print("init rear")
 vl53_rear = None
 
 try:
-    vl53_rear = adafruit_vl53l0x.VL53L0X(i2c)
+    vl53_rear = adafruit_vl53l0x.VL53L0X(i2c, 22)
     print("set rear to 12")
-    vl53_rear.set_address(12)
+    vl53_rear.set_address(41)
 except:
     print("rear already at 12")
-    vl53_rear = adafruit_vl53l0x.VL53L0X(i2c, 12)
+    vl53_rear = adafruit_vl53l0x.VL53L0X(i2c, 22)
 
 vl53_rear.measurement_timing_budget = 500000
 
-print("sleep 1")
-time.sleep(1)
-print("xshut on")
-GPIO.output(FRONT_XSHUT_PIN, ON_LEVEL)
+# print("sleep 1")
+# time.sleep(1)
+# print("xshut on")
+# GPIO.output(FRONT_XSHUT_PIN, ON_LEVEL)
 
-print("init front")
-vl53_front = adafruit_vl53l0x.VL53L0X(i2c)
-vl53_front.measurement_timing_budget = 500000
+# print("init front")
+# vl53_front = adafruit_vl53l0x.VL53L0X(i2c)
+# vl53_front.measurement_timing_budget = 500000
 
 
-print("PRINT!")
-while True:
-    print("rear", vl53_rear.range, "mm", "front", vl53_front.range, "mm")
+# print("PRINT!")
+# while True:
+#     print("rear", vl53_rear.range, "mm", "front", vl53_front.range, "mm")
