@@ -1,5 +1,6 @@
 from rclpy.node import Node
 from time import time
+import random
 from std_msgs.msg import Float32
 from eel_interfaces.msg import TankStatus
 from ..utils.sim import ANGULAR_VELOCITY
@@ -12,6 +13,20 @@ from ..utils.topics import (
 
 TERMINAL_PITCH_ANGULAR_VELOCITY_DEGPS = 10.0
 MOMENTUM_TOLERANCE = 0.03
+
+# PITCH_NOISE_PERCENT = 0.001
+# PITCH_RANGE_FLOOR = -90.0
+# PITCH_RANGE_CEILING = 90.0
+# PITCH_RANGE = abs(PITCH_RANGE_FLOOR) + abs(PITCH_RANGE_CEILING)
+# PITCH_NOISE_ABS_VALUE = PITCH_NOISE_PERCENT * PITCH_RANGE
+# PITCH_NOISE_FLOOR = -PITCH_NOISE_ABS_VALUE / 2
+# PITCH_NOISE_CEILING = PITCH_NOISE_ABS_VALUE / 2
+PITCH_NOISE_FLOOR = -0.1
+PITCH_NOISE_CEILING = 0.1
+
+
+def create_noise(floor, ceiling):
+    return random.uniform(floor, ceiling)
 
 
 def get_momentum_difference(front_tank_level, rear_tank_level):
@@ -76,16 +91,20 @@ class ImuSimulator:
         momentum_difference = get_momentum_difference(
             self._front_tank_level, self._rear_tank_level
         )
-        if abs(momentum_difference) > MOMENTUM_TOLERANCE:
-            now = time()
-            time_delta = now - self.last_updated_at
-            angular_velocity = get_velocity(
-                TERMINAL_PITCH_ANGULAR_VELOCITY_DEGPS, momentum_difference
-            )
-            pitch_delta = calculate_angle_delta(angular_velocity, time_delta)
-            new_pitch = self._current_pitch + pitch_delta
-            capped_pitch = cap_pitch(new_pitch)
-            self._current_pitch = capped_pitch
+        # if abs(momentum_difference) > MOMENTUM_TOLERANCE:
+        now = time()
+        time_delta = now - self.last_updated_at
+        angular_velocity = get_velocity(
+            TERMINAL_PITCH_ANGULAR_VELOCITY_DEGPS, momentum_difference
+        )
+        pitch_delta = calculate_angle_delta(angular_velocity, time_delta)
+        new_pitch = (
+            self._current_pitch
+            + pitch_delta
+            # + create_noise(PITCH_NOISE_FLOOR, PITCH_NOISE_CEILING)
+        )
+        capped_pitch = cap_pitch(new_pitch)
+        self._current_pitch = capped_pitch
 
     def _update_heading(self):
         if self.speed > 0:
@@ -110,7 +129,11 @@ class ImuSimulator:
         return sys, gyro, accel, mag
 
     def get_euler(self):
-        return self.current_heading, 0.0, self._current_pitch
+        return (
+            self.current_heading,
+            0.0,
+            self._current_pitch + create_noise(PITCH_NOISE_FLOOR, PITCH_NOISE_CEILING),
+        )
 
     def get_is_calibrated(self):
         return True
