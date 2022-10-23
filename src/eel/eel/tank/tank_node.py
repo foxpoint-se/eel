@@ -255,6 +255,11 @@ class TankNode(Node):
             range_level = (range - self.floor_mm) / (self.ceiling_mm - self.floor_mm)
             level_filled = 1 - range_level
             self.current_level = level_filled
+            self.get_logger().info(
+                "range: {} - level: {} - filled: {}".format(
+                    range, range_level, level_filled
+                )
+            )
 
 
 def main(args=None):
