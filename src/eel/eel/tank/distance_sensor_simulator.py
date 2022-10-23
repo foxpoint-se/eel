@@ -44,8 +44,8 @@ class DistanceSensorSimulator:
         time_delta = now - self.last_updated_at
         position_delta = calculate_position_delta(self.fill_velocity_mmps, time_delta)
         if self.get_is_motor_filling_up():
-            self.current_range = self.current_range + position_delta
-        elif self.get_is_motor_emptying():
             self.current_range = self.current_range - position_delta
+        elif self.get_is_motor_emptying():
+            self.current_range = self.current_range + position_delta
 
         self.last_updated_at = time()
