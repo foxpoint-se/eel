@@ -1,4 +1,4 @@
-from time import time
+from time import time, sleep
 
 
 def calculate_position_delta(linear_velocity, time_delta):
@@ -35,6 +35,8 @@ class DistanceSensorSimulator:
         )
 
     def get_range(self):
+        # to simulate that actual sensor measurement takes some time, depending on `timing_budget`
+        sleep(0.3)
         return self.current_range
 
     def _update_range(self):
