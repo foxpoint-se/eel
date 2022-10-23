@@ -57,6 +57,9 @@ sim-depth:		## start depth simulation
 sim-nav:		## start navigation simulation
 	ros2 launch eel_bringup sim_navigation.launch.py
 
+start-tanks:		## start tanks launch file
+	ros2 launch eel_bringup tanks.launch.py
+
 build-sym:		## build with symlink
 	colcon build --symlink-install
 
