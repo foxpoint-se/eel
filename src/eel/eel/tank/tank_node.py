@@ -167,12 +167,14 @@ class TankNode(Node):
         self.level_updater.start()
 
         self.get_logger().info(
-            "{}Tank node started. Motor pin: {}, Direction pin: {}, Distance sensor address: {}, Update frequency: {}".format(
+            "{}Tank node started. Motor pin: {}, Direction pin: {}, Distance sensor address: {}, Update frequency: {}, Range: {} - {} mm".format(
                 "SIMULATE " if self.should_simulate else "",
                 self.motor_pin,
                 self.direction_pin,
                 self.distance_sensor_address,
                 UPDATE_FREQUENCY,
+                self.floor_mm,
+                self.ceiling_mm,
             )
         )
 
