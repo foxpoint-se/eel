@@ -13,6 +13,10 @@ FRONT_TANK_STATUS = "tank_front/status"
 REAR_TANK_CMD = "tank_rear/cmd"
 REAR_TANK_STATUS = "tank_rear/status"
 
+TANK_FLOOR_MM_PARAM = "tank_floor_mm"
+TANK_CEILING_MM_PARAM = "tank_ceiling_mm"
+XSHUT_PIN_PARAM = "xshut_pin_param"
+
 
 def generate_launch_description():
     ld = LaunchDescription()
@@ -25,9 +29,12 @@ def generate_launch_description():
             {SIMULATE_PARAM: True},
             {CMD_TOPIC_PARAM: FRONT_TANK_CMD},
             {STATUS_TOPIC_PARAM: FRONT_TANK_STATUS},
-            {MOTOR_PIN_PARAM: "22"},
-            {DIRECTION_PIN_PARAM: "23"},
-            {DISTANCE_SENSOR_ADDRESS_PARAM: "56"},
+            {MOTOR_PIN_PARAM: "23"},
+            {DIRECTION_PIN_PARAM: "18"},
+            {DISTANCE_SENSOR_ADDRESS_PARAM: "22"},
+            {TANK_FLOOR_MM_PARAM: "1"},
+            {TANK_CEILING_MM_PARAM: "80"},
+            {XSHUT_PIN_PARAM: "0"},
         ],
     )
 
@@ -39,9 +46,12 @@ def generate_launch_description():
             {SIMULATE_PARAM: True},
             {CMD_TOPIC_PARAM: REAR_TANK_CMD},
             {STATUS_TOPIC_PARAM: REAR_TANK_STATUS},
-            {MOTOR_PIN_PARAM: "22"},
-            {DIRECTION_PIN_PARAM: "23"},
-            {DISTANCE_SENSOR_ADDRESS_PARAM: "56"},
+            {MOTOR_PIN_PARAM: "24"},
+            {DIRECTION_PIN_PARAM: "25"},
+            {DISTANCE_SENSOR_ADDRESS_PARAM: "29"},
+            {TANK_FLOOR_MM_PARAM: "1"},
+            {TANK_CEILING_MM_PARAM: "80"},
+            {XSHUT_PIN_PARAM: "21"},
         ],
     )
 
