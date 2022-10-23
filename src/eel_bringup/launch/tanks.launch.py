@@ -40,24 +40,24 @@ def generate_launch_description():
         ],
     )
 
-    # rear_tank_node = Node(
-    #     package="eel",
-    #     executable="tank",
-    #     name="tank_node",
-    #     parameters=[
-    #         {SIMULATE_PARAM: True},
-    #         {CMD_TOPIC_PARAM: REAR_TANK_CMD},
-    #         {STATUS_TOPIC_PARAM: REAR_TANK_STATUS},
-    #         {MOTOR_PIN_PARAM: "24"},
-    #         {DIRECTION_PIN_PARAM: "25"},
-    #         {DISTANCE_SENSOR_ADDRESS_PARAM: "29"},
-    #         {TANK_FLOOR_MM_PARAM: "25"},  # 12 is measured floor
-    #         {TANK_CEILING_MM_PARAM: "63"},  # 63 is measured ceiling
-    #         {XSHUT_PIN_PARAM: "21"},
-    #     ],
-    # )
+    rear_tank_node = Node(
+        package="eel",
+        executable="tank",
+        name="tank_node",
+        parameters=[
+            {SIMULATE_PARAM: False},
+            {CMD_TOPIC_PARAM: REAR_TANK_CMD},
+            {STATUS_TOPIC_PARAM: REAR_TANK_STATUS},
+            {MOTOR_PIN_PARAM: "24"},
+            {DIRECTION_PIN_PARAM: "25"},
+            {DISTANCE_SENSOR_ADDRESS_PARAM: "29"},
+            {TANK_FLOOR_MM_PARAM: "15"},  # 12 is measured floor
+            {TANK_CEILING_MM_PARAM: "63"},  # 63 is measured ceiling
+            {XSHUT_PIN_PARAM: "21"},
+        ],
+    )
 
     ld.add_action(front_tank_node)
-    # ld.add_action(rear_tank_node)
+    ld.add_action(rear_tank_node)
 
     return ld
