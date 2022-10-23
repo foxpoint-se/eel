@@ -26,7 +26,7 @@ from .distance_sensor_simulator import DistanceSensorSimulator
 # change depending on measured values
 TANK_FILL_TIME_S = 22
 # change depending on how big of an error we accept
-TARGET_TOLERANCE = 0.03
+TARGET_TOLERANCE = 0.05
 
 LEVEL_FLOOR = 0.0
 LEVEL_CEILING = 1.0
