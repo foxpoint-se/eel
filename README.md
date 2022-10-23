@@ -128,3 +128,39 @@ This will probably not work, since another service is using the same port. Follo
    sudo adduser ${USER} dialout
    ```
 1. Reboot
+
+## Notes on networking when using ethernet cable
+
+We set `dhcp4` to false in both cases, since we want a specific address.
+
+- **For 1:1 connection (RPi to computer):** Uncomment `gateway4`. Should be IP for computer (host).
+
+- **For 1:m connection (RPi to router).** `gateway4` should be commented out (disabled).
+
+Edit `/etc/netplan/50-cloud-init.yaml` and run `sudo netplan apply`.
+
+**Example**
+
+```
+# This file is generated from information provided by the datasource.  Changes
+# to it will not persist across an instance reboot.  To disable cloud-init's
+# network configuration capabilities, write a file
+# /etc/cloud/cloud.cfg.d/99-disable-network-config.cfg with the following:
+# network: {config: disabled}
+network:
+  version: 2
+  ethernets:
+    eth0:
+      dhcp4: false
+      optional: true
+      addresses:
+        - 192.168.0.101/24
+      #gateway4: 192.168.0.100   # <---- comment or uncomment
+  wifis:
+    wlan0:
+      dhcp4: true
+      optional: true
+      access-points:
+        mywifiname:
+          password: mypassword
+```
