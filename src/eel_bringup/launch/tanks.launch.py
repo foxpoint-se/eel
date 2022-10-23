@@ -33,7 +33,7 @@ def generate_launch_description():
             {DIRECTION_PIN_PARAM: "18"},
             {DISTANCE_SENSOR_ADDRESS_PARAM: "22"},
             {
-                TANK_FLOOR_MM_PARAM: "11"
+                TANK_FLOOR_MM_PARAM: "15"
             },  # 11 is meausured floor. should possibly be 30 (or david says 20)
             {TANK_CEILING_MM_PARAM: "72"},  # 72 is measured ceiling
             {XSHUT_PIN_PARAM: "0"},
@@ -52,7 +52,7 @@ def generate_launch_description():
     #         {DIRECTION_PIN_PARAM: "25"},
     #         {DISTANCE_SENSOR_ADDRESS_PARAM: "29"},
     #         {TANK_FLOOR_MM_PARAM: "25"},  # 12 is measured floor
-    #         {TANK_CEILING_MM_PARAM: "45"},  # 63 is measured ceiling
+    #         {TANK_CEILING_MM_PARAM: "63"},  # 63 is measured ceiling
     #         {XSHUT_PIN_PARAM: "21"},
     #     ],
     # )
