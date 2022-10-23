@@ -3,6 +3,7 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float32
 from eel_interfaces.msg import TankStatus
+import threading
 from ..utils.constants import (
     SIMULATE_PARAM,
     MOTOR_PIN_PARAM,
@@ -118,6 +119,7 @@ class TankNode(Node):
         self.is_autocorrecting = False
         self.target_level = None
         self.target_status = NO_TARGET  # only used for passing information to frontend
+        self.current_level = None
 
         self.cmd_topic = self.get_parameter(CMD_TOPIC_PARAM).value
         self.status_topic = self.get_parameter(STATUS_TOPIC_PARAM).value
@@ -136,7 +138,7 @@ class TankNode(Node):
         if self.should_simulate:
             self.pump_motor_control = PumpMotorControlSimulator()
             self.distance_sensor = DistanceSensorSimulator(
-                initial_measurement_mm=self.floor_mm,
+                initial_measurement_mm=self.ceiling_mm,
                 update_frequency_hz=UPDATE_FREQUENCY,
                 fill_velocity_mmps=self.fill_velocity_mmps,
                 create_timer=self.create_timer,
@@ -157,7 +159,12 @@ class TankNode(Node):
                 parent_node=self,
             )
 
-        self.level_updater = self.init_timer()
+        self.check_target_updater = self.create_timer(
+            1.0 / UPDATE_FREQUENCY, self.target_loop
+        )
+
+        self.level_updater = threading.Thread(target=self.calculate_level, daemon=True)
+        self.level_updater.start()
 
         self.get_logger().info(
             "{}Tank node started. Motor pin: {}, Direction pin: {}, Distance sensor address: {}, Update frequency: {}".format(
@@ -169,12 +176,6 @@ class TankNode(Node):
             )
         )
 
-    def should_check_against_level(self):
-        return self.target_level is not None and self.is_autocorrecting is True
-
-    def init_timer(self):
-        return self.create_timer(1.0 / UPDATE_FREQUENCY, self.loop)
-
     def start_checking_against_target(self, target):
         self.target_level = target
         self.is_autocorrecting = True
@@ -185,7 +186,7 @@ class TankNode(Node):
 
     def handle_tank_cmd(self, msg):
         requested_target_level = msg.data
-        current_level = self.get_level()
+        current_level = self.current_level
         target_level = clamp(requested_target_level, LEVEL_FLOOR, LEVEL_CEILING)
 
         if not is_within_accepted_target_boundaries(current_level, target_level):
@@ -209,13 +210,16 @@ class TankNode(Node):
         msg.target_status = self.target_status
         self.publisher.publish(msg)
 
-    def loop(self):
-        current_level = self.get_level()
-        target_level = self.target_level
-        if self.should_check_against_level():
-            self.check_against_target(current_level, target_level)
+    def target_loop(self):
+        if (
+            self.target_level is not None
+            and self.current_level
+            and self.is_autocorrecting is True
+        ):
+            self.check_against_target(self.current_level, self.target_level)
 
-        self.publish_status(current_level)
+        if self.current_level is not None:
+            self.publish_status(self.current_level)
 
     def check_against_target(self, current_level, target_level):
         if is_within_accepted_target_boundaries(current_level, target_level):
@@ -245,17 +249,12 @@ class TankNode(Node):
         ):
             self.pump_motor_control.fill()
 
-    def get_level(self):
-        range = self.distance_sensor.get_range()
-
-        range_level = (range - self.floor_mm) / (self.ceiling_mm - self.floor_mm)
-        level_filled = 1 - range_level
-        self.get_logger().info(
-            "Getting range: {} - Range level: {} - Floor: {} - Ceiling: {} - Filled: {}".format(
-                range, range_level, self.floor_mm, self.ceiling_mm, level_filled
-            )
-        )
-        return level_filled
+    def calculate_level(self):
+        while True:
+            range = self.distance_sensor.get_range()
+            range_level = (range - self.floor_mm) / (self.ceiling_mm - self.floor_mm)
+            level_filled = 1 - range_level
+            self.current_level = level_filled
 
 
 def main(args=None):

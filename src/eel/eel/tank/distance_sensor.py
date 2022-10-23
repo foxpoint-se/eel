@@ -22,9 +22,12 @@ def wait_for_address_change(xshut_pin):
     GPIO.output(xshut_pin, ON_LEVEL)
 
 
+# `timing_budget` values
+# 500000: slow but accurate
+# 50000: fast but less accurate
 class DistanceSensor:
     def __init__(
-        self, address, timing_budget=50000, xshut_pin=0, parent_node: Node = None
+        self, address, timing_budget=500000, xshut_pin=0, parent_node: Node = None
     ):
         self.address = address
         self.xshut_pin = xshut_pin
