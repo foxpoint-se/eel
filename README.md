@@ -164,3 +164,109 @@ network:
         mywifiname:
           password: mypassword
 ```
+
+## Setting up Openvpn
+
+### Installing OpenVPN Access Server using AWS
+
+First create a AWS account
+
+Find correct image launch instance -> Market place -> OpenVpn Access Server
+In launch meny create and download your SSL keys .pem file
+
+Continue set up by connecting to your new instance by running the following command in command line:
+
+```ssh -i "{path_to_pem_file}" root@{ip-address}.compute.amazonaws.com```
+
+The variables can be found under connect to instance -> ssh client
+
+Follow the installation instruction by basically choosing default options on every choice given.
+
+Exit current shell and ssh onto the server with the openvpnas user instead
+
+```ssh -i "{path_to_pem_file}" openvpnas@{ip-address}.compute.amazonaws.com```
+
+Change the password for the openvpn user using the following command:
+
+```sudo passwd openvpn```
+
+Now connect to the admin GUI via a browser on address:
+
+```https://{ip-address}/admin```
+
+### Configuring the OpenVPN Access Server
+
+First enable inter-client communication so that connected clients can reach eachother over the VPN.
+
+Settings -> Advanced VPN Settings -> Inter-Client Communication set to yes
+
+Create a static IP Address Network, this will create a subnet under your VPN allowing for clients to recieve a static IP address on that network.
+
+For exampel
+Network Address: 172.27.240.0    Netmark Bits: 20
+
+Create two users for the OpenVPN server
+
+User Management -> User Permisssions
+
+Enter new user name, under more settings set the password for the user and also assign a static IP address under the same subnet as provided under create static IP Address Network. 
+
+### Installing the openvpn3 client
+
+Unsure that apt supports the https transport
+
+```sudo apt-get install apt-transport-https```
+
+Install the OpenVPN repository key used by the OpenVPN 3 Linux packages
+
+```sudo curl -fsSL https://swupdate.openvpn.net/repos/openvpn-repo-pkg-key.pub | gpg --dearmor > /etc/apt/trusted.gpg.d/openvpn-repo-pkg-keyring.gpg```
+
+NOTE: There might be a issue with writing directly to the trusted.gpg.d folder. If so create the file in a less restricted file area and then move the file.
+
+Find out the release name of your ubuntu distro by running
+
+```lsb_release -a```
+
+Copy the codename field
+
+Add the package to the sources list by running, replace DISTRO with the codename copied 
+
+```curl -fsSL https://swupdate.openvpn.net/community/openvpn3/repos/openvpn3-$DISTRO.list >/etc/apt/sources.list.d/openvpn3.list```
+
+Install the client
+
+```sudo apt-get install openvpn3```
+
+### Configuring client
+
+First download the client configuration by visiting the Access Server via the user GUI. In a browser open:
+
+```https://{ip-address}```
+
+Log in with your newly created user credentials. Then download the configuration by pressing the link under Available connection profiles.
+
+To be able to connect to the server without prompting for the credentials we will need to create a log in file. This file should contain two rows, row 1 contains the user name and row 2 the password.
+Create this file under /etc/openvpn3/auth.txt.
+
+Now edit your downloaded configuration file with for exampel vi. 
+
+```vi {connection_profile_path}```
+
+Find the row that says auth-user-pass and edit that line by adding the full path to the auth file
+
+```auth-user-pass /etc/openvpn3/auth.txt```
+
+Now import the configuration profile into the openvpn3 client
+
+```openvpn3 config-import -c {path} --name {new_name_for_profile}```
+
+NOTE: The name is only a covenience for you so that you do not need to provide the full configuration path when connecting.
+
+Configuration should now be done, connect to the server by running
+
+```openvpn3 session-start -c {new_name_for_profile}```
+
+To gracefully terminate a session run
+
+```openvpn3 session-manage -c {new_name_for_profile} --disconnect```
+
