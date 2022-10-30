@@ -168,7 +168,7 @@ class TankNode(Node):
         self.level_updater.start()
 
         self.get_logger().info(
-            "{}Tank node started. Motor pin: {}, Direction pin: {}, Distance sensor address: {}, Update frequency: {}, Range: {} - {} mm".format(
+            "{}Tank node started. Motor pin: {}, Direction pin: {}, Distance sensor address: {}, Update frequency: {}, Range: {} - {} mm, CMD topic: {}, status topic: {}".format(
                 "SIMULATE " if self.should_simulate else "",
                 self.motor_pin,
                 self.direction_pin,
@@ -176,6 +176,8 @@ class TankNode(Node):
                 UPDATE_FREQUENCY,
                 self.floor_mm,
                 self.ceiling_mm,
+                self.cmd_topic,
+                self.status_topic,
             )
         )
 
@@ -270,7 +272,7 @@ class TankNode(Node):
                 self.pump_motor_control.stop()
                 self.stop_checking_against_target()
                 self.target_status = DISTANCE_SENSOR_ERROR
-                self.get_logger().error(err)
+                self.get_logger().error(str(err))
                 # TODO: maybe also have a `__del` method in the tank class or something?
 
 
