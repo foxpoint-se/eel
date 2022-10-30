@@ -3,8 +3,11 @@ import ms5837
 from rclpy.node import Node
 
 # meters
-CALIBRATION_DEPTH_1 = 0
-CALIBRATION_DEPTH_2 = 0.08
+CALIBRATION_DEPTH_1 = 0.03
+CALIBRATION_DEPTH_2 = 0.40
+
+CALIBRATION_VALUE_1 = 201.08855674940125
+CALIBRATION_VALUE_2 = 208.52912813488265
 
 
 class PressureSensor:
@@ -18,10 +21,10 @@ class PressureSensor:
 
         self.logger = parent_node.get_logger()
         self.sensor.setFluidDensity(ms5837.DENSITY_FRESHWATER)
-        self.depth_1_value = None
-        self.depth_2_value = None
+        self.depth_1_value = CALIBRATION_VALUE_1
+        self.depth_2_value = CALIBRATION_VALUE_2
 
-        self._calibrate()
+        # self._calibrate()
 
     def _get_depth_reading(self):
         self.sensor.read()
@@ -46,7 +49,7 @@ class PressureSensor:
         self.logger.info(
             "Second step: Hold pressure sensor at {} m".format(CALIBRATION_DEPTH_2)
         )
-        time.sleep(5)
+        time.sleep(10)
         self.depth_2_value = self._get_depth_reading()
         self.logger.info("Calibration done!")
         self.logger.info(

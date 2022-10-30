@@ -27,7 +27,7 @@ def wait_for_address_change(xshut_pin):
 # 50000: fast but less accurate
 class DistanceSensor:
     def __init__(
-        self, address, timing_budget=500000, xshut_pin=0, parent_node: Node = None
+        self, address, timing_budget=1000000, xshut_pin=0, parent_node: Node = None
     ):
         self.address = address
         self.xshut_pin = xshut_pin
