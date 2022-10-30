@@ -24,7 +24,7 @@ def generate_launch_description():
     front_tank_node = Node(
         package="eel",
         executable="tank",
-        name="tank_node",
+        name="front_tank",
         parameters=[
             {SIMULATE_PARAM: True},
             {CMD_TOPIC_PARAM: FRONT_TANK_CMD},
@@ -41,7 +41,7 @@ def generate_launch_description():
     rear_tank_node = Node(
         package="eel",
         executable="tank",
-        name="tank_node",
+        name="rear_tank",
         parameters=[
             {SIMULATE_PARAM: True},
             {CMD_TOPIC_PARAM: REAR_TANK_CMD},
