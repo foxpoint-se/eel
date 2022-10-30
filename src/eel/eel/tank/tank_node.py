@@ -50,6 +50,7 @@ LEVEL_CEILING = 1.0
 # UPDATE_FREQUENCY = 10 should therefore be plenty.
 UPDATE_FREQUENCY = 10
 
+DISTANCE_SENSOR_ERROR = "distance_sensor_error"
 TARGET_REACHED = "target_reached"
 CEILING_REACHED = "ceiling_reached"
 FLOOR_REACHED = "floor_reached"
@@ -253,15 +254,24 @@ class TankNode(Node):
 
     def calculate_level(self):
         while True:
-            range = self.distance_sensor.get_range()
-            range_level = (range - self.floor_mm) / (self.ceiling_mm - self.floor_mm)
-            level_filled = 1 - range_level
-            self.current_level = level_filled
-            self.get_logger().info(
-                "range: {} - level: {} - filled: {}".format(
-                    range, range_level, level_filled
+            try:
+                range = self.distance_sensor.get_range()
+                range_level = (range - self.floor_mm) / (
+                    self.ceiling_mm - self.floor_mm
                 )
-            )
+                level_filled = 1 - range_level
+                self.current_level = level_filled
+                self.get_logger().info(
+                    "range: {} - level: {} - filled: {}".format(
+                        range, range_level, level_filled
+                    )
+                )
+            except Exception as err:
+                self.pump_motor_control.stop()
+                self.stop_checking_against_target()
+                self.target_status = DISTANCE_SENSOR_ERROR
+                self.get_logger().error(err)
+                # TODO: maybe also have a `__del` method in the tank class or something?
 
 
 def main(args=None):
