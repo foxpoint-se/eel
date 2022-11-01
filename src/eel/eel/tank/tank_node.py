@@ -121,6 +121,7 @@ class TankNode(Node):
         self.target_level = None
         self.target_status = NO_TARGET  # only used for passing information to frontend
         self.current_level = None
+        self.current_range = None
 
         self.cmd_topic = self.get_parameter(CMD_TOPIC_PARAM).value
         self.status_topic = self.get_parameter(STATUS_TOPIC_PARAM).value
@@ -131,10 +132,13 @@ class TankNode(Node):
                 )
             )
 
+        self.debug_topic = "{}_debug".format(self.status_topic)
+
         self.level_cmd_subscription = self.create_subscription(
             Float32, self.cmd_topic, self.handle_tank_cmd, 10
         )
         self.publisher = self.create_publisher(TankStatus, self.status_topic, 10)
+        self.debug_publisher = self.create_publisher(Float32, self.debug_topic, 10)
 
         if self.should_simulate:
             self.pump_motor_control = PumpMotorControlSimulator()
@@ -215,6 +219,10 @@ class TankNode(Node):
         msg.target_status = self.target_status
         self.publisher.publish(msg)
 
+        msg2 = Float32()
+        msg2.data = float(self.current_range or 0.0)
+        self.debug_publisher.publish(msg2)
+
     def target_loop(self):
         if (
             self.target_level is not None
@@ -258,16 +266,17 @@ class TankNode(Node):
         while True:
             try:
                 range = self.distance_sensor.get_range()
+                self.current_range = range
                 range_level = (range - self.floor_mm) / (
                     self.ceiling_mm - self.floor_mm
                 )
                 level_filled = 1 - range_level
                 self.current_level = level_filled
-                self.get_logger().info(
-                    "range: {} - level: {} - filled: {}".format(
-                        range, range_level, level_filled
-                    )
-                )
+                # self.get_logger().info(
+                #     "range: {} - level: {} - filled: {}".format(
+                #         range, range_level, level_filled
+                #     )
+                # )
             except Exception as err:
                 self.pump_motor_control.stop()
                 self.stop_checking_against_target()

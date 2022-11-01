@@ -57,7 +57,15 @@ def generate_launch_description():
         ],
     )
 
+    pressure_node = Node(
+        package="eel",
+        executable="pressure",
+        name="pressure_node",
+        parameters=[{SIMULATE_PARAM: False}],
+    )
+
     ld.add_action(front_tank_node)
     ld.add_action(rear_tank_node)
+    # ld.add_action(pressure_node)
 
     return ld

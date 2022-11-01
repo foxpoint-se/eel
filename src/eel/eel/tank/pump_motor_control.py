@@ -31,7 +31,8 @@ class PumpMotorControl(PumpStateControl):
 
     def _start_motor(self):
         # GPIO.output(self.motor_pin, RUN_GPIO_LEVEL)
-        self.pwm_output.start(80)
+        # self.pwm_output.start(80)
+        self.pwm_output.start(60)
 
     def _stop_motor(self):
         # GPIO.output(self.motor_pin, STOP_GPIO_LEVEL)
