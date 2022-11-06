@@ -72,5 +72,14 @@ install-depth-sensor:		## install stuff needed for depth senson
 		pip install ms5837-python-master/; \
 	)
 
+install-voltage-sensor:		## install stuff needed for depth senson
+	( \
+		wget https://github.com/e71828/pi_ina226/archive/refs/heads/main.zip -O voltage-lib.zip; \
+		unzip voltage-lib.zip; \
+		touch pi_ina226-main/COLCON_IGNORE; \
+		source .venv/bin/activate; \
+		pip install pi_ina226-main/; \
+	)
+
 detect-i2c:		## detect i2c
 	sudo i2cdetect -y 1
