@@ -270,3 +270,145 @@ To gracefully terminate a session run
 
 ```openvpn3 session-manage -c {new_name_for_profile} --disconnect```
 
+## Installing modem
+
+Installation scripts are provided by the provider and the guide can be found under:
+
+https://docs.sixfab.com/page/qmi-interface-internet-connection-setup-using-sixfab-shield-hat
+
+Connection script can then be found under /opt/qmi_files/quectel-CM
+Run the connection script with
+
+```sudo ./quectel-CM -s [YOUR APN]```
+
+For easier access it is suggested to do a symlink into /usr/bin so that it is added to path
+
+```ln /opt/qmi_files/quectel-CM/quectel-CM /urs/bin```
+
+## Scripts and service files for auto modem/vpn usage
+
+In a modem connect script we can search for the expected ipv4 address that we would get from a wifi connection.
+If we do not find that address under ifconfig after 20 seconds then we start the modem.
+
+```#!/bin/bash
+
+LAN_IP_ADDRESS="192.168.0.222"
+NOF_TRYS=20
+TRY_NR=1
+
+echo "Looking for ip ${LAN_IP_ADDRESS} among interfaces"
+while [ $TRY_NR -le $NOF_TRYS ]
+do
+  IF_CONFIG=$(ifconfig | grep $LAN_IP_ADDRESS)
+
+  if [[ "$IF_CONFIG" == *"$LAN_IP_ADDRESS"*  ]]; then
+    break
+  fi
+
+  ((TRY_NR++))
+  sleep 1
+done
+
+if [ $TRY_NR -le $NOF_TRYS ]; then
+  echo "Found address ${LAN_IP_ADDRESS} no need for modem"
+  exit 0
+fi
+
+echo "Did not find address ${LAN_IP_ADDRESS} starting modem"
+quectel-CM -s 4g.tele2.se
+```
+
+Like wise for openvpn connections we could wait for the wwan0 interface (interface provided by modem) to show up under ifconfig.
+
+```#!/bin/bash
+
+MODEM_INTERFACE="wwan0"
+NOF_TRYS=20
+TRY_NR=1
+
+echo "Waiting 20 seconds for modem to verify ip address initiate connection" 
+sleep 20
+
+echo "Starting to scan for ${MODEM_INTERFACE} interface"
+while [ $TRY_NR -le $NOF_TRYS ]
+do
+  IF_CONFIG=$(ifconfig | grep $MODEM_INTERFACE)
+
+  if [[ "$IF_CONFIG" == *"$MODEM_INTERFACE"*  ]]; then
+    break
+  fi
+
+  ((TRY_NR++))
+  sleep 1
+done
+
+if [ $TRY_NR -ge $NOF_TRYS ]; then
+  echo "Did not find interface ${MODEM_INTERFACE} will not initiate openvpn tunneling. Use local ip address"
+  exit 0
+fi
+
+echo "Found interface ${MODEM_INTERFACE} initiating opnvpn tunneling"
+openvpn3 session-start --config /home/ubuntu/pi-user.ovpn
+
+while true
+do
+  openvpn3 session-stats --config /home/ubuntu/pi-user.ovpn
+  sleep 15
+done
+
+```
+
+Our systemd service file would want to know how to dissconnect from openvpn3 on shutdown. We create a script for that also.
+
+```#!/bin/bash
+
+openvpn3 session-manage --config /home/ubuntu/pi-user.ovpn --disconnect
+``` 
+
+We can then create two systemd service files one for modem connection and one for vpn connection. Start off with the modem service file.
+
+```sudo touch modem.service && sudo vi modem.service```
+
+```
+[Unit]
+Description=Service to connect to 4g network via modem
+
+[Service]
+Type=simple
+ExecStart=/bin/bash /usr/bin/modem_connect
+
+[Install]
+WantedBy=multi-user.target 
+
+```
+
+Move the file to the systemd service files
+```sudo cp modem.service /etc/systemd/system```
+
+Change the permissions for systemd to use the service
+```sudo chmod 644 /etc/systemd/system/modem.service```
+
+And then enable the service to run on boot
+```sudo systemctl enable modem```
+
+Now create a service file for the openvpn connection.
+
+```sudo touch openvpn.service && sudo vi openvpn.service```
+
+Add the following to the file
+
+```[Unit]
+Description=A service to automatically connect to openvpn with a given config
+Wants=modem.service
+After=network.target modem.service
+
+[Service]
+type=forking
+ExecStart=/bin/bash /usr/bin/openvpn_connect
+ExecStop=/bin/bash /usr/bin/openvpn_disconnect
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Now do the same steps as for modem service with move, chmod and enable.
