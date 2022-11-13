@@ -58,6 +58,16 @@ source source_me.sh
 make start
 ```
 
+## I2C addresses
+
+| Address | Device                 | Comment                        |
+| ------- | ---------------------- | ------------------------------ |
+| 28      | IMU (BNO055)           |                                |
+| 29      | Front: Distance sensor | Will be moved to 1d on startup |
+| 29      | Rear: Distance sensor  |                                |
+| 40      | Voltage sensor         |                                |
+| 76      | Pressure sensor        |                                |
+
 ## Notes on running `imu` node
 
 Plug in the BNO055 module to some pins (not sure which ones..? Possibly like this: https://learn.adafruit.com/bno055-absolute-orientation-sensor-with-raspberry-pi-and-beaglebone-black/hardware)
@@ -178,7 +188,7 @@ In launch meny create and download your SSL keys .pem file
 
 Continue set up by connecting to your new instance by running the following command in command line:
 
-```ssh -i "{path_to_pem_file}" root@{ip-address}.compute.amazonaws.com```
+`ssh -i "{path_to_pem_file}" root@{ip-address}.compute.amazonaws.com`
 
 The variables can be found under connect to instance -> ssh client
 
@@ -186,15 +196,15 @@ Follow the installation instruction by basically choosing default options on eve
 
 Exit current shell and ssh onto the server with the openvpnas user instead
 
-```ssh -i "{path_to_pem_file}" openvpnas@{ip-address}.compute.amazonaws.com```
+`ssh -i "{path_to_pem_file}" openvpnas@{ip-address}.compute.amazonaws.com`
 
 Change the password for the openvpn user using the following command:
 
-```sudo passwd openvpn```
+`sudo passwd openvpn`
 
 Now connect to the admin GUI via a browser on address:
 
-```https://{ip-address}/admin```
+`https://{ip-address}/admin`
 
 ### Configuring the OpenVPN Access Server
 
@@ -205,72 +215,72 @@ Settings -> Advanced VPN Settings -> Inter-Client Communication set to yes
 Create a static IP Address Network, this will create a subnet under your VPN allowing for clients to recieve a static IP address on that network.
 
 For exampel
-Network Address: 172.27.240.0    Netmark Bits: 20
+Network Address: 172.27.240.0 Netmark Bits: 20
 
 Create two users for the OpenVPN server
 
 User Management -> User Permisssions
 
-Enter new user name, under more settings set the password for the user and also assign a static IP address under the same subnet as provided under create static IP Address Network. 
+Enter new user name, under more settings set the password for the user and also assign a static IP address under the same subnet as provided under create static IP Address Network.
 
 ### Installing the openvpn3 client
 
 Unsure that apt supports the https transport
 
-```sudo apt-get install apt-transport-https```
+`sudo apt-get install apt-transport-https`
 
 Install the OpenVPN repository key used by the OpenVPN 3 Linux packages
 
-```sudo curl -fsSL https://swupdate.openvpn.net/repos/openvpn-repo-pkg-key.pub | gpg --dearmor > /etc/apt/trusted.gpg.d/openvpn-repo-pkg-keyring.gpg```
+`sudo curl -fsSL https://swupdate.openvpn.net/repos/openvpn-repo-pkg-key.pub | gpg --dearmor > /etc/apt/trusted.gpg.d/openvpn-repo-pkg-keyring.gpg`
 
 NOTE: There might be a issue with writing directly to the trusted.gpg.d folder. If so create the file in a less restricted file area and then move the file.
 
 Find out the release name of your ubuntu distro by running
 
-```lsb_release -a```
+`lsb_release -a`
 
 Copy the codename field
 
-Add the package to the sources list by running, replace DISTRO with the codename copied 
+Add the package to the sources list by running, replace DISTRO with the codename copied
 
-```curl -fsSL https://swupdate.openvpn.net/community/openvpn3/repos/openvpn3-$DISTRO.list >/etc/apt/sources.list.d/openvpn3.list```
+`curl -fsSL https://swupdate.openvpn.net/community/openvpn3/repos/openvpn3-$DISTRO.list >/etc/apt/sources.list.d/openvpn3.list`
 
 Install the client
 
-```sudo apt-get install openvpn3```
+`sudo apt-get install openvpn3`
 
 ### Configuring client
 
 First download the client configuration by visiting the Access Server via the user GUI. In a browser open:
 
-```https://{ip-address}```
+`https://{ip-address}`
 
 Log in with your newly created user credentials. Then download the configuration by pressing the link under Available connection profiles.
 
 To be able to connect to the server without prompting for the credentials we will need to create a log in file. This file should contain two rows, row 1 contains the user name and row 2 the password.
 Create this file under /etc/openvpn3/auth.txt.
 
-Now edit your downloaded configuration file with for exampel vi. 
+Now edit your downloaded configuration file with for exampel vi.
 
-```vi {connection_profile_path}```
+`vi {connection_profile_path}`
 
 Find the row that says auth-user-pass and edit that line by adding the full path to the auth file
 
-```auth-user-pass /etc/openvpn3/auth.txt```
+`auth-user-pass /etc/openvpn3/auth.txt`
 
 Now import the configuration profile into the openvpn3 client
 
-```openvpn3 config-import -c {path} --name {new_name_for_profile}```
+`openvpn3 config-import -c {path} --name {new_name_for_profile}`
 
 NOTE: The name is only a covenience for you so that you do not need to provide the full configuration path when connecting.
 
 Configuration should now be done, connect to the server by running
 
-```openvpn3 session-start -c {new_name_for_profile}```
+`openvpn3 session-start -c {new_name_for_profile}`
 
 To gracefully terminate a session run
 
-```openvpn3 session-manage -c {new_name_for_profile} --disconnect```
+`openvpn3 session-manage -c {new_name_for_profile} --disconnect`
 
 ## Installing modem
 
@@ -281,11 +291,11 @@ https://docs.sixfab.com/page/qmi-interface-internet-connection-setup-using-sixfa
 Connection script can then be found under /opt/qmi_files/quectel-CM
 Run the connection script with
 
-```sudo ./quectel-CM -s [YOUR APN]```
+`sudo ./quectel-CM -s [YOUR APN]`
 
 For easier access it is suggested to do a symlink into /usr/bin so that it is added to path
 
-```ln /opt/qmi_files/quectel-CM/quectel-CM /urs/bin```
+`ln /opt/qmi_files/quectel-CM/quectel-CM /urs/bin`
 
 ## Scripts and service files for auto modem/vpn usage
 
@@ -328,7 +338,7 @@ MODEM_INTERFACE="wwan0"
 NOF_TRYS=20
 TRY_NR=1
 
-echo "Waiting 20 seconds for modem to verify ip address initiate connection" 
+echo "Waiting 20 seconds for modem to verify ip address initiate connection"
 sleep 20
 
 echo "Starting to scan for ${MODEM_INTERFACE} interface"
@@ -365,11 +375,11 @@ Our systemd service file would want to know how to dissconnect from openvpn3 on 
 ```#!/bin/bash
 
 openvpn3 session-manage --config /home/ubuntu/pi-user.ovpn --disconnect
-``` 
+```
 
 We can then create two systemd service files one for modem connection and one for vpn connection. Start off with the modem service file.
 
-```sudo touch modem.service && sudo vi modem.service```
+`sudo touch modem.service && sudo vi modem.service`
 
 ```
 [Unit]
@@ -380,22 +390,22 @@ Type=simple
 ExecStart=/bin/bash /usr/bin/modem_connect
 
 [Install]
-WantedBy=multi-user.target 
+WantedBy=multi-user.target
 
 ```
 
 Move the file to the systemd service files
-```sudo cp modem.service /etc/systemd/system```
+`sudo cp modem.service /etc/systemd/system`
 
 Change the permissions for systemd to use the service
-```sudo chmod 644 /etc/systemd/system/modem.service```
+`sudo chmod 644 /etc/systemd/system/modem.service`
 
 And then enable the service to run on boot
-```sudo systemctl enable modem```
+`sudo systemctl enable modem`
 
 Now create a service file for the openvpn connection.
 
-```sudo touch openvpn.service && sudo vi openvpn.service```
+`sudo touch openvpn.service && sudo vi openvpn.service`
 
 Add the following to the file
 
