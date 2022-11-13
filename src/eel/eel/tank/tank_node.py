@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
+from rclpy.executors import ExternalShutdownException
 from std_msgs.msg import Float32
 from eel_interfaces.msg import TankStatus
 import threading
@@ -288,8 +289,17 @@ class TankNode(Node):
 def main(args=None):
     rclpy.init(args=args)
     node = TankNode()
-    rclpy.spin(node)
-    rclpy.shutdown()
+
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    except ExternalShutdownException:
+        sys.exit(1)
+    finally:
+        node.pump_motor_control.stop()
+        node.stop_checking_against_target()
+        rclpy.try_shutdown()
 
 
 if __name__ == "__main__":
