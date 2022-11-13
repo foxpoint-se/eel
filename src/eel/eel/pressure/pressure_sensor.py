@@ -59,5 +59,6 @@ class PressureSensor:
             "Value at {} m: {}".format(CALIBRATION_DEPTH_2, self.depth_2_value)
         )
 
+    # TODO: some kind of while loop, that gets all readings. and then publish at desired frequency
     def get_current_depth(self):
         return self._get_calibrated_depth_reading()
