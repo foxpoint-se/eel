@@ -37,10 +37,13 @@ class PressureNode(Node):
         )
 
     def publish_status(self):
-        current_depth = self.sensor.get_current_depth()
-        msg = PressureStatus()
-        msg.depth = current_depth
-        self.publisher.publish(msg)
+        try:
+            current_depth = self.sensor.get_current_depth()
+            msg = PressureStatus()
+            msg.depth = current_depth
+            self.publisher.publish(msg)
+        except OSError as error:
+            self.get_logger().debug("Could not get depth reading")
 
 
 def main(args=None):
