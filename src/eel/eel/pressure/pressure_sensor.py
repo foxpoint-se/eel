@@ -13,6 +13,7 @@ CALIBRATION_VALUE_2 = 208.52912813488265
 class PressureSensor:
     def __init__(self, parent_node: Node) -> None:
         self.sensor = ms5837.MS5837_30BA()
+        # TODO: try catch on startup, and try again in some way
         if not self.sensor.init():
             raise RuntimeError("Pressure sensor could not be initialized")
 
