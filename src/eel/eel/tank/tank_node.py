@@ -280,8 +280,8 @@ class TankNode(Node):
                 #     )
                 # )
             except Exception as err:
-                self.pump_motor_control.stop()
-                self.stop_checking_against_target()
+                # self.pump_motor_control.stop()
+                # self.stop_checking_against_target()
                 self.target_status = DISTANCE_SENSOR_ERROR
                 self.get_logger().error(str(err))
                 # TODO: maybe also have a `__del` method in the tank class or something?
