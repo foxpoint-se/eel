@@ -1,8 +1,16 @@
+import random
 from time import time, sleep
 
 
 def calculate_position_delta(linear_velocity, time_delta):
     return linear_velocity * time_delta
+
+
+OS_ERROR_RATE = 0.5
+
+
+def should_raise_oserror():
+    return random.random() < OS_ERROR_RATE
 
 
 class DistanceSensorSimulator:
@@ -35,6 +43,10 @@ class DistanceSensorSimulator:
         )
 
     def get_range(self):
+        # to simulate that reading sometimes fails.
+        if should_raise_oserror():
+            raise OSError("Simulating OSError")
+
         # to simulate that actual sensor measurement takes some time, depending on `timing_budget`
         sleep(0.3)
         return self.current_range
