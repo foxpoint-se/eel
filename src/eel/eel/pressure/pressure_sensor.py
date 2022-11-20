@@ -24,7 +24,7 @@ class PressureSensor:
         self.depth_1_value = CALIBRATION_VALUE_1
         self.depth_2_value = CALIBRATION_VALUE_2
 
-        # self._calibrate()
+        self._calibrate()
 
     def _get_depth_reading(self):
         self.sensor.read()
