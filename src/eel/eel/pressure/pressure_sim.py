@@ -1,3 +1,4 @@
+import random
 from rclpy.node import Node
 from eel_interfaces.msg import TankStatus
 from time import time
@@ -9,6 +10,12 @@ TERMINAL_VELOCITY_MPS = 0.5
 
 MAX_DEPTH = 10.0
 MIN_DEPTH = 0.0
+
+OS_ERROR_RATE = 0.1
+
+
+def should_raise_oserror():
+    return random.random() < OS_ERROR_RATE
 
 
 def get_neutral_offset(tank_level, neutral_level, neutral_tolerance):
@@ -91,4 +98,7 @@ class PressureSensorSimulator:
         self._last_updated_at = time()
 
     def get_current_depth(self):
+        if should_raise_oserror():
+            raise OSError("Simulating OSError")
+
         return self._current_depth
