@@ -42,8 +42,8 @@ class PressureNode(Node):
             msg = PressureStatus()
             msg.depth = current_depth
             self.publisher.publish(msg)
-        except OSError as error:
-            self.get_logger().debug("Could not get depth reading")
+        except OSError as err:
+            self.get_logger().error(str(err))
 
 
 def main(args=None):
