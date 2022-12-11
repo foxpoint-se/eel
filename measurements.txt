@@ -1,0 +1,41 @@
+time to sink
+
+2.55 sec
+2.44 sec
+2.64 sec
+2.74 sec
+2.80 sec
+
+avg: 2.634
+
+51 cm - 11.4 cm = 39.6 cm
+
+s = v * t
+
+0.396 / 2.634 = 0.1503 
+
+0.1503 m/s
+
+====
+
+25 degrees
+4.03 sec
+
+25 degrees
+3.97 sec
+
+25 degrees
+3.32 sec
+
+25 degrees
+3.69 sec
+
+24 degrees
+3.15 sec
+
+
+4.03 + 3.97 + 3.32 + 3.69 + 3.15 = 18.16 sec
+
+18.16 / 5 = 3.632 sec
+
+25 degrees / 3.632 = 6.8833 deg/sec
