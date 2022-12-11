@@ -64,8 +64,15 @@ def generate_launch_description():
         parameters=[{SIMULATE_PARAM: False}],
     )
 
+    battery_node = Node(
+        package="eel",
+        executable="battery",
+        name="battery_node",
+    )
+
     ld.add_action(front_tank_node)
     ld.add_action(rear_tank_node)
     ld.add_action(pressure_node)
+    ld.add_action(battery_node)
 
     return ld

@@ -55,6 +55,12 @@ def generate_launch_description():
         name="motor_node",
     )
 
+    battery_node = Node(
+        package="eel",
+        executable="battery",
+        name="battery_node",
+    )
+
     ld.add_action(navigation_node)
     ld.add_action(should_simulate_arg)
     ld.add_action(gnss_node)
@@ -62,5 +68,6 @@ def generate_launch_description():
     ld.add_action(radio_node)
     ld.add_action(rudder_node)
     ld.add_action(motor_node)
+    ld.add_action(battery_node)
 
     return ld
