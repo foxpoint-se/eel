@@ -44,10 +44,42 @@
 # Tu = 28.0
 # ======================================================
 
+# ======================================================
+# Measured values in production mode
+# ======================================================
+# Depth
+# Kp = 16.0     Ki = 0      Kd = 0
+# ------------------------------------------------------
+# Ku = 16.0
+# Tu = 38.0
+# ======================================================
+# Pitch
+# Kp = 0.5     Ki = 0      Kd = 0
+# ------------------------------------------------------
+# Ku = 0.5
+# Tu = 28.0
+# ======================================================
 
-def get_simulation_pid_settings():
+
+# "Prod" sim
+# 471 - 433 = 38 sec
+# Go with 16 for now. Should probably be a bit higher, e. g. 20
+# depth_Kp = 16.0
+# depth_Ki = 0.0
+# depth_Kd = 0.0
+
+
+def get_simulation_pid_settings_OLD_BUT_WORKS_WELL_IN_SIM():
     depth_Ku = 8.0
     depth_Tu = 43.0
+    pitch_Ku = 0.5
+    pitch_Tu = 28.0
+    return depth_Ku, depth_Tu, pitch_Ku, pitch_Tu
+
+
+def get_simulation_pid_settings():
+    depth_Ku = 16.0
+    depth_Tu = 38.0
     pitch_Ku = 0.5
     pitch_Tu = 28.0
     return depth_Ku, depth_Tu, pitch_Ku, pitch_Tu
