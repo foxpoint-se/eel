@@ -7,9 +7,6 @@ from std_msgs.msg import Float32
 from time import time
 import math
 
-# TODO: remove and uninstall simple-pid?
-from simple_pid import PID
-
 from eel_interfaces.msg import (
     DepthControlStatus,
     DepthControlCmd,
