@@ -31,3 +31,6 @@ PRESSURE_STATUS = "pressure/status"
 # Pressure
 DEPTH_CONTROL_STATUS = "depth_control/status"
 DEPTH_CONTROL_CMD = "depth_control/cmd"
+
+# Battery
+BATTERY_STATUS = "battery/status"

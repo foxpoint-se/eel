@@ -26,6 +26,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/PressureStatus.msg"
   "msg/DepthControlStatus.msg"
   "msg/DepthControlCmd.msg"
+  "msg/BatteryStatus.msg"
 )
 
 ament_package()
