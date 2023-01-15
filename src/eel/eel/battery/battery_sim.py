@@ -1,3 +1,4 @@
+from rclpy.node import Node
 from time import time
 
 BATTERY_MAX_VOLTAGE = 16.8

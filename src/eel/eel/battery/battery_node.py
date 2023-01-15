@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import rlcpy
+import rclpy
 from rclpy.node import Node
 from eel_interfaces.msg import BatteryStatus
 from .battery_sensor import BatterySensor

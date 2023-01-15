@@ -28,6 +28,7 @@ setup(
             "tank = eel.tank.tank_node:main",
             "pressure = eel.pressure.pressure_node:main",
             "depth_control = eel.depth_control.depth_control_node:main",
+            "battery = eel.battery.battery_node:main",
         ],
     },
 )
