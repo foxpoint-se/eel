@@ -24,12 +24,12 @@ def generate_launch_description():
         parameters=[{SIMULATE_PARAM: True}],
     )
 
-    radio_node = Node(
-        package="eel",
-        executable="radio",
-        name="radio_node",
-        parameters=[{SIMULATE_PARAM: True}],
-    )
+    # radio_node = Node(
+    #     package="eel",
+    #     executable="radio",
+    #     name="radio_node",
+    #     parameters=[{SIMULATE_PARAM: True}],
+    # )
 
     rudder_node = Node(
         package="eel",
@@ -60,7 +60,7 @@ def generate_launch_description():
     )
 
     ld.add_action(navigation_node)
-    ld.add_action(radio_node)
+    # ld.add_action(radio_node)
     ld.add_action(rudder_node)
     ld.add_action(motor_node)
     ld.add_action(imu_node)
