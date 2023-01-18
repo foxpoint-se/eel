@@ -6,7 +6,8 @@ def calculate_position_delta(linear_velocity, time_delta):
     return linear_velocity * time_delta
 
 
-OS_ERROR_RATE = 0.1
+# OS_ERROR_RATE = 0.1
+OS_ERROR_RATE = 0.0
 
 
 def should_raise_oserror():
