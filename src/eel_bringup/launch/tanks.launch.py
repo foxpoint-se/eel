@@ -21,24 +21,24 @@ XSHUT_PIN_PARAM = "xshut_pin_param"
 def generate_launch_description():
     ld = LaunchDescription()
 
-    front_tank_node = Node(
-        package="eel",
-        executable="tank",
-        name="front_tank",
-        parameters=[
-            {SIMULATE_PARAM: False},
-            {CMD_TOPIC_PARAM: FRONT_TANK_CMD},
-            {STATUS_TOPIC_PARAM: FRONT_TANK_STATUS},
-            {MOTOR_PIN_PARAM: "23"},
-            {DIRECTION_PIN_PARAM: "18"},
-            {DISTANCE_SENSOR_ADDRESS_PARAM: "22"},
-            {
-                TANK_FLOOR_MM_PARAM: "15"
-            },  # 11 is meausured floor. should possibly be 30 (or david says 20)
-            {TANK_CEILING_MM_PARAM: "72"},  # 72 is measured ceiling
-            {XSHUT_PIN_PARAM: "0"},
-        ],
-    )
+    # front_tank_node = Node(
+    #     package="eel",
+    #     executable="tank",
+    #     name="front_tank",
+    #     parameters=[
+    #         {SIMULATE_PARAM: False},
+    #         {CMD_TOPIC_PARAM: FRONT_TANK_CMD},
+    #         {STATUS_TOPIC_PARAM: FRONT_TANK_STATUS},
+    #         {MOTOR_PIN_PARAM: "23"},
+    #         {DIRECTION_PIN_PARAM: "18"},
+    #         {DISTANCE_SENSOR_ADDRESS_PARAM: "22"},
+    #         {
+    #             TANK_FLOOR_MM_PARAM: "15"
+    #         },  # 11 is meausured floor. should possibly be 30 (or david says 20)
+    #         {TANK_CEILING_MM_PARAM: "72"},  # 72 is measured ceiling
+    #         {XSHUT_PIN_PARAM: "0"},
+    #     ],
+    # )
 
     rear_tank_node = Node(
         package="eel",
@@ -64,11 +64,7 @@ def generate_launch_description():
         parameters=[{SIMULATE_PARAM: False}],
     )
 
-    battery_node = Node(
-        package="eel",
-        executable="battery",
-        name="battery_node"
-    )
+    battery_node = Node(package="eel", executable="battery", name="battery_node")
 
     imu_node = Node(
         package="eel",
@@ -77,7 +73,7 @@ def generate_launch_description():
         parameters=[{SIMULATE_PARAM: False}],
     )
 
-    ld.add_action(front_tank_node)
+    # ld.add_action(front_tank_node)
     ld.add_action(rear_tank_node)
     ld.add_action(pressure_node)
     ld.add_action(battery_node)
