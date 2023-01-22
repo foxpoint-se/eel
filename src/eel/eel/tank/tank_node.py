@@ -92,6 +92,8 @@ def should_fill(current_level, target_level):
 def should_empty(current_level, target_level):
     return current_level > target_level
 
+# NOTE: example usage
+# ros2 run eel tank --ros-args -p simulate:=False -p cmd_topic:=/tank_rear/cmd -p status_topic:=/tank_rear/status -p motor_pin:=24 -p direction_pin:=25 -p tank_floor_mm:=15 -p tank_ceiling_mm:=63 -p xshut_pin_param:=21
 
 class TankNode(Node):
     def __init__(self):
