@@ -60,13 +60,14 @@ make start
 
 ## I2C addresses
 
-| Address | Device                 | Comment                        |
-| ------- | ---------------------- | ------------------------------ |
-| 28      | IMU (BNO055)           |                                |
-| 29      | Front: Distance sensor | Will be moved to 1d on startup |
-| 29      | Rear: Distance sensor  | Will be moved to 16 on startup |
-| 40      | Voltage sensor         |                                |
-| 76      | Pressure sensor        |                                |
+| Address | Device                           | Comment                        |
+| ------- | -------------------------------- | ------------------------------ |
+| 28      | IMU (BNO055)                     |                                |
+| 29      | Front: Distance sensor           | Will be moved to 1d on startup |
+| 29      | Rear: Distance sensor            | Will be moved to 16 on startup |
+| 40      | Voltage sensor                   |                                |
+| 48      | AD converter for potentionmeters |                                |
+| 76      | Pressure sensor                  |                                |
 
 ## Notes on running `imu` node
 
