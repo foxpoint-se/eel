@@ -154,17 +154,21 @@ class TankNode(Node):
             )
         else:
             from .pump_motor_control import PumpMotorControl
-            from .distance_sensor import DistanceSensor
+
+            # from .distance_sensor import DistanceSensor
+            from .distance_sensor_potentiometer import DistanceSensorPotentiometer
 
             self.pump_motor_control = PumpMotorControl(
                 motor_pin=self.motor_pin, direction_pin=self.direction_pin
             )
 
-            self.distance_sensor = DistanceSensor(
-                address=self.distance_sensor_address,
-                xshut_pin=self.xshut_pin,
-                parent_node=self,
-            )
+            # self.distance_sensor = DistanceSensor(
+            #     address=self.distance_sensor_address,
+            #     xshut_pin=self.xshut_pin,
+            #     parent_node=self,
+            # )
+
+            self.distance_sensor = DistanceSensorPotentiometer()
 
         self.check_target_updater = self.create_timer(
             1.0 / UPDATE_FREQUENCY, self.target_loop
