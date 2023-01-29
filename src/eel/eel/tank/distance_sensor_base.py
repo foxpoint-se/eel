@@ -3,5 +3,5 @@ from abc import abstractmethod
 
 class DistanceSensorBase:
     @abstractmethod
-    def get_range(self) -> float:
+    def get_level(self) -> float:
         pass
