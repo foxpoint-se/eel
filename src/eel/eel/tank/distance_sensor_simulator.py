@@ -14,6 +14,12 @@ def should_raise_oserror():
     return random.random() < OS_ERROR_RATE
 
 
+# TODO: get rid of mm variables.
+# TODO: get rid of fill velocity param.
+# TODO: different fill and empty velocities. filling is faster. something like 60 s to fill, and double to empty?
+# TODO: get rid of error simulation?
+
+
 class DistanceSensorSimulator:
     def __init__(
         self,
