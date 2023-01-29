@@ -5,11 +5,9 @@ from adafruit_ads1x15.analog_in import AnalogIn
 from .distance_sensor_base import DistanceSensorBase
 
 
-POTENTIOMETER_FLOOR = 0
-POTENTIOMETER_CEILING = 26600
-
-PISTON_FLOOR_MM = 15
-PISTON_CEILING_MM = 63
+# NOTE: range when using full range of potentiometer
+# floor = 0
+# ceiling = 26600
 
 
 def translate_from_range_to_range(value, from_min, from_max, to_min, to_max):
@@ -24,36 +22,45 @@ def translate_from_range_to_range(value, from_min, from_max, to_min, to_max):
     return to_min + (value_scaled * right_span)
 
 
-def cap_value(value):
-    if value > POTENTIOMETER_CEILING:
-        return POTENTIOMETER_CEILING
-    elif value < POTENTIOMETER_FLOOR:
-        return POTENTIOMETER_FLOOR
+def cap_value(value, floor, ceiling):
+    if value > ceiling:
+        return ceiling
+    elif value < floor:
+        return floor
     return value
 
 
 class DistanceSensorPotentiometer(DistanceSensorBase):
-    def __init__(self) -> None:
+    def __init__(self, floor=5000, ceiling=17000, pin=None) -> None:
         super().__init__()
+        if pin == 1:
+            self.pin = ADS.P1
+        elif pin == 0:
+            self.pin = ADS.P0
+        else:
+            raise Exception("Invalid pin number for potentiometer", pin)
+        self.floor = floor
+        self.ceiling = ceiling
         self.__i2c = busio.I2C(board.SCL, board.SDA)
         self.__ads = ADS.ADS1015(self.__i2c)
-        # TODO: make the pin dynamic
-        self.__channel = AnalogIn(self.__ads, ADS.P1)
+
+        # NOTE: front tank uses P1. rear uses P0
+        self.__channel = AnalogIn(self.__ads, self.pin)
 
     def __get_raw_value(self):
         return self.__channel.value
 
     def __get_pretty_value(self):
         raw = self.__get_raw_value()
-        capped = cap_value(raw)
-        to_mm = translate_from_range_to_range(
+        capped = cap_value(raw, self.floor, self.ceiling)
+        level = translate_from_range_to_range(
             capped,
-            POTENTIOMETER_FLOOR,
-            POTENTIOMETER_CEILING,
-            PISTON_FLOOR_MM,
-            PISTON_CEILING_MM,
+            self.floor,
+            self.ceiling,
+            0.0,
+            1.0,
         )
-        return to_mm
+        return level
 
-    def get_range(self) -> float:
+    def get_level(self) -> float:
         return self.__get_pretty_value()

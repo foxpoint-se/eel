@@ -4,7 +4,7 @@ from launch_ros.actions import Node
 SIMULATE_PARAM = "simulate"
 MOTOR_PIN_PARAM = "motor_pin"
 DIRECTION_PIN_PARAM = "direction_pin"
-DISTANCE_SENSOR_ADDRESS_PARAM = "distance_sensor_address"
+DISTANCE_SENSOR_PIN_PARAM = "distance_sensor_pin"
 CMD_TOPIC_PARAM = "cmd_topic"
 STATUS_TOPIC_PARAM = "status_topic"
 
@@ -13,49 +13,44 @@ FRONT_TANK_STATUS = "tank_front/status"
 REAR_TANK_CMD = "tank_rear/cmd"
 REAR_TANK_STATUS = "tank_rear/status"
 
-TANK_FLOOR_MM_PARAM = "tank_floor_mm"
-TANK_CEILING_MM_PARAM = "tank_ceiling_mm"
-XSHUT_PIN_PARAM = "xshut_pin_param"
+TANK_FLOOR_VALUE_PARAM = "tank_floor_value"
+TANK_CEILING_VALUE_PARAM = "tank_ceiling_value"
 
 
 def generate_launch_description():
     ld = LaunchDescription()
 
-    # front_tank_node = Node(
-    #     package="eel",
-    #     executable="tank",
-    #     name="front_tank",
-    #     parameters=[
-    #         {SIMULATE_PARAM: False},
-    #         {CMD_TOPIC_PARAM: FRONT_TANK_CMD},
-    #         {STATUS_TOPIC_PARAM: FRONT_TANK_STATUS},
-    #         {MOTOR_PIN_PARAM: "23"},
-    #         {DIRECTION_PIN_PARAM: "18"},
-    #         {DISTANCE_SENSOR_ADDRESS_PARAM: "22"},
-    #         {
-    #             TANK_FLOOR_MM_PARAM: "15"
-    #         },  # 11 is meausured floor. should possibly be 30 (or david says 20)
-    #         {TANK_CEILING_MM_PARAM: "72"},  # 72 is measured ceiling
-    #         {XSHUT_PIN_PARAM: "0"},
-    #     ],
-    # )
-
-    rear_tank_node = Node(
+    front_tank_node = Node(
         package="eel",
         executable="tank",
-        name="rear_tank",
+        name="front_tank",
         parameters=[
             {SIMULATE_PARAM: False},
-            {CMD_TOPIC_PARAM: REAR_TANK_CMD},
-            {STATUS_TOPIC_PARAM: REAR_TANK_STATUS},
-            {MOTOR_PIN_PARAM: "24"},
-            {DIRECTION_PIN_PARAM: "25"},
-            {DISTANCE_SENSOR_ADDRESS_PARAM: "29"},
-            {TANK_FLOOR_MM_PARAM: "15"},  # 12 is measured floor
-            {TANK_CEILING_MM_PARAM: "63"},  # 63 is measured ceiling
-            {XSHUT_PIN_PARAM: "21"},
+            {CMD_TOPIC_PARAM: FRONT_TANK_CMD},
+            {STATUS_TOPIC_PARAM: FRONT_TANK_STATUS},
+            {MOTOR_PIN_PARAM: "23"},
+            {DIRECTION_PIN_PARAM: "18"},
+            {DISTANCE_SENSOR_PIN_PARAM: "1"},
+            {TANK_FLOOR_VALUE_PARAM: "4736"},
+            {TANK_CEILING_VALUE_PARAM: "18256"},
         ],
     )
+
+    # rear_tank_node = Node(
+    #     package="eel",
+    #     executable="tank",
+    #     name="rear_tank",
+    #     parameters=[
+    #         {SIMULATE_PARAM: False},
+    #         {CMD_TOPIC_PARAM: REAR_TANK_CMD},
+    #         {STATUS_TOPIC_PARAM: REAR_TANK_STATUS},
+    #         {MOTOR_PIN_PARAM: "24"},
+    #         {DIRECTION_PIN_PARAM: "25"},
+    #         {DISTANCE_SENSOR_ADDRESS_PARAM: "29"},
+    #         {TANK_FLOOR_VALUE_PARAM: "6000"},
+    #         {TANK_CEILING_VALUE_PARAM: "15000"},
+    #     ],
+    # )
 
     # pressure_node = Node(
     #     package="eel",
@@ -73,8 +68,8 @@ def generate_launch_description():
     #     parameters=[{SIMULATE_PARAM: False}],
     # )
 
-    # ld.add_action(front_tank_node)
-    ld.add_action(rear_tank_node)
+    ld.add_action(front_tank_node)
+    # ld.add_action(rear_tank_node)
     # ld.add_action(pressure_node)
     # ld.add_action(battery_node)
     # ld.add_action(imu_node)

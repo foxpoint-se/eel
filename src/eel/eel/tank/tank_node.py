@@ -5,30 +5,24 @@ from rclpy.node import Node
 from rclpy.executors import ExternalShutdownException
 from std_msgs.msg import Float32
 from eel_interfaces.msg import TankStatus
-import threading
+
 from ..utils.constants import (
     SIMULATE_PARAM,
     MOTOR_PIN_PARAM,
     DIRECTION_PIN_PARAM,
-    DISTANCE_SENSOR_ADDRESS_PARAM,
+    DISTANCE_SENSOR_PIN_PARAM,
     CMD_TOPIC_PARAM,
     STATUS_TOPIC_PARAM,
-    TANK_FLOOR_MM_PARAM,
-    TANK_CEILING_MM_PARAM,
-    XSHUT_PIN_PARAM,
+    TANK_FLOOR_VALUE_PARAM,
+    TANK_CEILING_VALUE_PARAM,
 )
 from ..utils.utils import clamp
 from .pump_motor_simulator import PumpMotorControlSimulator
 from .distance_sensor_simulator import DistanceSensorSimulator
 
-# # change depending on measured values
-# TANK_FLOOR_MM = 30
-# # change depending on measured values
-# TANK_CEILING_MM = 65
-# change depending on measured values
 TANK_FILL_TIME_S = 22
 # change depending on how big of an error we accept
-TARGET_TOLERANCE = 0.05
+TARGET_TOLERANCE = 0.02
 
 LEVEL_FLOOR = 0.0
 LEVEL_CEILING = 1.0
@@ -92,8 +86,14 @@ def should_fill(current_level, target_level):
 def should_empty(current_level, target_level):
     return current_level > target_level
 
+
 # NOTE: example usage
+# OLD
 # ros2 run eel tank --ros-args -p simulate:=False -p cmd_topic:=/tank_rear/cmd -p status_topic:=/tank_rear/status -p motor_pin:=24 -p direction_pin:=25 -p tank_floor_mm:=15 -p tank_ceiling_mm:=63 -p xshut_pin_param:=21
+# ros2 run eel tank --ros-args -p simulate:=False -p cmd_topic:=/tank_front/cmd -p status_topic:=/tank_front/status -p motor_pin:=23 -p direction_pin:=18 -p tank_floor_mm:=15 -p tank_ceiling_mm:=63 -p xshut_pin_param:=21
+# NEW
+# ros2 run eel tank --ros-args -p simulate:=False -p cmd_topic:=/tank_front/cmd -p status_topic:=/tank_front/status -p motor_pin:=23 -p direction_pin:=18 -p tank_floor_value:=4736 -p tank_ceiling_value:=18256 -p distance_sensor_pin:=1
+
 
 class TankNode(Node):
     def __init__(self):
@@ -103,23 +103,18 @@ class TankNode(Node):
         self.declare_parameter(STATUS_TOPIC_PARAM)
         self.declare_parameter(MOTOR_PIN_PARAM, -1)
         self.declare_parameter(DIRECTION_PIN_PARAM, -1)
-        self.declare_parameter(DISTANCE_SENSOR_ADDRESS_PARAM, -1)
-        self.declare_parameter(TANK_FLOOR_MM_PARAM)
-        self.declare_parameter(TANK_CEILING_MM_PARAM)
-        self.declare_parameter(XSHUT_PIN_PARAM)
+        self.declare_parameter(DISTANCE_SENSOR_PIN_PARAM, -1)
+        self.declare_parameter(TANK_FLOOR_VALUE_PARAM)
+        self.declare_parameter(TANK_CEILING_VALUE_PARAM)
+
         self.should_simulate = self.get_parameter(SIMULATE_PARAM).value
         self.motor_pin = int(self.get_parameter(MOTOR_PIN_PARAM).value)
         self.direction_pin = int(self.get_parameter(DIRECTION_PIN_PARAM).value)
-        self.distance_sensor_address = int(
-            self.get_parameter(DISTANCE_SENSOR_ADDRESS_PARAM).value
+        self.distance_sensor_pin = int(
+            self.get_parameter(DISTANCE_SENSOR_PIN_PARAM).value
         )
-        self.floor_mm = int(self.get_parameter(TANK_FLOOR_MM_PARAM).value)
-        self.ceiling_mm = int(self.get_parameter(TANK_CEILING_MM_PARAM).value)
-
-        self.tank_range_mm = self.ceiling_mm - self.floor_mm
-        self.fill_velocity_mmps = self.tank_range_mm / TANK_FILL_TIME_S
-
-        self.xshut_pin = int(self.get_parameter(XSHUT_PIN_PARAM).value)
+        self.floor_value = int(self.get_parameter(TANK_FLOOR_VALUE_PARAM).value)
+        self.ceiling_value = int(self.get_parameter(TANK_CEILING_VALUE_PARAM).value)
 
         self.is_autocorrecting = False
         self.target_level = None
@@ -146,48 +141,42 @@ class TankNode(Node):
 
         if self.should_simulate:
             self.pump_motor_control = PumpMotorControlSimulator()
+            # TODO: update simulator, to reflect how sensor works.
             self.distance_sensor = DistanceSensorSimulator(
-                initial_measurement_mm=self.ceiling_mm,
+                initial_measurement_mm=0,
                 update_frequency_hz=UPDATE_FREQUENCY,
-                fill_velocity_mmps=self.fill_velocity_mmps,
+                fill_velocity_mmps=5,
                 create_timer=self.create_timer,
                 get_is_motor_filling_up=self.pump_motor_control.get_is_filling_up,
                 get_is_motor_emptying=self.pump_motor_control.get_is_emptying,
             )
         else:
             from .pump_motor_control import PumpMotorControl
-
-            # from .distance_sensor import DistanceSensor
             from .distance_sensor_potentiometer import DistanceSensorPotentiometer
 
             self.pump_motor_control = PumpMotorControl(
                 motor_pin=self.motor_pin, direction_pin=self.direction_pin
             )
 
-            # self.distance_sensor = DistanceSensor(
-            #     address=self.distance_sensor_address,
-            #     xshut_pin=self.xshut_pin,
-            #     parent_node=self,
-            # )
-
-            self.distance_sensor = DistanceSensorPotentiometer()
+            self.distance_sensor = DistanceSensorPotentiometer(
+                floor=self.floor_value,
+                ceiling=self.ceiling_value,
+                pin=self.distance_sensor_pin,
+            )
 
         self.check_target_updater = self.create_timer(
             1.0 / UPDATE_FREQUENCY, self.target_loop
         )
 
-        self.level_updater = threading.Thread(target=self.calculate_level, daemon=True)
-        self.level_updater.start()
-
         self.get_logger().info(
-            "{}Tank node started. Motor pin: {}, Direction pin: {}, Distance sensor address: {}, Update frequency: {}, Range: {} - {} mm, CMD topic: {}, status topic: {}".format(
+            "{}Tank node started. Motor pin: {}, Direction pin: {}, Distance sensor pin: {}, Update frequency: {}, Range: {} - {} mm, CMD topic: {}, status topic: {}".format(
                 "SIMULATE " if self.should_simulate else "",
                 self.motor_pin,
                 self.direction_pin,
-                self.distance_sensor_address,
+                self.distance_sensor_pin,
                 UPDATE_FREQUENCY,
-                self.floor_mm,
-                self.ceiling_mm,
+                self.floor_value,
+                self.ceiling_value,
                 self.cmd_topic,
                 self.status_topic,
             )
@@ -203,7 +192,7 @@ class TankNode(Node):
 
     def handle_tank_cmd(self, msg):
         requested_target_level = msg.data
-        current_level = self.current_level
+        current_level = self.get_level()
         target_level = clamp(requested_target_level, LEVEL_FLOOR, LEVEL_CEILING)
 
         if not is_within_accepted_target_boundaries(current_level, target_level):
@@ -232,15 +221,15 @@ class TankNode(Node):
         self.debug_publisher.publish(msg2)
 
     def target_loop(self):
+        current_level = self.get_level()
         if (
             self.target_level is not None
-            and self.current_level
+            and current_level
             and self.is_autocorrecting is True
         ):
-            self.check_against_target(self.current_level, self.target_level)
+            self.check_against_target(current_level, self.target_level)
 
-        if self.current_level is not None:
-            self.publish_status(self.current_level)
+        self.publish_status(current_level)
 
     def check_against_target(self, current_level, target_level):
         if is_within_accepted_target_boundaries(current_level, target_level):
@@ -270,27 +259,10 @@ class TankNode(Node):
         ):
             self.pump_motor_control.fill()
 
-    def calculate_level(self):
-        while True:
-            try:
-                range = self.distance_sensor.get_range()
-                self.current_range = range
-                range_level = (range - self.floor_mm) / (
-                    self.ceiling_mm - self.floor_mm
-                )
-                level_filled = 1 - range_level
-                self.current_level = level_filled
-                # self.get_logger().info(
-                #     "range: {} - level: {} - filled: {}".format(
-                #         range, range_level, level_filled
-                #     )
-                # )
-            except Exception as err:
-                # self.pump_motor_control.stop()
-                # self.stop_checking_against_target()
-                self.target_status = DISTANCE_SENSOR_ERROR
-                self.get_logger().error(str(err))
-                # TODO: maybe also have a `__del` method in the tank class or something?
+    def get_level(self):
+        distance_level = self.distance_sensor.get_level()
+        level_filled = 1 - distance_level
+        return level_filled
 
 
 def main(args=None):
