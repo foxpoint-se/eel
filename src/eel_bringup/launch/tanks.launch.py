@@ -46,7 +46,7 @@ def generate_launch_description():
     #         {STATUS_TOPIC_PARAM: REAR_TANK_STATUS},
     #         {MOTOR_PIN_PARAM: "24"},
     #         {DIRECTION_PIN_PARAM: "25"},
-    #         {DISTANCE_SENSOR_ADDRESS_PARAM: "29"},
+    #         {DISTANCE_SENSOR_PIN_PARAM: "0"},
     #         {TANK_FLOOR_VALUE_PARAM: "6000"},
     #         {TANK_CEILING_VALUE_PARAM: "15000"},
     #     ],
