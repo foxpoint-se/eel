@@ -1,23 +1,15 @@
-import random
-from time import time, sleep
+from time import time
 
 
 def calculate_position_delta(linear_velocity, time_delta):
     return linear_velocity * time_delta
 
 
-# OS_ERROR_RATE = 0.1
-OS_ERROR_RATE = 0.0
-
-
-def should_raise_oserror():
-    return random.random() < OS_ERROR_RATE
-
-
 # TODO: get rid of mm variables.
 # TODO: get rid of fill velocity param.
 # TODO: different fill and empty velocities. filling is faster. something like 60 s to fill, and double to empty?
 # TODO: get rid of error simulation?
+# TODO: make distance sensor work the same as irl. it returns full tank now by default now.
 
 
 class DistanceSensorSimulator:
@@ -49,15 +41,6 @@ class DistanceSensorSimulator:
             1.0 / (update_frequency_hz), self._update_range
         )
 
-    def get_range(self):
-        # to simulate that reading sometimes fails.
-        if should_raise_oserror():
-            raise OSError("Simulating OSError")
-
-        # to simulate that actual sensor measurement takes some time, depending on `timing_budget`
-        sleep(0.3)
-        return self.current_range
-
     def _update_range(self):
         now = time()
         time_delta = now - self.last_updated_at
@@ -68,3 +51,6 @@ class DistanceSensorSimulator:
             self.current_range = self.current_range + position_delta
 
         self.last_updated_at = time()
+
+    def get_level(self) -> float:
+        return float(self.current_range)
