@@ -1,33 +1,35 @@
-import random
-from time import time, sleep
+from time import time
+from .distance_sensor_base import DistanceSensorBase
 
 
 def calculate_position_delta(linear_velocity, time_delta):
     return linear_velocity * time_delta
 
 
-# OS_ERROR_RATE = 0.1
-OS_ERROR_RATE = 0.0
+def cap_value(value, floor, ceiling):
+    if value > ceiling:
+        return ceiling
+    elif value < floor:
+        return floor
+    return value
 
 
-def should_raise_oserror():
-    return random.random() < OS_ERROR_RATE
+FILL_VELOCITY_PERCENT_PER_SECOND = 0.05
+EMPTY_VELOCITY_PERCENT_PER_SECOND = 0.03
 
 
-class DistanceSensorSimulator:
+class DistanceSensorSimulator(DistanceSensorBase):
     def __init__(
         self,
-        initial_measurement_mm=None,
+        initial_measurement_percent=None,
         update_frequency_hz=None,
-        fill_velocity_mmps=None,
         create_timer=None,
         get_is_motor_filling_up=None,
         get_is_motor_emptying=None,
     ):
         if None in [
-            initial_measurement_mm,
+            initial_measurement_percent,
             update_frequency_hz,
-            fill_velocity_mmps,
             create_timer,
             get_is_motor_filling_up,
             get_is_motor_emptying,
@@ -35,30 +37,29 @@ class DistanceSensorSimulator:
             raise TypeError("all arguments to distance sensor simulator are required")
 
         self.last_updated_at = time()
-        self.current_range = initial_measurement_mm
-        self.fill_velocity_mmps = fill_velocity_mmps
+        self.current_level = initial_measurement_percent
         self.get_is_motor_filling_up = get_is_motor_filling_up
         self.get_is_motor_emptying = get_is_motor_emptying
         self.distance_updater = create_timer(
-            1.0 / (update_frequency_hz), self._update_range
+            1.0 / (update_frequency_hz), self._update_level
         )
 
-    def get_range(self):
-        # to simulate that reading sometimes fails.
-        if should_raise_oserror():
-            raise OSError("Simulating OSError")
-
-        # to simulate that actual sensor measurement takes some time, depending on `timing_budget`
-        sleep(0.3)
-        return self.current_range
-
-    def _update_range(self):
+    def _update_level(self):
         now = time()
         time_delta = now - self.last_updated_at
-        position_delta = calculate_position_delta(self.fill_velocity_mmps, time_delta)
         if self.get_is_motor_filling_up():
-            self.current_range = self.current_range - position_delta
+            position_delta = calculate_position_delta(
+                FILL_VELOCITY_PERCENT_PER_SECOND, time_delta
+            )
+            self.current_level = self.current_level - position_delta
         elif self.get_is_motor_emptying():
-            self.current_range = self.current_range + position_delta
+            position_delta = calculate_position_delta(
+                EMPTY_VELOCITY_PERCENT_PER_SECOND, time_delta
+            )
+            self.current_level = self.current_level + position_delta
 
+        self.current_level = cap_value(self.current_level, 0.0, 1.0)
         self.last_updated_at = time()
+
+    def get_level(self) -> float:
+        return float(self.current_level)
