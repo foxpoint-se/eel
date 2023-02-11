@@ -141,11 +141,9 @@ class TankNode(Node):
 
         if self.should_simulate:
             self.pump_motor_control = PumpMotorControlSimulator()
-            # TODO: update simulator, to reflect how sensor works.
             self.distance_sensor = DistanceSensorSimulator(
-                initial_measurement_mm=0,
+                initial_measurement_percent=1.0,
                 update_frequency_hz=UPDATE_FREQUENCY,
-                fill_velocity_mmps=5,
                 create_timer=self.create_timer,
                 get_is_motor_filling_up=self.pump_motor_control.get_is_filling_up,
                 get_is_motor_emptying=self.pump_motor_control.get_is_emptying,
