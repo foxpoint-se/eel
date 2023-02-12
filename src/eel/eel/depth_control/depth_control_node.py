@@ -90,6 +90,7 @@ def get_is_off_pitch_target(current_pitch, pitch_target):
     # greater than 2 degrees
     return diff > 2
 
+
 def needs_adjusting(current_pitch, pitch_target, current_depth, depth_target):
     is_off_depth = get_is_off_depth_target(current_depth, depth_target)
     is_off_pitch = get_is_off_pitch_target(current_pitch, pitch_target)
@@ -146,7 +147,7 @@ class DepthControlNode(Node):
         self.should_control_depth = False
         self.should_control_pitch = False
         self.depth_target = None
-        self.target_pitch = None
+        self.pitch_target = None
         self.current_depth = None
         self.current_pitch = None
         self.last_depth_at = None
@@ -160,6 +161,9 @@ class DepthControlNode(Node):
         self.depth_Tu = depth_Tu
         self.pitch_Ku = pitch_Ku
         self.pitch_Tu = pitch_Tu
+
+        self.depth_pid_type = None
+        self.pitch_pid_type = None
 
         self.pitch_pid_controller = None
         self.depth_pid_controller = None
@@ -207,6 +211,12 @@ class DepthControlNode(Node):
         self.last_error = 0.0
 
     def handle_cmd_msg(self, msg):
+        self.depth_target = msg.depth_target
+        self.pitch_target = msg.pitch_target
+        self.depth_pid_type = msg.depth_pid_type
+        self.pitch_pid_type = msg.pitch_pid_type
+
+    def handle_cmd_msg_OLD(self, msg):
         self.depth_target = msg.depth_target
         self.pitch_target = msg.pitch_target
 
@@ -268,7 +278,107 @@ class DepthControlNode(Node):
         base_msg.data = 0.0
         self.pid_publisher_base.publish(base_msg)
 
+    def get_next_levels(self, depth_controller_output, pitch_controller_output):
+        if depth_controller_output and pitch_controller_output:
+            pitch_front_tank = pitch_controller_output
+            pitch_rear_tank = -pitch_controller_output
+
+            next_front_level = (0.5 * pitch_front_tank) + (
+                0.5 * depth_controller_output
+            )
+            next_rear_level = (0.5 * pitch_rear_tank) + (0.5 * depth_controller_output)
+
+            return next_front_level, next_rear_level
+
+        # if depth_controller_output and not pitch_controller_output:
+        #     return depth_controller_output, depth_controller_output
+
+        # if pitch_controller_output and not depth_controller_output:
+        #     return pitch_controller_output, -pitch_controller_output
+
+        return None, None
+
+    def publish_new_values(self):
+        # pitch_controller_output = None
+        # depth_controller_output = None
+        # if self.pitch_pid_controller:
+        pitch_controller_output = self.pitch_pid_controller.compute(self.current_pitch)
+        # if self.depth_pid_controller:
+        depth_controller_output = self.depth_pid_controller.compute(self.current_depth)
+
+        next_front_tank_level, next_rear_tank_level = self.get_next_levels(
+            depth_controller_output, pitch_controller_output
+        )
+
+        if next_front_tank_level and next_rear_tank_level:
+            front_msg = Float32()
+            front_msg.data = next_front_tank_level
+            rear_msg = Float32()
+            rear_msg.data = next_rear_tank_level
+
+            self.front_tank_pub.publish(front_msg)
+            self.rear_tank_pub.publish(rear_msg)
+
+        self.log_pid_error(self.pitch_target - self.current_pitch)
+
+    def is_depth_stable(self):
+        if abs(self.current_depth - self.depth_target) > 0.2:
+            return False
+        return True
+
+    def is_pitch_stable(self):
+        if abs(self.current_pitch - self.pitch_target) > 2:
+            return False
+        return True
+
+    def adjust(self):
+        if self.is_depth_stable() and self.is_pitch_stable():
+            if self.depth_pid_controller:
+                del self.depth_pid_controller
+                self.depth_pid_controller = None
+            if self.pitch_pid_controller:
+                del self.pitch_pid_controller
+                self.pitch_pid_controller = None
+        else:
+            if not self.depth_pid_controller:
+                depth_Kp, depth_Ki, depth_Kd = lookup_zieglernichols_gains(
+                    self.depth_Ku, self.depth_Tu, self.depth_pid_type
+                )
+                self.logger.info(
+                    "init depth pid with Kp {} Ki {} Kd {}".format(
+                        depth_Kp, depth_Ki, depth_Kd
+                    )
+                )
+                self.depth_pid_controller = PidController(
+                    self.depth_target,
+                    depth_Kp,
+                    depth_Ki,
+                    depth_Kd,
+                )
+
+            if not self.pitch_pid_controller:
+                pitch_Kp, pitch_Ki, pitch_Kd = lookup_zieglernichols_gains(
+                    self.pitch_Ku, self.pitch_Tu, self.pitch_pid_type
+                )
+                self.logger.info(
+                    "init pitch pid with Kp {} Ki {} Kd {}".format(
+                        pitch_Kp, pitch_Ki, pitch_Kd
+                    )
+                )
+                self.pitch_pid_controller = PidController(
+                    self.pitch_target,
+                    pitch_Kp,
+                    pitch_Ki,
+                    pitch_Kd,
+                )
+
+        self.publish_new_values()
+
     def loop(self):
+        if self.pitch_target and self.depth_target:
+            self.adjust()
+
+    def loop_OLD(self):
         if self.pitch_pid_controller and self.depth_pid_controller:
             pitch_controller_output = self.pitch_pid_controller.compute(
                 self.current_pitch
