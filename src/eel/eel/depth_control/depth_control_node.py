@@ -47,6 +47,7 @@ def get_are_same_sign(value_1, value_2):
     return False
 
 
+# TODO: remove
 def is_within_accepted_target_boundaries(current_level, target_level, tolerance):
     low_threshold = target_level - (tolerance / 2)
     high_threshold = target_level + (tolerance / 2)
@@ -76,6 +77,23 @@ def calculate_rear_depth(main_depth, pitch):
     return calculate_displacement_depth(
         main_depth, pitch, SIMULATION_PRESSURE_SENSOR_REAR_DISPLACEMENT
     )
+
+
+def get_is_off_depth_target(current_depth, depth_target):
+    diff = abs(current_depth - depth_target)
+    # greater than 20 centimeters
+    return diff > 0.2
+
+
+def get_is_off_pitch_target(current_pitch, pitch_target):
+    diff = abs(current_pitch - pitch_target)
+    # greater than 2 degrees
+    return diff > 2
+
+def needs_adjusting(current_pitch, pitch_target, current_depth, depth_target):
+    is_off_depth = get_is_off_depth_target(current_depth, depth_target)
+    is_off_pitch = get_is_off_pitch_target(current_pitch, pitch_target)
+    return is_off_depth or is_off_pitch
 
 
 class PidController:
@@ -157,8 +175,8 @@ class DepthControlNode(Node):
         )
 
         # TODO: enable these conditionally, for use when tuning PID
-        # self.pid_publisher = self.create_publisher(Float32, "pid_error", 10)
-        # self.pid_publisher_base = self.create_publisher(Float32, "pid_error_target", 10)
+        self.pid_publisher = self.create_publisher(Float32, "pid_error", 10)
+        self.pid_publisher_base = self.create_publisher(Float32, "pid_error_target", 10)
 
         self.create_subscription(
             DepthControlCmd, DEPTH_CONTROL_CMD, self.handle_cmd_msg, 10
@@ -256,6 +274,8 @@ class DepthControlNode(Node):
                 self.current_pitch
             )
 
+            # try with a factor here, perhaps???? 0.5 or something?
+            # pitch_front_tank = 0.5 * pitch_controller_output
             pitch_front_tank = pitch_controller_output
             pitch_rear_tank = -pitch_controller_output
 
@@ -263,6 +283,15 @@ class DepthControlNode(Node):
                 self.current_depth
             )
 
+            # try with different influence to each tank??
+            # next_front_tank_level = (0.7 * pitch_front_tank) + (
+            #     0.3 * depth_controller_output
+            # )
+            # next_rear_tank_level = (0.3 * pitch_rear_tank) + (
+            #     0.7 * depth_controller_output
+            # )
+
+            # with 0.5 the pitch and depth pids are weighted equally
             next_front_tank_level = (0.5 * pitch_front_tank) + (
                 0.5 * depth_controller_output
             )
@@ -270,13 +299,23 @@ class DepthControlNode(Node):
                 0.5 * depth_controller_output
             )
 
-            # self.log_pid_error(self.pitch_target - self.current_pitch)
+            # next_front_tank_level = pitch_front_tank
+            # next_rear_tank_level = pitch_rear_tank
+
+            self.log_pid_error(self.pitch_target - self.current_pitch)
+            # self.log_pid_error(self.depth_target - self.current_depth)
 
             front_msg = Float32()
             front_msg.data = next_front_tank_level
             rear_msg = Float32()
             rear_msg.data = next_rear_tank_level
 
+            # if needs_adjusting(
+            #     self.current_pitch,
+            #     self.pitch_target,
+            #     self.current_depth,
+            #     self.depth_target,
+            # ):
             self.front_tank_pub.publish(front_msg)
             self.rear_tank_pub.publish(rear_msg)
 
