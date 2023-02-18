@@ -20,6 +20,5 @@ print("start getting values...")
 while 1:
     now = time.time()
     if now - last_reading > 0.1:
-        print(f"Rear {rear_chan.value}")
-        # print(f"Front {front_chan.value}")
+        print(f"Rear {rear_chan.value} \t Front {front_chan.value}")
         last_reading = now

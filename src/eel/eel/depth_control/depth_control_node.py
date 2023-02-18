@@ -13,6 +13,7 @@ from eel_interfaces.msg import (
     ImuStatus,
     PressureStatus,
     TankStatus,
+    PidDepthCmd,
 )
 from ..utils.topics import (
     DEPTH_CONTROL_STATUS,
@@ -157,11 +158,15 @@ class DepthControlNode(Node):
         )
 
         # TODO: enable these conditionally, for use when tuning PID
-        # self.pid_publisher = self.create_publisher(Float32, "pid_error", 10)
-        # self.pid_publisher_base = self.create_publisher(Float32, "pid_error_target", 10)
+        self.pid_publisher = self.create_publisher(Float32, "pid_error", 10)
+        self.pid_publisher_base = self.create_publisher(Float32, "pid_error_target", 10)
 
         self.create_subscription(
             DepthControlCmd, DEPTH_CONTROL_CMD, self.handle_cmd_msg, 10
+        )
+
+        self.create_subscription(
+            PidDepthCmd, "pid_depth/cmd", self.handle_pid_depth_msg, 10
         )
 
         self.create_subscription(ImuStatus, IMU_STATUS, self.handle_imu_msg, 10)
@@ -187,6 +192,20 @@ class DepthControlNode(Node):
         self.cumulative_error = 0.0
         self.elapsed_time = 0.0
         self.last_error = 0.0
+
+    def handle_pid_depth_msg(self, msg):
+        if msg.depth_target < 0:
+            if self.depth_pid_controller:
+                del self.depth_pid_controller
+                self.depth_pid_controller = None
+        else:
+            self.depth_target = msg.depth_target
+            self.depth_pid_controller = PidController(
+                self.depth_target,
+                msg.p_value,
+                msg.i_value,
+                msg.d_value,
+            )
 
     def handle_cmd_msg(self, msg):
         self.depth_target = msg.depth_target
@@ -251,6 +270,25 @@ class DepthControlNode(Node):
         self.pid_publisher_base.publish(base_msg)
 
     def loop(self):
+        if self.depth_pid_controller:
+            depth_controller_output = self.depth_pid_controller.compute(
+                self.current_depth
+            )
+            next_front_tank_level = depth_controller_output
+
+            next_rear_tank_level = depth_controller_output
+
+            self.log_pid_error(self.depth_target - self.current_depth)
+
+            front_msg = Float32()
+            front_msg.data = next_front_tank_level
+            rear_msg = Float32()
+            rear_msg.data = next_rear_tank_level
+
+            self.front_tank_pub.publish(front_msg)
+            self.rear_tank_pub.publish(rear_msg)
+
+    def loop_OLD(self):
         if self.pitch_pid_controller and self.depth_pid_controller:
             pitch_controller_output = self.pitch_pid_controller.compute(
                 self.current_pitch
