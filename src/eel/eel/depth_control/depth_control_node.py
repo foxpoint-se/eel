@@ -193,7 +193,14 @@ class DepthControlNode(Node):
         self.elapsed_time = 0.0
         self.last_error = 0.0
 
+        self.last_messaged_at = None
+
     def handle_pid_depth_msg(self, msg):
+        self.get_logger().info(
+            "Got PID msg: depth {}, P {}, I {}, D {}".format(
+                msg.depth_target, msg.p_value, msg.i_value, msg.d_value
+            )
+        )
         if msg.depth_target < 0:
             if self.depth_pid_controller:
                 del self.depth_pid_controller
@@ -269,6 +276,27 @@ class DepthControlNode(Node):
         base_msg.data = 0.0
         self.pid_publisher_base.publish(base_msg)
 
+    def message_tanks(self, next_front, next_rear):
+        if next_front is not None and next_rear is not None:
+            front_msg = Float32()
+            front_msg.data = next_front
+            rear_msg = Float32()
+            rear_msg.data = next_rear
+
+            self.front_tank_pub.publish(front_msg)
+            self.rear_tank_pub.publish(rear_msg)
+
+    def try_message_tanks(self, next_front, next_rear):
+        if self.last_messaged_at is None:
+            self.message_tanks(next_front, next_rear)
+            self.last_messaged_at = time()
+        else:
+            now = time()
+            time_elapsed = now - self.last_messaged_at
+            if time_elapsed >= 1:
+                self.message_tanks(next_front, next_rear)
+                self.last_messaged_at = now
+
     def loop(self):
         if self.depth_pid_controller:
             depth_controller_output = self.depth_pid_controller.compute(
@@ -280,13 +308,12 @@ class DepthControlNode(Node):
 
             self.log_pid_error(self.depth_target - self.current_depth)
 
-            front_msg = Float32()
-            front_msg.data = next_front_tank_level
-            rear_msg = Float32()
-            rear_msg.data = next_rear_tank_level
+            self.try_message_tanks(next_front_tank_level, next_rear_tank_level)
 
-            self.front_tank_pub.publish(front_msg)
-            self.rear_tank_pub.publish(rear_msg)
+        else:
+            self.message_tanks(
+                self.current_front_tank_level, self.current_rear_tank_level
+            )
 
     def loop_OLD(self):
         if self.pitch_pid_controller and self.depth_pid_controller:
