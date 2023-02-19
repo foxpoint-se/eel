@@ -42,7 +42,7 @@ class PressureNode(Node):
             msg = PressureStatus()
             msg.depth = current_depth
             self.publisher.publish(msg)
-        except OSError as err:
+        except (OSError, IOError) as err:
             self.get_logger().error(str(err))
 
 
