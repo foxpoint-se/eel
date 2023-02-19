@@ -206,6 +206,9 @@ class TankNode(Node):
 
     def publish_status(self, current_level):
         msg = TankStatus()
+
+        # TODO: ensure float
+        # The 'current_level' field must be of type 'float'
         msg.current_level = current_level
         msg.target_level = []
         if self.target_level:
@@ -258,9 +261,12 @@ class TankNode(Node):
             self.pump_motor_control.fill()
 
     def get_level(self):
-        distance_level = self.distance_sensor.get_level()
-        level_filled = 1 - distance_level
-        return level_filled
+        try:
+            distance_level = self.distance_sensor.get_level()
+            level_filled = 1 - distance_level
+            return level_filled
+        except (OSError, IOError) as err:
+            self.get_logger().error(str(err))
 
 
 def main(args=None):

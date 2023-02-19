@@ -37,21 +37,24 @@ class ImuNode(Node):
         )
 
     def publish_imu(self):
-        heading, roll, pitch = self.get_euler()
-        sys, gyro, accel, mag = self.get_calibration_status()
-        is_calibrated = self.get_is_calibrated()
+        try:
+            heading, roll, pitch = self.get_euler()
+            sys, gyro, accel, mag = self.get_calibration_status()
+            is_calibrated = self.get_is_calibrated()
 
-        msg = ImuStatus()
-        msg.is_calibrated = is_calibrated or False
-        msg.sys = sys
-        msg.gyro = gyro
-        msg.accel = accel
-        msg.mag = mag
-        msg.heading = heading
-        msg.roll = roll
-        msg.pitch = pitch
+            msg = ImuStatus()
+            msg.is_calibrated = is_calibrated or False
+            msg.sys = sys
+            msg.gyro = gyro
+            msg.accel = accel
+            msg.mag = mag
+            msg.heading = heading
+            msg.roll = roll
+            msg.pitch = pitch
 
-        self.status_publisher.publish(msg)
+            self.status_publisher.publish(msg)
+        except (OSError, IOError) as err:
+            self.get_logger().error(str(err))
 
 
 def main(args=None):
