@@ -14,6 +14,7 @@ from eel_interfaces.msg import (
     PressureStatus,
     TankStatus,
     PidDepthCmd,
+    PidPitchCmd,
 )
 from ..utils.topics import (
     DEPTH_CONTROL_STATUS,
@@ -188,6 +189,10 @@ class DepthControlNode(Node):
             PidDepthCmd, "pid_depth/cmd", self.handle_pid_depth_msg, 10
         )
 
+        self.create_subscription(
+            PidPitchCmd, "pid_pitch/cmd", self.handle_pid_pitch_msg, 10
+        )
+
         self.create_subscription(ImuStatus, IMU_STATUS, self.handle_imu_msg, 10)
         self.create_subscription(
             PressureStatus, PRESSURE_STATUS, self.handle_pressure_msg, 10
@@ -235,6 +240,21 @@ class DepthControlNode(Node):
                 msg.i_value,
                 msg.d_value,
             )
+
+    def handle_pid_pitch_msg(self, msg):
+        self.get_logger().info(
+            "Got PID msg: pitch {}, P {}, I {}, D {}".format(
+                msg.pitch_target, msg.p_value, msg.i_value, msg.d_value
+            )
+        )
+        
+        self.pitch_target = msg.pitch_target
+        self.pitch_pid_controller = PidController(
+            self.pitch_target,
+            msg.p_value,
+            msg.i_value,
+            msg.d_value,
+        )
 
     def handle_cmd_msg(self, msg):
         self.depth_target = msg.depth_target
@@ -323,6 +343,24 @@ class DepthControlNode(Node):
                 self.message_tanks(next_front, next_rear)
                 self.last_messaged_at = now
 
+    def loop(self):
+        if self.pitch_pid_controller:
+            pitch_controller_output = self.pitch_pid_controller.compute(
+                self.current_pitch
+            )
+
+            pitch_front_tank = pitch_controller_output
+            pitch_rear_tank = -pitch_controller_output
+            
+            next_front_tank_level = pitch_front_tank
+
+            next_rear_tank_level = pitch_rear_tank
+
+            self.log_pid_error(self.pitch_target - self.current_pitch)
+
+            self.message_tanks(next_front_tank_level, next_rear_tank_level)
+
+
     def loop_OLD(self):
         if self.depth_pid_controller:
             depth_controller_output = self.depth_pid_controller.compute(
@@ -341,7 +379,7 @@ class DepthControlNode(Node):
                 self.current_front_tank_level, self.current_rear_tank_level
             )
 
-    def loop(self):
+    def loop_NEW(self):
         if self.pitch_pid_controller and self.depth_pid_controller:
 
             # if self.last_pitch_controller_output and abs(self.pitch_target - self.current_pitch) <= 1.5:
