@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from ..utils.utils import clamp
-from ..utils.pid_tuning import get_simulation_pid_settings, lookup_zieglernichols_gains
+from ..utils.pid_tuning import get_simulation_pid_settings, get_production_pid_settings, lookup_zieglernichols_gains
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float32
@@ -158,7 +158,8 @@ class DepthControlNode(Node):
         self.current_rear_tank_level = None
 
         # TODO: conditionally set pid settings, based on what we find when tuning hardware
-        depth_Ku, depth_Tu, pitch_Ku, pitch_Tu = get_simulation_pid_settings()
+        # depth_Ku, depth_Tu, pitch_Ku, pitch_Tu = get_simulation_pid_settings()
+        depth_Ku, depth_Tu, pitch_Ku, pitch_Tu = get_production_pid_settings()
         self.depth_Ku = depth_Ku
         self.depth_Tu = depth_Tu
         self.pitch_Ku = pitch_Ku

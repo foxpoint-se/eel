@@ -205,21 +205,22 @@ class TankNode(Node):
             self.pump_motor_control.fill()
 
     def publish_status(self, current_level):
-        msg = TankStatus()
+        if current_level is not None:
+            msg = TankStatus()
 
-        # TODO: ensure float
-        # The 'current_level' field must be of type 'float'
-        msg.current_level = current_level
-        msg.target_level = []
-        if self.target_level:
-            msg.target_level.append(self.target_level)
-        msg.is_autocorrecting = self.is_autocorrecting
-        msg.target_status = self.target_status
-        self.publisher.publish(msg)
+            # TODO: ensure float
+            # The 'current_level' field must be of type 'float'
+            msg.current_level = float(current_level)
+            msg.target_level = []
+            if self.target_level:
+                msg.target_level.append(self.target_level)
+            msg.is_autocorrecting = self.is_autocorrecting
+            msg.target_status = self.target_status
+            self.publisher.publish(msg)
 
-        msg2 = Float32()
-        msg2.data = float(self.current_range or 0.0)
-        self.debug_publisher.publish(msg2)
+            msg2 = Float32()
+            msg2.data = float(self.current_range or 0.0)
+            self.debug_publisher.publish(msg2)
 
     def target_loop(self):
         current_level = self.get_level()

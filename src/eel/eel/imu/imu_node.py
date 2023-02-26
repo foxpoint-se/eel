@@ -8,12 +8,23 @@ from ..utils.constants import SIMULATE_PARAM
 from ..utils.topics import IMU_STATUS
 
 
+def filter_pitch(previous, new):
+    if previous is None:
+        return new
+    if abs(new - previous) > 30:
+        return previous
+    if new > 360.0 or new < -360.0:
+        return previous
+    return new
+
+
 class ImuNode(Node):
     def __init__(self):
         super().__init__("imu_node")
         self.declare_parameter(SIMULATE_PARAM, False)
         self.should_simulate = self.get_parameter(SIMULATE_PARAM).value
         self.status_publisher = self.create_publisher(ImuStatus, IMU_STATUS, 10)
+        self.previous_pitch = None
 
         # hertz (publications per second)
         self.update_frequency = 5
@@ -50,9 +61,15 @@ class ImuNode(Node):
             msg.mag = mag
             msg.heading = heading
             msg.roll = roll
-            msg.pitch = pitch
+
+            pitch_to_send = filter_pitch(self.previous_pitch, pitch)
+
+            msg.pitch = pitch_to_send
 
             self.status_publisher.publish(msg)
+
+            self.previous_pitch = pitch_to_send
+
         except (OSError, IOError) as err:
             self.get_logger().error(str(err))
 
