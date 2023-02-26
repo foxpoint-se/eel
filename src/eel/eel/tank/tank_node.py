@@ -53,7 +53,8 @@ FLOOR_REACHED = "floor_reached"
 NO_TARGET = "no_target"
 ADJUSTING = "adjusting"
 
-
+# TODO:
+# '<=' not supported between instances of 'float' and 'NoneType'
 def is_within_accepted_target_boundaries(current_level, target_level):
     low_threshold = target_level - (TARGET_TOLERANCE / 2)
     high_threshold = target_level + (TARGET_TOLERANCE / 2)

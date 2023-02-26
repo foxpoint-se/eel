@@ -288,9 +288,14 @@ class DepthControlNode(Node):
         pitch_Ku = self.pitch_Ku
         pitch_Tu = self.pitch_Tu
 
-        pitch_Kp, pitch_Ki, pitch_Kd = lookup_zieglernichols_gains(
-            pitch_Ku, pitch_Tu, msg.pitch_pid_type
-        )
+        # pitch_Kp, pitch_Ki, pitch_Kd = lookup_zieglernichols_gains(
+        #     pitch_Ku, pitch_Tu, msg.pitch_pid_type
+        # )
+
+        pitch_Kp = 0.02
+        pitch_Ki = 0.0
+        pitch_Kd = 0.127
+
         self.logger.info(
             "init pitch pid with Kp {} Ki {} Kd {}".format(pitch_Kp, pitch_Ki, pitch_Kd)
         )
@@ -344,7 +349,7 @@ class DepthControlNode(Node):
                 self.message_tanks(next_front, next_rear)
                 self.last_messaged_at = now
 
-    def loop(self):
+    def loop_ONLY_PITCH(self):
         if self.pitch_pid_controller:
             pitch_controller_output = self.pitch_pid_controller.compute(
                 self.current_pitch
@@ -380,7 +385,7 @@ class DepthControlNode(Node):
                 self.current_front_tank_level, self.current_rear_tank_level
             )
 
-    def loop_NEW(self):
+    def loop(self):
         if self.pitch_pid_controller and self.depth_pid_controller:
 
             # if self.last_pitch_controller_output and abs(self.pitch_target - self.current_pitch) <= 1.5:
@@ -407,9 +412,14 @@ class DepthControlNode(Node):
             next_front_tank_level = (0.5 * pitch_front_tank) + (
                 0.5 * depth_controller_output
             )
+
+            next_front_tank_level = 0.67 * next_front_tank_level
+
             next_rear_tank_level = (0.5 * pitch_rear_tank) + (
                 0.5 * depth_controller_output
             )
+
+            next_rear_tank_level = 1.33 * next_rear_tank_level
 
             # self.log_pid_error(self.pitch_target - self.current_pitch)
 
