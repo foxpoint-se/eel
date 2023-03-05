@@ -63,20 +63,9 @@ SIMULATION_VEHICLE_LENGTH = 1  # meters
 SIMULATION_PRESSURE_SENSOR_REAR_DISPLACEMENT = 0.5 - SIMULATION_VEHICLE_LENGTH
 SIMULATION_PRESSURE_SENSOR_FRONT_DISPLACEMENT = SIMULATION_VEHICLE_LENGTH - 0.5
 
-def calculate_center_depth(main_depth, pitch, displacement=0.4):
-    if pitch >= 0:
-        return main_depth + (displacement * math.sin(pitch))
-    else:
-        return main_depth - (displacement * math.sin(pitch))
-
-# def calculate_depth_diff(pitch):
-#     return 0.375 * math.sin(pitch)
-
-# def calculate_center_depth_USE_THIS(main_depth, pitch):
-#     if pitch > 0:
-#         return main_depth - calculate_depth_diff(pitch)
-#     else:
-#         return main_depth + calculate_depth_diff(pitch)
+def calculate_center_depth(main_depth, pitch_deg, displacement=0.375):
+    pitch_rad = math.radians(pitch_deg)
+    return main_depth - (displacement * math.sin(pitch_rad))
 
 
 def calculate_displacement_depth(main_depth, pitch, displacement):
@@ -317,8 +306,7 @@ class DepthControlNode(Node):
         self.current_rear_tank_level = msg.current_level
 
     def handle_pressure_msg(self, msg):
-        self.current_depth = msg.depth
-        # self.current_depth = calculate_center_depth_USE_THIS(msg.depth, self.current_pitch)
+        self.current_depth = calculate_center_depth(msg.depth, self.current_pitch)
 
     def log_pid_error(self, pid_error):
         msg = Float32()
