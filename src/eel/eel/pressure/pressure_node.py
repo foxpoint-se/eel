@@ -9,15 +9,9 @@ from eel_interfaces.msg import ImuStatus
 
 PUBLISH_FREQUENCY = 5
 
-
-def calculate_depth_diff(pitch):
-    return 0.375 * math.sin(pitch)
-
-def calculate_center_depth_USE_THIS(main_depth, pitch):
-    if pitch > 0:
-        return main_depth - calculate_depth_diff(pitch)
-    else:
-        return main_depth + calculate_depth_diff(pitch)
+def calculate_center_depth(main_depth, pitch_deg, displacement=0.375):
+    pitch_rad = math.radians(pitch_deg)
+    return main_depth - (displacement * math.sin(pitch_rad))
 
 
 def get_pressure_sensor(should_simulate: bool, parent_node: Node):
@@ -58,7 +52,8 @@ class PressureNode(Node):
 
     def publish_status(self):
         try:
-            current_depth = self.sensor.get_current_depth()
+            depth_reading = self.sensor.get_current_depth()
+            current_depth = calculate_center_depth(depth_reading, self.current_pitch)
             msg = PressureStatus()
             msg.depth = current_depth
             # if self.should_simulate:

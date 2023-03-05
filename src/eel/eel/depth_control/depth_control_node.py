@@ -63,30 +63,6 @@ SIMULATION_VEHICLE_LENGTH = 1  # meters
 SIMULATION_PRESSURE_SENSOR_REAR_DISPLACEMENT = 0.5 - SIMULATION_VEHICLE_LENGTH
 SIMULATION_PRESSURE_SENSOR_FRONT_DISPLACEMENT = SIMULATION_VEHICLE_LENGTH - 0.5
 
-def calculate_center_depth(main_depth, pitch_deg, displacement=0.375):
-    pitch_rad = math.radians(pitch_deg)
-    return main_depth - (displacement * math.sin(pitch_rad))
-
-
-def calculate_displacement_depth(main_depth, pitch, displacement):
-    return main_depth + displacement * math.sin(pitch)
-
-
-def calculate_front_depth(main_depth, pitch):
-    return calculate_displacement_depth(
-        main_depth, pitch, SIMULATION_PRESSURE_SENSOR_FRONT_DISPLACEMENT
-    )
-
-
-def calculate_rear_depth(main_depth, pitch):
-    return calculate_displacement_depth(
-        main_depth, pitch, SIMULATION_PRESSURE_SENSOR_REAR_DISPLACEMENT
-    )
-
-
-def round_to_nearest(val, base=0.05):
-    return base * round(val / base)
-
 
 class PidController:
     def __init__(self, set_point, kP=0.0, kI=0.0, kD=0.0, on_log_error=None) -> None:
@@ -260,9 +236,9 @@ class DepthControlNode(Node):
         # depth_Kp, depth_Ki, depth_Kd = lookup_zieglernichols_gains(
         #     depth_Ku, depth_Tu, msg.depth_pid_type
         # )
-        depth_Kp = 3.0
-        depth_Ki = 0.0
-        depth_Kd = 50.0
+        depth_Kp = 2.7
+        depth_Ki = 0.02
+        depth_Kd = 150.0
 
         self.logger.info(
             "init depth pid with Kp {} Ki {} Kd {}".format(depth_Kp, depth_Ki, depth_Kd)
@@ -283,6 +259,7 @@ class DepthControlNode(Node):
 
         pitch_Kp = 0.02
         pitch_Ki = 0.0
+        # pitch_Kd = 0.127
         pitch_Kd = 0.127
 
         self.logger.info(
@@ -306,7 +283,7 @@ class DepthControlNode(Node):
         self.current_rear_tank_level = msg.current_level
 
     def handle_pressure_msg(self, msg):
-        self.current_depth = calculate_center_depth(msg.depth, self.current_pitch)
+        self.current_depth = msg.depth
 
     def log_pid_error(self, pid_error):
         msg = Float32()
@@ -401,13 +378,13 @@ class DepthControlNode(Node):
                 0.5 * depth_controller_output
             )
 
-            next_front_tank_level = 0.67 * next_front_tank_level
+            next_front_tank_level = 0.8 * next_front_tank_level
 
             next_rear_tank_level = (0.5 * pitch_rear_tank) + (
                 0.5 * depth_controller_output
             )
 
-            next_rear_tank_level = 1.33 * next_rear_tank_level
+            next_rear_tank_level = 1.2 * next_rear_tank_level
 
             # self.log_pid_error(self.pitch_target - self.current_pitch)
 
