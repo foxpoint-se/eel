@@ -57,6 +57,8 @@ KILL_SWITCH = "kill_switch"
 # TODO:
 # '<=' not supported between instances of 'float' and 'NoneType'
 def is_within_accepted_target_boundaries(current_level, target_level):
+    if current_level is None or target_level is None:
+        return False
     low_threshold = target_level - (TARGET_TOLERANCE / 2)
     high_threshold = target_level + (TARGET_TOLERANCE / 2)
     is_within_target = low_threshold <= current_level <= high_threshold
