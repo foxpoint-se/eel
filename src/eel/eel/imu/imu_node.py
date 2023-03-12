@@ -17,7 +17,7 @@ def filter_pitch(previous, new):
         return previous
     return new
 
-
+# example usage: ros2 run eel imu
 class ImuNode(Node):
     def __init__(self):
         super().__init__("imu_node")

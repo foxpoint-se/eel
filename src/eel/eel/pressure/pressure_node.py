@@ -24,7 +24,7 @@ def get_pressure_sensor(should_simulate: bool, parent_node: Node):
 
         return PressureSensor(parent_node=parent_node)
 
-
+# example usage: ros2 run eel pressure
 class PressureNode(Node):
     def __init__(self):
         super().__init__("pressure_node")
