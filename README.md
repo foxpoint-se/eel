@@ -146,6 +146,8 @@ We set `dhcp4` to false in both cases, since we want a specific address.
 
 Connect through SSH to `192.168.0.101`.
 
+If it doesn't work: try setting the netmask on your machine to `255.255.255.0`.
+
 - **For 1:1 connection (RPi to computer):** Uncomment `gateway4`. Should be IP for computer (host). Also, set a static IP on your computer, which will be the host that RPi connects to. Should be the IP of the `gateway4` (`192.168.0.100`).
 
 - **For 1:m connection (RPi to router).** `gateway4` should be commented out (disabled).
