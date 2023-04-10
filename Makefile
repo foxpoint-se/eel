@@ -63,6 +63,9 @@ start-tanks:		## start tanks launch file
 start-pid:		## start pid launch file
 	ros2 launch eel_bringup pid.launch.py
 
+start-gunthix:		## start gunthix launch file
+	ros2 launch eel_bringup gunthix.launch.py
+
 build-sym:		## build with symlink
 	colcon build --symlink-install
 
