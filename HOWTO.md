@@ -44,6 +44,8 @@ We will refer to the three terminals as:
 
 1. In the `Remote to RPi` terminal (which you just setup in the previous section), do the following:
    1. `cd eel`
+   1. `git checkout main`
+   1. `git pull`
    1. `source source_me.sh`
    1. `make start-gunthix`
    1. You should now see some output saying that a few nodes have started. If you get any errors, I can't help you :)
