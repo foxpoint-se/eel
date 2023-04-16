@@ -48,6 +48,7 @@ We will refer to the three terminals as:
    1. `git pull`
    1. `source source_me.sh`
    1. `make build-sym`
+   1. `make start-pigpio`
    1. `make start-gunthix`
    1. You should now see some output saying that a few nodes have started. If you get any errors, I can't help you :)
 1. In another terminal, let's say `Ground control 1`, do the following:
