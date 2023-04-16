@@ -144,16 +144,10 @@ This will probably not work, since another service is using the same port. Follo
 
 `GPIO.setup()` will probably raise a runtime error saying `Not running on an RPi`. Do this to resolve:
 
-Change `/dev/gpiomem` group ownership to your user's group:
-
 ```
-sudo chown root:$USER /dev/gpiomem
-```
-
-Allow group read-write access to `/dev/gpiomem`:
-
-```
-sudo chmod g+rw /dev/gpiomem
+sudo apt install rpi.gpio-common
+sudo adduser ${USER} dialout
+sudo reboot
 ```
 
 ## Notes on running `rudder` node
@@ -163,7 +157,6 @@ Rudder node can raise `OSError` saying `failed to connect to localhost:8888`. Th
 ```
 make start-pigpio
 ```
-
 
 ## Notes on networking when using ethernet cable
 
