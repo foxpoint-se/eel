@@ -92,7 +92,7 @@ sudo apt install -y i2c-tools
 sudo usermod -a -G i2c ubuntu // if ubuntu is your user
 ```
 
-You should be able to run the `imu` node now:
+Reboot. You should be able to run the `imu` node now:
 
 ```
 source source_me.sh
@@ -139,6 +139,31 @@ This will probably not work, since another service is using the same port. Follo
    sudo adduser ${USER} dialout
    ```
 1. Reboot
+
+## Notes on running `motor` node
+
+`GPIO.setup()` will probably raise a runtime error saying `Not running on an RPi`. Do this to resolve:
+
+Change `/dev/gpiomem` group ownership to your user's group:
+
+```
+sudo chown root:$USER /dev/gpiomem
+```
+
+Allow group read-write access to `/dev/gpiomem`:
+
+```
+sudo chmod g+rw /dev/gpiomem
+```
+
+## Notes on running `rudder` node
+
+Rudder node can raise `OSError` saying `failed to connect to localhost:8888`. This means that you haven't started `pigpiod`. Resolve by running:
+
+```
+make start-pigpio
+```
+
 
 ## Notes on networking when using ethernet cable
 
