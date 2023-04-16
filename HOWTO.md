@@ -66,4 +66,13 @@ At this point (assuming no errors), everything should be up and running, so you 
 1. Open a web browser.
 1. Navigate to http://localhost:3000.
 
-... To be continued.
+## Shut down
+
+When you're done testing stuff, follow these steps to shut everything down properly:
+
+1. In the `Ground control 1` terminal, press `Ctrl C`
+1. In the `Ground control 2` terminal, press `Ctrl C`
+1. In the `Remote to RPi` terminal, press `Ctrl C`
+1. In the `Remote to RPi` terminal, run `sudo shutdown -h now`
+1. Kill the power to the Eel.
+1. Shut down your computer.
