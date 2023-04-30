@@ -383,7 +383,7 @@ class DepthControlNode(Node):
 
             next_front_tank_level = 0.67 * next_front_tank_level
 
-            next_front_tank_level = next_front_tank_level + 0.215
+            next_front_tank_level = next_front_tank_level + 0.44
 
             next_rear_tank_level = (0.2 * pitch_rear_tank) + (
                 0.8 * depth_controller_output
@@ -392,7 +392,7 @@ class DepthControlNode(Node):
 
             next_rear_tank_level = 1.33 * next_rear_tank_level
 
-            next_rear_tank_level = next_rear_tank_level + 0.47
+            next_rear_tank_level = next_rear_tank_level + 0.36
 
             # self.log_pid_error(self.pitch_target - self.current_pitch)
 
