@@ -53,19 +53,20 @@ def generate_launch_description():
         ],
     )
 
-    pressure_node = Node(
-        package="eel",
-        executable="pressure",
-        name="pressure_node",
-        parameters=[{SIMULATE_PARAM: False}],
-    )
+    # NOTE: when trimming pid values, run imu and pressure in separate terminals, so they don't have to be re-calibrated every time.
+    # pressure_node = Node(
+    #     package="eel",
+    #     executable="pressure",
+    #     name="pressure_node",
+    #     parameters=[{SIMULATE_PARAM: False}],
+    # )
 
-    imu_node = Node(
-        package="eel",
-        executable="imu",
-        name="imu_node",
-        parameters=[{SIMULATE_PARAM: False}],
-    )
+    # imu_node = Node(
+    #     package="eel",
+    #     executable="imu",
+    #     name="imu_node",
+    #     parameters=[{SIMULATE_PARAM: False}],
+    # )
 
     depth_control_node = Node(
         package="eel",
@@ -75,8 +76,8 @@ def generate_launch_description():
 
     ld.add_action(front_tank_node)
     ld.add_action(rear_tank_node)
-    ld.add_action(pressure_node)
-    ld.add_action(imu_node)
+    # ld.add_action(pressure_node)
+    # ld.add_action(imu_node)
     ld.add_action(depth_control_node)
 
     return ld

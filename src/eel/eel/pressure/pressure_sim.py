@@ -11,8 +11,8 @@ TERMINAL_VELOCITY_MPS = 0.5
 MAX_DEPTH = 10.0
 MIN_DEPTH = 0.0
 
-# OS_ERROR_RATE = 0.1
-OS_ERROR_RATE = 0.0
+OS_ERROR_RATE = 0.01
+# OS_ERROR_RATE = 0.0
 
 
 def should_raise_oserror():

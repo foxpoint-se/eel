@@ -6,3 +6,4 @@ int8 mag
 float32 heading
 float32 roll
 float32 pitch
+float32 pitch_velocity

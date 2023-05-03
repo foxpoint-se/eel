@@ -15,4 +15,4 @@ class ImuSensor:
 
     def get_euler(self):
         heading, roll, pitch = self.sensor.euler
-        return float(heading or 0), float(roll or 0), float(pitch or 0)
+        return float(heading or 0), float(roll or 0), -float(pitch or 0)

@@ -52,9 +52,13 @@ CEILING_REACHED = "ceiling_reached"
 FLOOR_REACHED = "floor_reached"
 NO_TARGET = "no_target"
 ADJUSTING = "adjusting"
+KILL_SWITCH = "kill_switch"
 
-
+# TODO:
+# '<=' not supported between instances of 'float' and 'NoneType'
 def is_within_accepted_target_boundaries(current_level, target_level):
+    if current_level is None or target_level is None:
+        return False
     low_threshold = target_level - (TARGET_TOLERANCE / 2)
     high_threshold = target_level + (TARGET_TOLERANCE / 2)
     is_within_target = low_threshold <= current_level <= high_threshold
@@ -85,6 +89,20 @@ def should_fill(current_level, target_level):
 
 def should_empty(current_level, target_level):
     return current_level > target_level
+
+def add_to_last_readings(current_level, last_readings, size=5):
+    last_readings.append(current_level)
+    if len(last_readings) > size:
+        last_readings.pop(0)
+    return last_readings
+
+def get_movement(readings):
+    if len(readings) == 0:
+        return None
+    first = readings[0]
+    last = readings[len(readings) - 1]
+    diff = last - first
+    return diff
 
 
 # NOTE: example usage
@@ -121,6 +139,7 @@ class TankNode(Node):
         self.target_status = NO_TARGET  # only used for passing information to frontend
         self.current_level = None
         self.current_range = None
+        self.last_five_readings = []
 
         self.cmd_topic = self.get_parameter(CMD_TOPIC_PARAM).value
         self.status_topic = self.get_parameter(STATUS_TOPIC_PARAM).value
@@ -205,21 +224,26 @@ class TankNode(Node):
             self.pump_motor_control.fill()
 
     def publish_status(self, current_level):
-        msg = TankStatus()
-        msg.current_level = current_level
-        msg.target_level = []
-        if self.target_level:
-            msg.target_level.append(self.target_level)
-        msg.is_autocorrecting = self.is_autocorrecting
-        msg.target_status = self.target_status
-        self.publisher.publish(msg)
+        if current_level is not None:
+            msg = TankStatus()
 
-        msg2 = Float32()
-        msg2.data = float(self.current_range or 0.0)
-        self.debug_publisher.publish(msg2)
+            # TODO: ensure float
+            # The 'current_level' field must be of type 'float'
+            msg.current_level = float(current_level)
+            msg.target_level = []
+            if self.target_level:
+                msg.target_level.append(self.target_level)
+            msg.is_autocorrecting = self.is_autocorrecting
+            msg.target_status = self.target_status
+            self.publisher.publish(msg)
+
+            msg2 = Float32()
+            msg2.data = float(self.current_range or 0.0)
+            self.debug_publisher.publish(msg2)
 
     def target_loop(self):
         current_level = self.get_level()
+        # self.last_five_readings = add_to_last_readings(current_level, self.last_five_readings)
         if (
             self.target_level is not None
             and current_level
@@ -227,9 +251,26 @@ class TankNode(Node):
         ):
             self.check_against_target(current_level, self.target_level)
 
+        # self.current_level = current_level
         self.publish_status(current_level)
 
     def check_against_target(self, current_level, target_level):
+        # movement = get_movement(self.last_five_readings)
+        # if self.pump_motor_control.get_is_emptying() or self.pump_motor_control.get_is_filling_up():
+        #     self.last_five_readings = add_to_last_readings(current_level, self.last_five_readings)
+
+        # if len(self.last_five_readings) > 4:
+        #     if self.pump_motor_control.get_is_emptying() and movement >= -0.005:
+        #         self.get_logger().info("movement {} {}".format(movement, str(self.last_five_readings)))
+        #         self.target_status = KILL_SWITCH
+        #     elif self.pump_motor_control.get_is_filling_up() and movement <= 0.005:
+        #         self.get_logger().info("movement {} {}".format(movement, str(self.last_five_readings)))
+        #         self.target_status = KILL_SWITCH
+
+        if self.target_status == KILL_SWITCH:
+            self.pump_motor_control.stop()
+            self.stop_checking_against_target()
+
         if is_within_accepted_target_boundaries(current_level, target_level):
             self.pump_motor_control.stop()
             self.stop_checking_against_target()
@@ -247,20 +288,23 @@ class TankNode(Node):
             self.stop_checking_against_target()
             self.target_status = CEILING_REACHED
 
-        if self.pump_motor_control.get_is_filling_up() and is_above_target(
+        if self.target_status != KILL_SWITCH and self.pump_motor_control.get_is_filling_up() and is_above_target(
             current_level, target_level
         ):
             self.pump_motor_control.empty()
 
-        if self.pump_motor_control.get_is_emptying() and is_below_target(
+        if self.target_status != KILL_SWITCH and self.pump_motor_control.get_is_emptying() and is_below_target(
             current_level, target_level
         ):
             self.pump_motor_control.fill()
 
     def get_level(self):
-        distance_level = self.distance_sensor.get_level()
-        level_filled = 1 - distance_level
-        return level_filled
+        try:
+            distance_level = self.distance_sensor.get_level()
+            level_filled = 1 - distance_level
+            return level_filled
+        except (OSError, IOError) as err:
+            self.get_logger().error(str(err))
 
 
 def main(args=None):
