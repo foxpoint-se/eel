@@ -17,20 +17,20 @@ class BatterySimulator:
 
         self.last_update = self.start_time
 
-        self.battery_updater = parent_node.create_timer(
-            1.0, self._loop
-        )
+        self.battery_updater = parent_node.create_timer(1.0, self._loop)
 
     def _loop(self):
         self._update_voltage()
         self.last_update = time()
-    
+
     def _update_voltage(self):
         now = time()
 
         if (int(now) - int(self.start_time)) % DEGENERATION_TIME_S == 0:
-            self.voltage = self.voltage - (BATTERY_MAX_VOLTAGE * DEGEN_RATE_PERCENT)
-    
+            self.voltage = self.voltage - (
+                BATTERY_MAX_VOLTAGE * DEGEN_RATE_PERCENT
+            )
+
     def get_voltage(self):
         return self.voltage
 

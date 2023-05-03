@@ -31,6 +31,8 @@ MOMENTUM_TOLERANCE = 0.03
 #
 # Or: F2 - 0.5 F1 = ?
 #
+
+
 def get_momentum_difference(front_tank_level, rear_tank_level):
     return front_tank_level - 0.5 * rear_tank_level
     # return front_tank_level - rear_tank_level

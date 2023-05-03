@@ -3,12 +3,14 @@ class BatterySensor:
         import logging
         from ina226 import INA226
 
-        self.ina = INA226(busnum=1, max_expected_amps=16, log_level=logging.INFO)
+        self.ina = INA226(
+            busnum=1, max_expected_amps=16, log_level=logging.INFO
+        )
         self.ina.configure()
 
     def get_voltage(self):
         return self.ina.voltage()
-    
+
     def get_current(self):
         return self.ina.current()
 
@@ -17,9 +19,10 @@ class BatterySensor:
 
     def get_supply_voltage(self):
         return self.ina.supply_voltage()
-    
+
     def get_shunt_voltage(self):
         return self.ina.shunt_voltage()
+
 
 def read():
     print("Bus Voltage    : %.3f V" % ina.voltage())
@@ -69,4 +72,6 @@ if __name__ == "__main__":
                 read()
                 break
         sleep(1)
-        print("===================================================Trigger again")
+        print(
+            "===================================================Trigger again"
+        )
