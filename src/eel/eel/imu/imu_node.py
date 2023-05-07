@@ -21,7 +21,7 @@ def get_pitch_velocity(pitch, previous_pitch, now, previous_pitch_at):
 def filter_pitch(previous, new):
     if previous is None:
         return new
-    if abs(new - previous) > 30.0:
+    if abs(new - previous) > 10.0:
         return previous
     if new > 360.0 or new < -360.0:
         return previous
@@ -75,9 +75,9 @@ class ImuNode(Node):
 
             now = time()
 
-            pitch_velocity = get_pitch_velocity(pitch, self.previous_pitch, now, self.previous_pitch_at)
-
             pitch_to_send = filter_pitch(self.previous_pitch, pitch)
+
+            pitch_velocity = get_pitch_velocity(pitch_to_send, self.previous_pitch, now, self.previous_pitch_at)
 
             msg.pitch = pitch_to_send
             msg.pitch_velocity = pitch_velocity
