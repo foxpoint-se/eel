@@ -170,7 +170,6 @@ class TankNode(Node):
             NO_TARGET  # only used for passing information to frontend
         )
         self.current_level = None
-        self.previous_level = None
         self.current_range = None
         self.last_five_readings = []
         self.current_velocity = 0.0
@@ -288,13 +287,8 @@ class TankNode(Node):
             self.debug_publisher.publish(msg2)
 
     def target_loop(self):
-        now = time()
         current_level = self.get_level()
         self.current_level = current_level
-        current_velocity = get_level_velocity(
-            current_level, self.previous_level, now, self.previous_level_at
-        )
-        self.current_velocity = current_velocity
         # self.last_five_readings = add_to_last_readings(current_level, self.last_five_readings)
         if (
             self.target_level is not None
@@ -303,8 +297,6 @@ class TankNode(Node):
         ):
             self.check_against_target(current_level, self.target_level)
 
-        self.previous_level = current_level  # TODO
-        self.previous_level_at = now
         self.publish_status(current_level)
 
     def check_against_target(self, current_level, target_level):
@@ -325,7 +317,7 @@ class TankNode(Node):
             or self.pump_motor_control.get_is_filling_up()
         ) and abs(self.current_velocity) < 0.005:
             self.get_logger().error(
-                "Running, but too low velocty. So should stop now."
+                "{} Running, but too low velocty. So should stop now.".format(round(self.current_velocity, 5))
             )
 
         # if self.target_status == KILL_SWITCH:
@@ -371,9 +363,16 @@ class TankNode(Node):
 
     def get_level(self):
         try:
+            now = time()
             distance_level = self.distance_sensor.get_level()
             level_filled = 1 - distance_level
             filtered_level = filter_level(level_filled, self.previous_level)
+            current_velocity = get_level_velocity(
+                filtered_level, self.previous_level, now, self.previous_level_at
+            )
+            self.current_velocity = current_velocity
+
+            self.previous_level_at = now
             self.previous_level = filtered_level
             return filtered_level
         except (OSError, IOError) as err:
