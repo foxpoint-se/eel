@@ -9,6 +9,9 @@ log
 # python cache
 **/*/__pycache__
 
+# coverage
+.coverage
+
 # vscode stuff
 .vscode
 

@@ -21,3 +21,6 @@ pytest==7.3.1
 PyYAML==6.0
 flake8==6.0.0
 pydocstyle==6.3.0
+pytest-pretty==1.2.0
+coverage==7.2.5
+pytest-cov==4.0.0

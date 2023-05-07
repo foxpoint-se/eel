@@ -90,8 +90,9 @@ install-voltage-sensor:		## install stuff needed for depth senson
 detect-i2c:		## detect i2c
 	sudo i2cdetect -y 1
 
+# -s outputs print statements
 test:		## run tests specific to eel only
-	pytest src/eel/test/eel
+	pytest -s --cov=eel src/eel/test/eel
 
 test-ros:		## run whole ros test suite
 	( \
@@ -99,3 +100,6 @@ test-ros:		## run whole ros test suite
 		colcon test-result --all --verbose; \
 		echo "COMMENT: it's probably mostly about fixing linting errors"; \
 	)
+
+coverage:		## coverage specific to eel only
+	coverage report -m pytest src/eel/test/eel

@@ -1,5 +1,89 @@
 # Eel
 
+## Notes
+
+starta om datorn och lägg detta i en annan fil
+
+meddelande kommer in: 0 - sätt tankarna till 0 - ingen compute loop
+
+---
+
+check target loop:
+
+om inget target:
+return
+
+om target surface och tankarna tömda:
+return
+
+om at target:
+return
+
+DepthController
+target = "SURFACE" | "TARGET" | "NO_TARGET"
+
+// stäng av vid is_at_target
+// stäng av vid is_at_surface
+// -- skicka tillbaka None. då kan jag låta bli att skicka meddelanden till tankarna
+
+get_next_levels (curr_front, curr_rear) -> front, rear
+om inget target:
+return None,None
+
+set_new_target(target1, target2, pid1, pid2)
+
+merge_pids -> front, rear
+
+\_\_is_at_target
+
+\_\_go_to_neutral
+
+init:
+depth_velocity_limit_mps = 0.05
+pitch_velocity_limit_degps = 2.0
+
+input:
+current depth
+current pitch
+
+    depth_velocity
+    pitch_velocity
+
+    target depth
+    target pitch
+
+    current t1 level
+    current t2 level
+
+    compute_pitch
+
+output
+next t1 level
+next t2 level
+
+---
+
+vid init:
+skapa en handler med --> merger, pitch_computer, depth_computer, target_checker
+
+vid msg:
+set new target
+
+varje vända:
+
+uppdatera handlern med current state
+
+      --> uppdatera target_checker med --> current depth, pitch, velocity1, velocity2
+
+get next state
+
+(bonus)
+vi kan visa i ui:t boundaries och typ grönt/rött för hastighet genom att
+
+handler.target_checker.lower_boundary
+handler.target_checker.upper_boundary
+handler.target_checker.
+
 ## Prerequisites
 
 - Ubuntu 20.04
