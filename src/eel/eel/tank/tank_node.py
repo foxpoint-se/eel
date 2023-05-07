@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import sys
 import rclpy
+from time import time
 from rclpy.node import Node
 from rclpy.executors import ExternalShutdownException
 from std_msgs.msg import Float32
@@ -109,14 +110,25 @@ def get_movement(readings):
 
 
 LEVEL_MOVEMENT_TOLERANCE = 0.05
+
+
 def filter_level(current_level, previous_level):
     if previous_level is None:
         return current_level
-    
+
     if abs(current_level - previous_level) < LEVEL_MOVEMENT_TOLERANCE:
         return current_level
 
     return previous_level
+
+
+def get_level_velocity(level, previous_level, now, previous_level_at):
+    if previous_level is None or previous_level_at is None:
+        return 0.0
+    level_delta = level - previous_level
+    time_delta = now - previous_level_at
+    velocity = level_delta / time_delta
+    return velocity
 
 
 # NOTE: example usage
@@ -161,6 +173,9 @@ class TankNode(Node):
         self.previous_level = None
         self.current_range = None
         self.last_five_readings = []
+        self.current_velocity = 0.0
+        self.previous_level = None
+        self.previous_level_at = None
 
         self.cmd_topic = self.get_parameter(CMD_TOPIC_PARAM).value
         self.status_topic = self.get_parameter(STATUS_TOPIC_PARAM).value
@@ -273,7 +288,13 @@ class TankNode(Node):
             self.debug_publisher.publish(msg2)
 
     def target_loop(self):
+        now = time()
         current_level = self.get_level()
+        self.current_level = current_level
+        current_velocity = get_level_velocity(
+            current_level, self.previous_level, now, self.previous_level_at
+        )
+        self.current_velocity = current_velocity
         # self.last_five_readings = add_to_last_readings(current_level, self.last_five_readings)
         if (
             self.target_level is not None
@@ -282,7 +303,8 @@ class TankNode(Node):
         ):
             self.check_against_target(current_level, self.target_level)
 
-        self.current_level = current_level
+        self.previous_level = current_level  # TODO
+        self.previous_level_at = now
         self.publish_status(current_level)
 
     def check_against_target(self, current_level, target_level):
@@ -298,9 +320,17 @@ class TankNode(Node):
         #         self.get_logger().info("movement {} {}".format(movement, str(self.last_five_readings)))
         #         self.target_status = KILL_SWITCH
 
-        if self.target_status == KILL_SWITCH:
-            self.pump_motor_control.stop()
-            self.stop_checking_against_target()
+        if (
+            self.pump_motor_control.get_is_emptying()
+            or self.pump_motor_control.get_is_filling_up()
+        ) and abs(self.current_velocity) < 0.005:
+            self.get_logger().error(
+                "Running, but too low velocty. So should stop now."
+            )
+
+        # if self.target_status == KILL_SWITCH:
+        #     self.pump_motor_control.stop()
+        #     self.stop_checking_against_target()
 
         if is_within_accepted_target_boundaries(current_level, target_level):
             self.pump_motor_control.stop()
