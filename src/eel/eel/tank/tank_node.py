@@ -54,6 +54,7 @@ NO_TARGET = "no_target"
 ADJUSTING = "adjusting"
 KILL_SWITCH = "kill_switch"
 
+
 # TODO:
 # '<=' not supported between instances of 'float' and 'NoneType'
 def is_within_accepted_target_boundaries(current_level, target_level):
@@ -90,11 +91,13 @@ def should_fill(current_level, target_level):
 def should_empty(current_level, target_level):
     return current_level > target_level
 
+
 def add_to_last_readings(current_level, last_readings, size=5):
     last_readings.append(current_level)
     if len(last_readings) > size:
         last_readings.pop(0)
     return last_readings
+
 
 def get_movement(readings):
     if len(readings) == 0:
@@ -131,12 +134,18 @@ class TankNode(Node):
         self.distance_sensor_pin = int(
             self.get_parameter(DISTANCE_SENSOR_PIN_PARAM).value
         )
-        self.floor_value = int(self.get_parameter(TANK_FLOOR_VALUE_PARAM).value)
-        self.ceiling_value = int(self.get_parameter(TANK_CEILING_VALUE_PARAM).value)
+        self.floor_value = int(
+            self.get_parameter(TANK_FLOOR_VALUE_PARAM).value
+        )
+        self.ceiling_value = int(
+            self.get_parameter(TANK_CEILING_VALUE_PARAM).value
+        )
 
         self.is_autocorrecting = False
         self.target_level = None
-        self.target_status = NO_TARGET  # only used for passing information to frontend
+        self.target_status = (
+            NO_TARGET  # only used for passing information to frontend
+        )
         self.current_level = None
         self.current_range = None
         self.last_five_readings = []
@@ -155,8 +164,12 @@ class TankNode(Node):
         self.level_cmd_subscription = self.create_subscription(
             Float32, self.cmd_topic, self.handle_tank_cmd, 10
         )
-        self.publisher = self.create_publisher(TankStatus, self.status_topic, 10)
-        self.debug_publisher = self.create_publisher(Float32, self.debug_topic, 10)
+        self.publisher = self.create_publisher(
+            TankStatus, self.status_topic, 10
+        )
+        self.debug_publisher = self.create_publisher(
+            Float32, self.debug_topic, 10
+        )
 
         if self.should_simulate:
             self.pump_motor_control = PumpMotorControlSimulator()
@@ -169,7 +182,9 @@ class TankNode(Node):
             )
         else:
             from .pump_motor_control import PumpMotorControl
-            from .distance_sensor_potentiometer import DistanceSensorPotentiometer
+            from .distance_sensor_potentiometer import (
+                DistanceSensorPotentiometer,
+            )
 
             self.pump_motor_control = PumpMotorControl(
                 motor_pin=self.motor_pin, direction_pin=self.direction_pin
@@ -210,9 +225,13 @@ class TankNode(Node):
     def handle_tank_cmd(self, msg):
         requested_target_level = msg.data
         current_level = self.get_level()
-        target_level = clamp(requested_target_level, LEVEL_FLOOR, LEVEL_CEILING)
+        target_level = clamp(
+            requested_target_level, LEVEL_FLOOR, LEVEL_CEILING
+        )
 
-        if not is_within_accepted_target_boundaries(current_level, target_level):
+        if not is_within_accepted_target_boundaries(
+            current_level, target_level
+        ):
             self.start_checking_against_target(target_level)
             self.start_motor_towards_target(current_level, target_level)
             self.target_status = ADJUSTING
@@ -278,23 +297,33 @@ class TankNode(Node):
 
         # Do we need these safety checks? Will they ever happen?
         # I guess that they could if the target check frequency is to low, so that the target then is missed.
-        if is_at_floor(current_level) and self.pump_motor_control.get_is_emptying():
+        if (
+            is_at_floor(current_level)
+            and self.pump_motor_control.get_is_emptying()
+        ):
             self.pump_motor_control.stop()
             self.stop_checking_against_target()
             self.target_status = FLOOR_REACHED
 
-        if is_at_ceiling(current_level) and self.pump_motor_control.get_is_filling_up():
+        if (
+            is_at_ceiling(current_level)
+            and self.pump_motor_control.get_is_filling_up()
+        ):
             self.pump_motor_control.stop()
             self.stop_checking_against_target()
             self.target_status = CEILING_REACHED
 
-        if self.target_status != KILL_SWITCH and self.pump_motor_control.get_is_filling_up() and is_above_target(
-            current_level, target_level
+        if (
+            self.target_status != KILL_SWITCH
+            and self.pump_motor_control.get_is_filling_up()
+            and is_above_target(current_level, target_level)
         ):
             self.pump_motor_control.empty()
 
-        if self.target_status != KILL_SWITCH and self.pump_motor_control.get_is_emptying() and is_below_target(
-            current_level, target_level
+        if (
+            self.target_status != KILL_SWITCH
+            and self.pump_motor_control.get_is_emptying()
+            and is_below_target(current_level, target_level)
         ):
             self.pump_motor_control.fill()
 
