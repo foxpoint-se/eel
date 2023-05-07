@@ -108,6 +108,17 @@ def get_movement(readings):
     return diff
 
 
+LEVEL_MOVEMENT_TOLERANCE = 0.05
+def filter_level(current_level, previous_level):
+    if previous_level is None:
+        return current_level
+    
+    if abs(current_level - previous_level) < LEVEL_MOVEMENT_TOLERANCE:
+        return current_level
+
+    return previous_level
+
+
 # NOTE: example usage
 # OLD
 # ros2 run eel tank --ros-args -p simulate:=False -p cmd_topic:=/tank_rear/cmd -p status_topic:=/tank_rear/status -p motor_pin:=24 -p direction_pin:=25 -p tank_floor_mm:=15 -p tank_ceiling_mm:=63 -p xshut_pin_param:=21
@@ -147,6 +158,7 @@ class TankNode(Node):
             NO_TARGET  # only used for passing information to frontend
         )
         self.current_level = None
+        self.previous_level = None
         self.current_range = None
         self.last_five_readings = []
 
@@ -270,7 +282,7 @@ class TankNode(Node):
         ):
             self.check_against_target(current_level, self.target_level)
 
-        # self.current_level = current_level
+        self.current_level = current_level
         self.publish_status(current_level)
 
     def check_against_target(self, current_level, target_level):
@@ -331,7 +343,9 @@ class TankNode(Node):
         try:
             distance_level = self.distance_sensor.get_level()
             level_filled = 1 - distance_level
-            return level_filled
+            filtered_level = filter_level(level_filled, self.previous_level)
+            self.previous_level = filtered_level
+            return filtered_level
         except (OSError, IOError) as err:
             self.get_logger().error(str(err))
 
