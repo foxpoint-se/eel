@@ -35,7 +35,9 @@ def get_average_bouyancy(
     front_offset = get_neutral_offset(
         front_tank_level, neutral_level, neutral_tolerance
     )
-    rear_offset = get_neutral_offset(rear_tank_level, neutral_level, neutral_tolerance)
+    rear_offset = get_neutral_offset(
+        rear_tank_level, neutral_level, neutral_tolerance
+    )
     offset_average = (front_offset + rear_offset) / 2
     return offset_average
 
