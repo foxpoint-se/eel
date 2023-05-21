@@ -37,6 +37,7 @@ DEPTH_TOLERANCE_METERS = 0.2
 
 DEPTH_DIFF_MAX_OUT = 2.0
 
+# TODO: remove
 TERMINAL_VELOCITY_MPS = 0.5
 
 
@@ -62,6 +63,7 @@ def is_within_accepted_target_boundaries(
     return is_within_target
 
 
+# TODO: remove
 # TODO: Remove or move somewhere else. Can be useful for when getting depth at
 # center when
 # sensor is placed at one end of the vehicle.
@@ -196,6 +198,13 @@ class DepthControlNode(Node):
 
             self.front_tank_pub.publish(front_msg)
             self.rear_tank_pub.publish(rear_msg)
+
+        self.get_logger().info(
+            "{} - {}".format(
+                self.depth_controller.get_progress_state(),
+                self.depth_controller.get_target_state(),
+            )
+        )
 
     def handle_pid_depth_msg(self, msg):
         self.get_logger().info(

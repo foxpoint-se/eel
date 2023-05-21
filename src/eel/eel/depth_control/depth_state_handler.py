@@ -47,6 +47,7 @@ class DepthController(DepthControllerInterface):
         depth_pid: PidInterface = None,
         pitch_pid: PidInterface = None,
         merger: MergerInterface = None,
+        neutral_levels: TankLevels = None,
     ) -> None:
         super().__init__()
         self.__tank_levels: TankLevels = None
@@ -59,6 +60,7 @@ class DepthController(DepthControllerInterface):
         self.__depth_pid = depth_pid
         self.__pitch_pid = pitch_pid
         self.__merger = merger
+        self.__neutral_levels = neutral_levels
 
     def __are_tanks_empty(self):
         return (
@@ -67,13 +69,17 @@ class DepthController(DepthControllerInterface):
         )
 
     def __get_levels_towards_surface(self) -> TankLevels:
-        are_tanks_empty = self.__are_tanks_empty()
-        if are_tanks_empty:
-            self.__progress_state = ProgressState.AT_SURFACE
-            self.__target_state = TargetState.NO_TARGET
+        if self.get_progress_state() is ProgressState.AT_SURFACE:
             self.__target = None
             return None
         return TankLevels(front=0.0, rear=0.0)
+
+    def __capture_neutral_levels(self):
+        neutral_levels = TankLevels(
+            front=self.__current_state.front_tank_level,
+            rear=self.__current_state.rear_tank_level,
+        )
+        self.__neutral_levels = neutral_levels
 
     def update(self, current_state: EelDepthState = None) -> TankLevels:
         self.__current_state = current_state
@@ -91,8 +97,25 @@ class DepthController(DepthControllerInterface):
             return self.__tank_levels
 
         if self.get_target_state() is TargetState.TOWARDS_TARGET:
-            if self.__are_all_at_target():
-                return None
+            if self.get_progress_state() is ProgressState.AT_TARGET:
+                # if self.__are_all_at_target():
+                self.__capture_neutral_levels()
+                self.__tank_levels = self.__neutral_levels
+                return self.__tank_levels
+                # self.__tank_levels = TankLevels(self.__merger)
+                # return
+
+            # target = None |
+
+            # if towards surface -> send surface levels
+            # if towards target, send control signals
+            #            also: update neutral levels.
+            # if at target, send neutral
+
+            # if towards target -> check all target checks.
+            #   if they're not ok, send control signal
+            #   if they're ok, save current levels as neutrals.
+            #   send the neutrals.
 
             depth_control = self.__depth_pid.compute(
                 self.__current_state.depth
@@ -148,11 +171,13 @@ class DepthController(DepthControllerInterface):
         return TargetState.TOWARDS_TARGET
 
     def get_progress_state(self) -> ProgressState:
-        # return ProgressState.NO_ACTION
+        if self.__are_all_at_target():
+            return ProgressState.AT_TARGET
+
+        if self.__are_tanks_empty():
+            return ProgressState.AT_SURFACE
+
         return ProgressState.NO_ACTION
-        # if self.__target is None:
-        #     self.__target_state = TargetState.NO_TARGET
-        # elif self.__target.depth < 0.05:
-        #     self.__target_state = TargetState.TOWARDS_SURFACE
-        # else:
-        #     self.__target_state = TargetState.TOWARDS_TARGET
+
+    def get_neutral_levels(self) -> TankLevels:
+        return self.__neutral_levels
