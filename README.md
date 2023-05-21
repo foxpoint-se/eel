@@ -443,3 +443,24 @@ WantedBy=multi-user.target
 ```
 
 Now do the same steps as for modem service with move, chmod and enable.
+
+## Connecting Ground Control to Eel, using VPN and websocket server
+
+Assuming:
+
+- Internet connection.
+- You have followed all setup above.
+
+1. SSH into Eel.
+1. Run `ifconfig` to verify that `tun0` inteface is available.
+1. Run `ping google.com` to verify internet connection.
+1. `cd eel`
+1. Run `make start-pigpio`
+1. Start any eel launch script, e.g. `make start-gunthix`
+1. In another terminal, while over SSH to eel, run `cd ground-control`.
+1. `make start-ros-ws`.
+1. On your computer, `openvpn3 session-start -c path/to/client.ovpn`
+1. `cd ground-control`
+1. Ensure your WS connection is targeting the IP of the Eel, through VPN (should be `172.27.208.110`).
+1. `make web-dev`.
+1. Verify that you get data in the interface, at `http://localhost:3000`
