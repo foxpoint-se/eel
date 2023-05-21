@@ -24,6 +24,7 @@ class BatteryNode(Node):
         self.get_power = sensor.get_power
         self.get_supply_voltage = sensor.get_supply_voltage
         self.get_shunt_voltage = sensor.get_shunt_voltage
+        self.get_voltage_percent = sensor.get_voltage_percent
 
         self.updater = self.create_timer(1.0 / self.update_frequency, self.publish_battery)
 
@@ -36,6 +37,7 @@ class BatteryNode(Node):
         msg.power = self.get_power()
         msg.supply_voltage = self.get_supply_voltage()
         msg.shunt_voltage = self.get_shunt_voltage()
+        msg.voltage_percent = self.get_voltage_percent()
 
         self.status_publisher.publish(msg)
 
