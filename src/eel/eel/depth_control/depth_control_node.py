@@ -199,12 +199,12 @@ class DepthControlNode(Node):
             self.front_tank_pub.publish(front_msg)
             self.rear_tank_pub.publish(rear_msg)
 
-        self.get_logger().info(
-            "{} - {}".format(
-                self.depth_controller.get_progress_state(),
-                self.depth_controller.get_target_state(),
-            )
-        )
+        # self.get_logger().info(
+        #     "{} - {}".format(
+        #         self.depth_controller.get_progress_state(),
+        #         self.depth_controller.get_target_state(),
+        #     )
+        # )
 
     def handle_pid_depth_msg(self, msg):
         self.get_logger().info(

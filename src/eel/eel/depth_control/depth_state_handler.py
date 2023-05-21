@@ -80,6 +80,7 @@ class DepthController(DepthControllerInterface):
             rear=self.__current_state.rear_tank_level,
         )
         self.__neutral_levels = neutral_levels
+        self.__merger.update_neutrals(neutral_levels)
 
     def update(self, current_state: EelDepthState = None) -> TankLevels:
         self.__current_state = current_state

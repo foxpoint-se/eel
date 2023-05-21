@@ -37,8 +37,10 @@ pid_merger_1 = PidMerger(
 pid_merger_for_simulation_1 = PidMerger(
     front_boost=1.0,
     rear_boost=1.0,
-    front_merge=DepthConfig(depth=0.5, pitch=0.5),
-    rear_merge=DepthConfig(depth=0.5, pitch=0.5),
+    front_merge=DepthConfig(depth=0.8, pitch=0.2),
+    rear_merge=DepthConfig(depth=0.8, pitch=0.2),
+    # front_merge=DepthConfig(depth=0.5, pitch=0.5),
+    # rear_merge=DepthConfig(depth=0.5, pitch=0.5),
     front_neutral=sim_neutrals.front,
     rear_neutral=sim_neutrals.rear,
 )

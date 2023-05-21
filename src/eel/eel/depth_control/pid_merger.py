@@ -8,6 +8,9 @@ class MergerInterface:
         """Merge two control signals to one."""
         pass
 
+    def update_neutrals(self, neutrals: TankLevels) -> None:
+        pass
+
 
 class PidMerger(MergerInterface):
     def __init__(
@@ -52,6 +55,6 @@ class PidMerger(MergerInterface):
 
         return TankLevels(front=front_with_offset, rear=rear_with_offset)
 
-    def update_neutral(self, front_neutral, rear_neutral):
-        self.front_neutral = front_neutral
-        self.rear_neutral = rear_neutral
+    def update_neutrals(self, neutrals: TankLevels = None):
+        self.front_neutral = neutrals.front
+        self.rear_neutral = neutrals.rear
