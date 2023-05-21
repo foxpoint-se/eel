@@ -38,7 +38,14 @@ install-pigpio:		## install pigpio in this folder
 		make; \
 		sudo make install; \
 	)
-
+install-pigpio-service:		## installs pigpio systemd service to run at boot
+	( \
+		sudo cp services/start-pigpio /usr/bin/start-pigpio; \
+		sudo cp services/pigpio.service /etc/systemd/system/pigpio.service; \
+		sudo chmod 644 /etc/systemd/system/pigpio.service; \
+		sudo systemctl enable pigpio; \
+		sudo systemctl start pigpio; \
+	)
 install-i2c:		## install i2c stuff
 	( \
 		sudo apt update; \

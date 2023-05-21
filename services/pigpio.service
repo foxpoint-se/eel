@@ -1,0 +1,10 @@
+[Unit]
+Description=Service to start pigpio on boot
+
+[Service]
+Type=forking
+ExecStart=/bin/bash /usr/bin/start-pigpio
+PIDFile=pigpio.pid
+
+[Install]
+WantedBy=multi-user.target
