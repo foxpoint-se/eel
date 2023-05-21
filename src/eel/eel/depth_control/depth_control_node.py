@@ -83,6 +83,8 @@ class DepthControlNode(Node):
         self.target_pitch = None
         self.current_depth = 0.0
         self.current_pitch = 0.0
+        self.current_pitch_velocity = 0.0
+        self.current_depth_velocity = 0.0
         self.last_depth_at = None
         self.last_depth = None
         self.current_front_tank_level = None
@@ -180,8 +182,8 @@ class DepthControlNode(Node):
         state = EelDepthState(
             depth=self.current_depth,
             pitch=self.current_pitch,
-            depth_velocity=0.01,  # TODO
-            pitch_velocity=0.01,  # TODO
+            depth_velocity=self.current_depth_velocity,
+            pitch_velocity=self.current_pitch_velocity,
             front_tank_level=self.current_front_tank_level,
             rear_tank_level=self.current_rear_tank_level,
         )
@@ -306,6 +308,7 @@ class DepthControlNode(Node):
 
     def handle_imu_msg(self, msg):
         self.current_pitch = msg.pitch
+        self.current_pitch_velocity = msg.pitch_velocity
 
     def handle_front_tank_msg(self, msg):
         self.current_front_tank_level = msg.current_level
@@ -315,6 +318,7 @@ class DepthControlNode(Node):
 
     def handle_pressure_msg(self, msg):
         self.current_depth = msg.depth
+        self.current_depth_velocity = msg.depth_velocity
 
     def log_pid_error(self, pid_error):
         msg = Float32()
