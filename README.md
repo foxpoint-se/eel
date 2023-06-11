@@ -58,6 +58,26 @@ source source_me.sh
 make start
 ```
 
+## Enable SPI access on Ubuntu
+Create /etc/udev/rules.d/90-gpio-spi.rules with:
+
+```
+KERNEL=="spidev0.0", OWNER="root", GROUP="spi"
+KERNEL=="spidev0.1", OWNER="root", GROUP="spi"
+```
+
+Create the group itself and assign it to an existing user "ubuntu":
+
+```
+sudo groupadd -f --system spi
+sudo usermod -a -G spi ubuntu
+```
+
+Restart
+
+sudo shutdown -r now
+
+
 ## I2C addresses
 
 | Address | Device                          | Comment                        |
