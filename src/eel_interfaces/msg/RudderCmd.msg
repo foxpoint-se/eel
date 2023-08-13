@@ -1,0 +1,2 @@
+float32 horizontal_value
+float32 vertical_value
