@@ -4,7 +4,7 @@ from rclpy.node import Node
 from rclpy.executors import ExternalShutdownException
 from std_msgs.msg import Float32
 import sys
-from .rudder_servo import RudderServo
+from .general_servo import RudderServo
 from .rudder_sim import RudderSimulator
 from ..utils.topics import RUDDER_CMD, RUDDER_STATUS
 from ..utils.constants import SIMULATE_PARAM
@@ -30,13 +30,21 @@ class Rudder(Node):
         self.rudder_status_publisher = self.create_publisher(Float32, RUDDER_STATUS, 10)
 
         if self.should_simulate:
-            simulator = RudderSimulator()
-            self.detach = simulator.detach
-            self.set_value = simulator.set_value
+            # simulator = RudderSimulator()
+            # self.detach = simulator.detach
+            # self.set_value = simulator.set_value
+            raise Exception("not implemented")
         if not self.should_simulate:
-            servo = RudderServo()
-            self.detach = servo.detach
-            self.set_value = servo.set_value
+            horizontal_servo = RudderServo(
+                pin=13,
+                min_pulse_width=0.81 / 1000,
+                max_pulse_width=2.2 / 1000,
+                flip_direction=True,
+                cap_min = -0.85,
+                cap_max = 0.85,
+            )
+            self.horizontal_detach = horizontal_servo.detach
+            self.horizontal_set_value = horizontal_servo.set_value
 
         self.get_logger().info(
             "{}Rudder node started.".format("SIMULATE " if self.should_simulate else "")
@@ -44,12 +52,12 @@ class Rudder(Node):
 
     def shutdown(self):
         self.get_logger().info("Rudder node shutting down...")
-        self.detach()
+        self.horizontal_detach()
 
     def handle_rudder_msg(self, msg):
         new_value = msg.data + self.rudder_calibration_term
         rudder_value = clamp(new_value, -1, 1)
-        self.set_value(rudder_value)
+        self.horizontal_set_value(rudder_value)
         status_msg = Float32()
         status_msg.data = float(rudder_value)
         self.rudder_status_publisher.publish(status_msg)
