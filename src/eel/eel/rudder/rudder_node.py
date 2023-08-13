@@ -4,10 +4,9 @@ from rclpy.node import Node
 from rclpy.executors import ExternalShutdownException
 from std_msgs.msg import Float32
 import sys
-from eel_interfaces.msg import RudderCmd
 from .general_servo import RudderServo
 from .rudder_sim import RudderSimulator
-from ..utils.topics import RUDDER_CMD, RUDDER_STATUS
+from ..utils.topics import RUDDER_HORIZONTAL_CMD, RUDDER_HORIZONTAL_STATUS, RUDDER_VERTICAL_CMD, RUDDER_VERTICAL_STATUS
 from ..utils.constants import SIMULATE_PARAM
 from ..utils.utils import clamp
 
@@ -28,10 +27,14 @@ class Rudder(Node):
         # self.rudder_cmd_subscription = self.create_subscription(
         #     Float32, RUDDER_CMD, self.handle_rudder_msg, 10
         # )
-        self.rudder_cmd_subscription = self.create_subscription(
-            RudderCmd, RUDDER_CMD, self.handle_rudder_msg, 10
+        self.horizontal_cmd_subscription = self.create_subscription(
+            Float32, RUDDER_HORIZONTAL_CMD, self.handle_horizontal_msg, 10
         )
-        self.rudder_status_publisher = self.create_publisher(Float32, RUDDER_STATUS, 10)
+        self.vertical_cmd_subscription = self.create_subscription(
+            Float32, RUDDER_VERTICAL_CMD, self.handle_vertical_msg, 10
+        )
+        self.horizontal_status_publisher = self.create_publisher(Float32, RUDDER_HORIZONTAL_STATUS, 10)
+        self.vertical_status_publisher = self.create_publisher(Float32, RUDDER_VERTICAL_STATUS, 10)
 
         if self.should_simulate:
             # simulator = RudderSimulator()
@@ -70,17 +73,21 @@ class Rudder(Node):
         self.horizontal_detach()
         self.vertical_detach()
 
-    def handle_rudder_msg(self, msg):
-        new_horizontal = msg.horizontal_value + self.rudder_calibration_term
-        new_vertical = msg.vertical_value
-        # new_value = msg.data + self.rudder_calibration_term
+    def handle_horizontal_msg(self, msg):
+        new_horizontal = msg.data + self.rudder_calibration_term
         new_horizontal = clamp(new_horizontal, -1, 1)
-        new_vertical = clamp(new_vertical, -1, 1)
         self.horizontal_set_value(new_horizontal)
+        status_msg = Float32()
+        status_msg.data = float(new_horizontal)
+        self.horizontal_status_publisher.publish(status_msg)
+
+    def handle_vertical_msg(self, msg):
+        new_vertical = msg.vertical_value
+        new_vertical = clamp(new_vertical, -1, 1)
         self.vertical_set_value(new_vertical)
         status_msg = Float32()
-        status_msg.data = float(new_horizontal) # TODO: status for vertical also
-        self.rudder_status_publisher.publish(status_msg)
+        status_msg.data = float(new_vertical)
+        self.vertical_status_publisher.publish(status_msg)
 
 
 def main(args=None):
