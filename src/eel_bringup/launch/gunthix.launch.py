@@ -20,37 +20,37 @@ TANK_CEILING_VALUE_PARAM = "tank_ceiling_value"
 def generate_launch_description():
     ld = LaunchDescription()
 
-    front_tank_node = Node(
-        package="eel",
-        executable="tank",
-        name="front_tank",
-        parameters=[
-            {SIMULATE_PARAM: False},
-            {CMD_TOPIC_PARAM: FRONT_TANK_CMD},
-            {STATUS_TOPIC_PARAM: FRONT_TANK_STATUS},
-            {MOTOR_PIN_PARAM: "23"},
-            {DIRECTION_PIN_PARAM: "18"},
-            {DISTANCE_SENSOR_PIN_PARAM: "0"},
-            {TANK_FLOOR_VALUE_PARAM: "4736"},
-            {TANK_CEILING_VALUE_PARAM: "18256"},
-        ],
-    )
+    # front_tank_node = Node(
+    #     package="eel",
+    #     executable="tank",
+    #     name="front_tank",
+    #     parameters=[
+    #         {SIMULATE_PARAM: False},
+    #         {CMD_TOPIC_PARAM: FRONT_TANK_CMD},
+    #         {STATUS_TOPIC_PARAM: FRONT_TANK_STATUS},
+    #         {MOTOR_PIN_PARAM: "23"},
+    #         {DIRECTION_PIN_PARAM: "18"},
+    #         {DISTANCE_SENSOR_PIN_PARAM: "0"},
+    #         {TANK_FLOOR_VALUE_PARAM: "4736"},
+    #         {TANK_CEILING_VALUE_PARAM: "18256"},
+    #     ],
+    # )
 
-    rear_tank_node = Node(
-        package="eel",
-        executable="tank",
-        name="rear_tank",
-        parameters=[
-            {SIMULATE_PARAM: False},
-            {CMD_TOPIC_PARAM: REAR_TANK_CMD},
-            {STATUS_TOPIC_PARAM: REAR_TANK_STATUS},
-            {MOTOR_PIN_PARAM: "24"},
-            {DIRECTION_PIN_PARAM: "25"},
-            {DISTANCE_SENSOR_PIN_PARAM: "1"},
-            {TANK_FLOOR_VALUE_PARAM: "5072"},
-            {TANK_CEILING_VALUE_PARAM: "16624"},
-        ],
-    )
+    # rear_tank_node = Node(
+    #     package="eel",
+    #     executable="tank",
+    #     name="rear_tank",
+    #     parameters=[
+    #         {SIMULATE_PARAM: False},
+    #         {CMD_TOPIC_PARAM: REAR_TANK_CMD},
+    #         {STATUS_TOPIC_PARAM: REAR_TANK_STATUS},
+    #         {MOTOR_PIN_PARAM: "24"},
+    #         {DIRECTION_PIN_PARAM: "25"},
+    #         {DISTANCE_SENSOR_PIN_PARAM: "1"},
+    #         {TANK_FLOOR_VALUE_PARAM: "5072"},
+    #         {TANK_CEILING_VALUE_PARAM: "16624"},
+    #     ],
+    # )
 
     rudder_node = Node(
         package="eel",
@@ -72,8 +72,8 @@ def generate_launch_description():
         name="battery_node",
     )
 
-    ld.add_action(front_tank_node)
-    ld.add_action(rear_tank_node)
+    # ld.add_action(front_tank_node)
+    # ld.add_action(rear_tank_node)
     ld.add_action(rudder_node)
     ld.add_action(motor_node)
     ld.add_action(battery_node)
