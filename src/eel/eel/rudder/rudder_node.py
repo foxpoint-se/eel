@@ -47,8 +47,8 @@ class Rudder(Node):
                 min_pulse_width=0.81 / 1000,
                 max_pulse_width=2.2 / 1000,
                 flip_direction=True,
-                cap_min = -0.8,
-                cap_max = 0.8,
+                cap_min = -0.75,
+                cap_max = 0.75,
             )
             self.horizontal_detach = horizontal_servo.detach
             self.horizontal_set_value = horizontal_servo.set_value
@@ -58,8 +58,8 @@ class Rudder(Node):
                 min_pulse_width=0.81 / 1000,
                 max_pulse_width=2.2 / 1000,
                 flip_direction=False,
-                cap_min = -0.8,
-                cap_max = 0.8,
+                cap_min = -0.75,
+                cap_max = 0.75,
             )
             self.vertical_detach = vertical_servo.detach
             self.vertical_set_value = vertical_servo.set_value
