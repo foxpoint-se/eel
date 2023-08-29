@@ -26,3 +26,6 @@ ms5837-python-master
 # voltage stuff
 pi_ina226-main
 voltage-lib.zip
+
+spidev-3.6.tar.gz
+spidev-3.6

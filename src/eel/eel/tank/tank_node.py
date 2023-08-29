@@ -11,7 +11,7 @@ from ..utils.constants import (
     SIMULATE_PARAM,
     MOTOR_PIN_PARAM,
     DIRECTION_PIN_PARAM,
-    DISTANCE_SENSOR_PIN_PARAM,
+    DISTANCE_SENSOR_CHANNEL_PARAM,
     CMD_TOPIC_PARAM,
     STATUS_TOPIC_PARAM,
     TANK_FLOOR_VALUE_PARAM,
@@ -136,7 +136,7 @@ def get_level_velocity(level, previous_level, now, previous_level_at):
 # ros2 run eel tank --ros-args -p simulate:=False -p cmd_topic:=/tank_rear/cmd -p status_topic:=/tank_rear/status -p motor_pin:=24 -p direction_pin:=25 -p tank_floor_mm:=15 -p tank_ceiling_mm:=63 -p xshut_pin_param:=21
 # ros2 run eel tank --ros-args -p simulate:=False -p cmd_topic:=/tank_front/cmd -p status_topic:=/tank_front/status -p motor_pin:=23 -p direction_pin:=18 -p tank_floor_mm:=15 -p tank_ceiling_mm:=63 -p xshut_pin_param:=21
 # NEW
-# ros2 run eel tank --ros-args -p simulate:=False -p cmd_topic:=/tank_front/cmd -p status_topic:=/tank_front/status -p motor_pin:=23 -p direction_pin:=18 -p tank_floor_value:=4736 -p tank_ceiling_value:=18256 -p distance_sensor_pin:=1
+# ros2 run eel tank --ros-args -p simulate:=False -p cmd_topic:=/tank_front/cmd -p status_topic:=/tank_front/status -p motor_pin:=23 -p direction_pin:=18 -p tank_floor_value:=4736 -p tank_ceiling_value:=18256 -p distance_sensor_channel:=1
 
 
 class TankNode(Node):
@@ -147,20 +147,20 @@ class TankNode(Node):
         self.declare_parameter(STATUS_TOPIC_PARAM)
         self.declare_parameter(MOTOR_PIN_PARAM, -1)
         self.declare_parameter(DIRECTION_PIN_PARAM, -1)
-        self.declare_parameter(DISTANCE_SENSOR_PIN_PARAM, -1)
+        self.declare_parameter(DISTANCE_SENSOR_CHANNEL_PARAM, -1)
         self.declare_parameter(TANK_FLOOR_VALUE_PARAM)
         self.declare_parameter(TANK_CEILING_VALUE_PARAM)
 
         self.should_simulate = self.get_parameter(SIMULATE_PARAM).value
         self.motor_pin = int(self.get_parameter(MOTOR_PIN_PARAM).value)
         self.direction_pin = int(self.get_parameter(DIRECTION_PIN_PARAM).value)
-        self.distance_sensor_pin = int(
-            self.get_parameter(DISTANCE_SENSOR_PIN_PARAM).value
+        self.distance_sensor_channel = int(
+            self.get_parameter(DISTANCE_SENSOR_CHANNEL_PARAM).value
         )
-        self.floor_value = int(
+        self.floor_value = float(
             self.get_parameter(TANK_FLOOR_VALUE_PARAM).value
         )
-        self.ceiling_value = int(
+        self.ceiling_value = float(
             self.get_parameter(TANK_CEILING_VALUE_PARAM).value
         )
 
@@ -208,18 +208,18 @@ class TankNode(Node):
             )
         else:
             from .pump_motor_control import PumpMotorControl
-            from .distance_sensor_potentiometer import (
-                DistanceSensorPotentiometer,
+            from .distance_sensor_ad_potentiometer import (
+                DistanceSensorADPotentiometer,
             )
 
             self.pump_motor_control = PumpMotorControl(
                 motor_pin=self.motor_pin, direction_pin=self.direction_pin
             )
 
-            self.distance_sensor = DistanceSensorPotentiometer(
+            self.distance_sensor = DistanceSensorADPotentiometer(
                 floor=self.floor_value,
                 ceiling=self.ceiling_value,
-                pin=self.distance_sensor_pin,
+                channel=self.distance_sensor_channel,
             )
 
         self.check_target_updater = self.create_timer(
@@ -227,11 +227,11 @@ class TankNode(Node):
         )
 
         self.get_logger().info(
-            "{}Tank node started. Motor pin: {}, Direction pin: {}, Distance sensor pin: {}, Update frequency: {}, Range: {} - {} mm, CMD topic: {}, status topic: {}".format(
+            "{}Tank node started. Motor pin: {}, Direction pin: {}, Distance sensor channel: {}, Update frequency: {}, Range: {} - {} mm, CMD topic: {}, status topic: {}".format(
                 "SIMULATE " if self.should_simulate else "",
                 self.motor_pin,
                 self.direction_pin,
-                self.distance_sensor_pin,
+                self.distance_sensor_channel,
                 UPDATE_FREQUENCY,
                 self.floor_value,
                 self.ceiling_value,
@@ -239,6 +239,7 @@ class TankNode(Node):
                 self.status_topic,
             )
         )
+        print("TYPER", type(self.distance_sensor_channel), type(self.distance_sensor))
 
     def start_checking_against_target(self, target):
         self.target_level = target
@@ -364,17 +365,18 @@ class TankNode(Node):
     def get_level(self):
         try:
             now = time()
-            distance_level = self.distance_sensor.get_level()
-            level_filled = 1 - distance_level
-            filtered_level = filter_level(level_filled, self.previous_level)
+            tank_level = self.distance_sensor.get_level()
+            # level_filled = 1 - distance_level
+            # print("FLIPPED", level_filled)
+            # filtered_level = filter_level(distance_level, self.previous_level)
             current_velocity = get_level_velocity(
-                filtered_level, self.previous_level, now, self.previous_level_at
+                tank_level, self.previous_level, now, self.previous_level_at
             )
             self.current_velocity = current_velocity
 
             self.previous_level_at = now
-            self.previous_level = filtered_level
-            return filtered_level
+            self.previous_level = tank_level
+            return tank_level
         except (OSError, IOError) as err:
             self.get_logger().error(str(err))
 

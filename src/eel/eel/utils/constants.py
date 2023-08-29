@@ -1,7 +1,7 @@
 SIMULATE_PARAM = "simulate"
 MOTOR_PIN_PARAM = "motor_pin"
 DIRECTION_PIN_PARAM = "direction_pin"
-DISTANCE_SENSOR_PIN_PARAM = "distance_sensor_pin"
+DISTANCE_SENSOR_CHANNEL_PARAM = "distance_sensor_channel"
 CMD_TOPIC_PARAM = "cmd_topic"
 STATUS_TOPIC_PARAM = "status_topic"
 TANK_FLOOR_VALUE_PARAM = "tank_floor_value"
