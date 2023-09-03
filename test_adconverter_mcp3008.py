@@ -1,36 +1,42 @@
+#!/usr/bin/python3
+
 import busio
 import digitalio
 import board
 import time
-# import adafruit_mcp3xxx.mcp3208 as MCP
+
 from adafruit_mcp3xxx.analog_in import AnalogIn
 from gpiozero import MCP3208
 
 # channel 1 is rear (?) and 0 is front (?)
-mcp = MCP3208(channel=1, differential=False, max_voltage=3.3)
+channel=1
+mcp = MCP3208(channel=channel, differential=False, max_voltage=3.3)
 
-# create the spi bus
-# spi = busio.SPI(clock=board.SCK, MISO=board.MISO, MOSI=board.MOSI)
+# front_floor = 0.66
+# front_ceiling = 0.16
 
-# create the cs (chip select)
-# cs = digitalio.DigitalInOut(board.D5)
+rear_floor = 0.288
+rear_ceiling = 0.005
 
-# create the mcp object
-# mcp = MCP.MCP3208(spi, cs)
+def translate_from_range_to_range(value, from_min, from_max, to_min, to_max):
+    # Figure out how 'wide' each range is
+    left_span = from_max - from_min
+    right_span = to_max - to_min
 
-# create an analog input channel on pin 0
-# chan = AnalogIn(mcp, MCP.P6)
+    # Convert the left range into a 0-1 range (float)
+    value_scaled = float(value - from_min) / float(left_span)
 
-# pins = [AnalogIn(mcp, MCP.P0), AnalogIn(mcp, MCP.P1), AnalogIn(mcp, MCP.P2), AnalogIn(mcp, MCP.P3), AnalogIn(mcp, MCP.P4), AnalogIn(mcp, MCP.P5), AnalogIn(mcp, MCP.P6), AnalogIn(mcp, MCP.P7)]
+    # Convert the 0-1 range into a value in the right range.
+    return to_min + (value_scaled * right_span)
 
-# print('| {0:>4} | {1:>4} | {2:>4} | {3:>4} | {4:>4} | {5:>4} | {6:>4} | {7:>4} |'.format(*range(8)))
-# print('-' * 57)
+print(f"TEST SCRIPT INIT {channel=} {mcp=}")
 
 
 while True:
-    # values = [0]*8
-    # for i, channel in enumerate(pins):
-    #     values[i] = channel.value
-    # print('| {0:>4} | {1:>4} | {2:>4} | {3:>4} | {4:>4} | {5:>4} | {6:>4} | {7:>4} |'.format(*values))
-    print(mcp.value)
+    print(f"Raw value{mcp.value} in percentage {translate_from_range_to_range(mcp.value, rear_floor, rear_ceiling, 0.0, 1.0)}")
     time.sleep(1)
+
+
+
+# Rear motor empty limit: 0.28726651202539366
+# Rear motor fill limit: 0.05945549993895738
