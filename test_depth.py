@@ -2,7 +2,7 @@
 import ms5837
 import time
 
-sensor = ms5837.MS5837_30BA()  # Default I2C bus is 1 (Raspberry Pi 3)
+sensor = ms5837.MS5837_02BA() # Default I2C bus is 1 (Raspberry Pi 3)
 # sensor = ms5837.MS5837_30BA(0) # Specify I2C bus
 # sensor = ms5837.MS5837_02BA()
 # sensor = ms5837.MS5837_02BA(0)
@@ -32,24 +32,26 @@ print("temp {}".format(sensor.temperature(ms5837.UNITS_Centigrade)))
 # sensor.temperature(ms5837.UNITS_Farenheit),
 # sensor.temperature(ms5837.UNITS_Kelvin))
 
-freshwaterDepth = sensor.depth()  # default is freshwater
-sensor.setFluidDensity(ms5837.DENSITY_SALTWATER)
-saltwaterDepth = sensor.depth()  # No nead to read() again
-sensor.setFluidDensity(1000)  # kg/m^3
+# freshwaterDepth = sensor.depth()  # default is freshwater
+# sensor.setFluidDensity(ms5837.DENSITY_SALTWATER)
+# saltwaterDepth = sensor.depth()  # No nead to read() again
+# sensor.setFluidDensity(1000)  # kg/m^3
 # print("Depth: %.3f m (freshwater)  %.3f m (saltwater)") % (freshwaterDepth, saltwaterDepth)
-print(
-    "depth {} m (freshwater),  {} (saltwater)".format(freshwaterDepth, saltwaterDepth)
-)
+# print(
+#     "depth {} m (freshwater),  {} (saltwater)".format(freshwaterDepth, saltwaterDepth)
+# )
 
 # fluidDensity doesn't matter for altitude() (always MSL air density)
 # print("MSL Relative Altitude: %.2f m") % sensor.altitude() # relative to Mean Sea Level pressure in air
-print("msl relative alt {}".format(sensor.altitude()))
+# print("msl relative alt {}".format(sensor.altitude()))
 
-time.sleep(5)
+# time.sleep(5)
 
 start = time.time()
-
 sensor.setFluidDensity(ms5837.DENSITY_FRESHWATER)
+
+atmosphere_pressure_offset = sensor.depth()
+
 # Spew readings
 while True:
     try:
@@ -59,7 +61,7 @@ while True:
             # print("diff", diff)
             # print("pressure", sensor.pressure(), "mbar", sensor.pressure(ms5837.UNITS_psi), "temp", sensor.temperature())
 
-            freshwaterDepth = sensor.depth()
+            freshwaterDepth = sensor.depth() - atmosphere_pressure_offset
             # sensor.setFluidDensity(ms5837.DENSITY_SALTWATER)
             # saltwaterDepth = sensor.depth()
             # print(
@@ -78,7 +80,7 @@ while True:
 
             # print("temp", sensor.temperature())
 
-            our_depth = (freshwaterDepth - 200) / 10
+            # our_depth = (freshwaterDepth - 200) / 10
 
             # print("P: %0.1f mbar  %0.3f psi\tT: %0.2f C  %0.2f F") % (
             print(
@@ -88,15 +90,17 @@ while True:
                 "depth m",
                 round(freshwaterDepth, 4),
                 "\t",
-                round(sensor.temperature(), 2),
-                "\t",
-                round(our_depth, 4),
-            )  # Default is mbar (no arguments)
+                round(sensor.temperature(), 2))
+                # "\t",
+                # round(our_depth, 4)
+            # Default is mbar (no arguments)
             # sensor.pressure(ms5837.UNITS_psi), # Request psi
             # sensor.temperature(), # Default is degrees C (no arguments)
             # sensor.temperature(ms5837.UNITS_Farenheit)) # Request Farenheit
         else:
             print("Sensor read failed!")
             exit(1)
+
+        time.sleep(1)
     except OSError as error:
         print("could not read")
