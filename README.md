@@ -1,24 +1,5 @@
 # Eel
 
-- [ ] dokumentera nånting om vad vi gjorde.
-- [ ] ta bort "kill switch"-loggen. den behöver vi inte längre om vi inte får error
-- [ ] dubbelkolla intervallen igen.
-
-vi gjorde typ det här:
-- vi hade problem med att gpiozero MCP3208 gav samma värde hela tiden
-- fast vi fick det att funka i testscriptet
-
-- behörigheter till spi-bus-objektet
-```
-sudo groupadd spiuser
-sudo usermod -aG spiuser <yourusername>
-sudo chown :spiuser <put the spi device name here>
-sudo chmod g+rw <put the spi device name here>
-```
-- starta om skiten
-- installera spidev https://www.youtube.com/watch?v=6VQIfGnMMt0
-- vi tror att det var spidev-installation som gjorde det?!??!
-
 ## Prerequisites
 
 - Ubuntu 20.04
