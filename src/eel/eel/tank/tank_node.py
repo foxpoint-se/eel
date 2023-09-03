@@ -53,7 +53,6 @@ CEILING_REACHED = "ceiling_reached"
 FLOOR_REACHED = "floor_reached"
 NO_TARGET = "no_target"
 ADJUSTING = "adjusting"
-KILL_SWITCH = "kill_switch"
 
 
 # TODO:
@@ -239,7 +238,6 @@ class TankNode(Node):
                 self.status_topic,
             )
         )
-        print("TYPER", type(self.distance_sensor_channel), type(self.distance_sensor))
 
     def start_checking_against_target(self, target):
         self.target_level = target
@@ -301,18 +299,6 @@ class TankNode(Node):
         self.publish_status(current_level)
 
     def check_against_target(self, current_level, target_level):
-        # movement = get_movement(self.last_five_readings)
-        # if self.pump_motor_control.get_is_emptying() or self.pump_motor_control.get_is_filling_up():
-        #     self.last_five_readings = add_to_last_readings(current_level, self.last_five_readings)
-
-        # if len(self.last_five_readings) > 4:
-        #     if self.pump_motor_control.get_is_emptying() and movement >= -0.005:
-        #         self.get_logger().info("movement {} {}".format(movement, str(self.last_five_readings)))
-        #         self.target_status = KILL_SWITCH
-        #     elif self.pump_motor_control.get_is_filling_up() and movement <= 0.005:
-        #         self.get_logger().info("movement {} {}".format(movement, str(self.last_five_readings)))
-        #         self.target_status = KILL_SWITCH
-
         if (
             self.pump_motor_control.get_is_emptying()
             or self.pump_motor_control.get_is_filling_up()
@@ -320,10 +306,6 @@ class TankNode(Node):
             self.get_logger().error(
                 "{} Running, but too low velocty. So should stop now.".format(round(self.current_velocity, 5))
             )
-
-        # if self.target_status == KILL_SWITCH:
-        #     self.pump_motor_control.stop()
-        #     self.stop_checking_against_target()
 
         if is_within_accepted_target_boundaries(current_level, target_level):
             self.pump_motor_control.stop()
@@ -349,15 +331,13 @@ class TankNode(Node):
             self.target_status = CEILING_REACHED
 
         if (
-            self.target_status != KILL_SWITCH
-            and self.pump_motor_control.get_is_filling_up()
+            self.pump_motor_control.get_is_filling_up()
             and is_above_target(current_level, target_level)
         ):
             self.pump_motor_control.empty()
 
         if (
-            self.target_status != KILL_SWITCH
-            and self.pump_motor_control.get_is_emptying()
+            self.pump_motor_control.get_is_emptying()
             and is_below_target(current_level, target_level)
         ):
             self.pump_motor_control.fill()
@@ -366,9 +346,6 @@ class TankNode(Node):
         try:
             now = time()
             tank_level = self.distance_sensor.get_level()
-            # level_filled = 1 - distance_level
-            # print("FLIPPED", level_filled)
-            # filtered_level = filter_level(distance_level, self.previous_level)
             current_velocity = get_level_velocity(
                 tank_level, self.previous_level, now, self.previous_level_at
             )

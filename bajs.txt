@@ -1,4 +1,0 @@
-ros2 run eel tank --ros-args -p simulate:=False -p cmd_topic:=/tank_front/cmd -p status_topic:=/tank_front/status -p motor_pin:=23 -p direction_pin:=18 -p tank_floor_value:=0.66 -p tank_ceiling_value:=0.16 -p distance_sensor_channel:=0
-
-
-ros2 run eel tank --ros-args -p simulate:=False -p cmd_topic:=/tank_rear/cmd -p status_topic:=/tank_rear/status -p motor_pin:=24 -p direction_pin:=25 -p tank_floor_value:=0.288 -p tank_ceiling_value:=0.005 -p distance_sensor_channel:=1
