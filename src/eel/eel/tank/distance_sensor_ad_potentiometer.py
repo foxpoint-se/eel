@@ -50,24 +50,15 @@ class DistanceSensorADPotentiometer:
         
         self.floor = floor
         self.ceiling = ceiling
-
-        # self.channel = 0
-        # mcp=<gpiozero.MCP3208 object using SPI(clock_pin=11, mosi_pin=10, miso_pin=9, select_pin=8)>
-
-        # MCP3208(channel=0, clock_pin=11, mosi_pin=10, miso_pin=9, select_pin=8)
-
         
         self.mcp = MCP3208(channel=self.channel,differential=False,max_voltage=3.3,clock_pin=11,mosi_pin=10,miso_pin=9,select_pin=8)
-        print(f"CLASS INIT {self.channel=} {self.mcp=}")
 
     def __get_raw_value(self):
         return self.mcp.value
 
     def __get_pretty_value(self):
         raw = self.__get_raw_value()
-        print("RAW", raw)
         capped = cap_value(raw, self.floor, self.ceiling)
-        print("CAPPED", capped)
         level = translate_from_range_to_range(
             capped,
             self.floor,
@@ -75,7 +66,7 @@ class DistanceSensorADPotentiometer:
             0.0,
             1.0,
         )
-        print("TRANSLATED", level)
+        
         return level
 
     def get_level(self) -> float:        
