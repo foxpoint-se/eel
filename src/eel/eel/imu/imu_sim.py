@@ -4,7 +4,7 @@ from std_msgs.msg import Float32
 from eel_interfaces.msg import TankStatus
 from ..utils.sim import ANGULAR_VELOCITY
 from ..utils.topics import (
-    RUDDER_STATUS,
+    RUDDER_HORIZONTAL_STATUS,
     MOTOR_CMD,
     FRONT_TANK_STATUS,
     REAR_TANK_STATUS,
@@ -12,6 +12,7 @@ from ..utils.topics import (
 
 TERMINAL_PITCH_ANGULAR_VELOCITY_DEGPS = 10.0
 MOMENTUM_TOLERANCE = 0.03
+
 
 # Imagine a sea-saw with forces F1, F2 on each end, L and 2L from the centre.
 #
@@ -62,7 +63,7 @@ class ImuSimulator:
         self._current_pitch = 0.0
         self.last_updated_at = time()
         self.rudder_subscription = parent_node.create_subscription(
-            Float32, RUDDER_STATUS, self._handle_rudder_msg, 10
+            Float32, RUDDER_HORIZONTAL_STATUS, self._handle_rudder_msg, 10
         )
         self.motor_subscription = parent_node.create_subscription(
             Float32, MOTOR_CMD, self._handle_motor_msg, 10
