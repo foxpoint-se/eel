@@ -9,6 +9,7 @@ on:
 
 jobs:
   test:
+    if: always()
     runs-on: ubuntu-latest
     strategy:
       matrix:
