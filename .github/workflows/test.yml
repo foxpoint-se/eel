@@ -2,7 +2,7 @@ name: Test Eel
 
 on:
   push:
-    branches: [feat/continuous-testing]
+    branches: [feat/contiuous-testing]
 
 jobs:
   build:
