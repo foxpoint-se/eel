@@ -7,6 +7,9 @@ help:
 
 .DEFAULT_GOAL := help
 
+clean: 		## clean workspace
+	rm -rf .venv
+
 install-py:		## setup venv and install py dependencies
 	( \
 		python3 -m venv .venv; \
@@ -15,6 +18,8 @@ install-py:		## setup venv and install py dependencies
        	pip install wheel; \
        	python -m pip install -r requirements.txt; \
     )
+
+install: install-py		## install everything (not really, but should be)
 
 # Run to create a virtual serial communication instead of HC12 radio link.
 # Send and listen to /tmp/virtual_serial_eel on Eel side, and
