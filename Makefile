@@ -96,3 +96,8 @@ install-voltage-sensor:		## install stuff needed for depth senson
 
 detect-i2c:		## detect i2c
 	sudo i2cdetect -y 1
+
+test-py:		## run tests specific to eel only
+	pytest src/eel/test/eel
+
+test: test-py		## run all tests
