@@ -1,0 +1,15 @@
+FROM ubuntu:jammy
+
+RUN apt-get update -y && apt-get upgrade -y
+RUN apt-get install -y build-essential
+
+RUN mkdir /ros2_ws
+RUN mkdir /ros2_ws/src
+
+WORKDIR /ros2_ws
+
+COPY . /ros2_ws/
+
+WORKDIR /ros2_ws
+
+# CMD tail -f /dev/null

@@ -1,0 +1,18 @@
+version: "3"
+
+services:
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    volumes:
+      - .:/ros2_ws
+      - /ros2_ws/build/
+      - /ros2_ws/install/
+      - /ros2_ws/log/
+  rpi:
+    build:
+      context: .
+      dockerfile: Dockerfile.rpi
+    # to keep it running when running locally. we don't want that in CI for example
+    command: ["tail", "-f", "/dev/null"]
