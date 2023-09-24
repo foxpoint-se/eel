@@ -341,7 +341,7 @@ class DepthControlNode(Node):
 
             next_front_tank_level = 0.67 * next_front_tank_level
 
-            next_front_tank_level = next_front_tank_level + 0.18
+            next_front_tank_level = next_front_tank_level + 0.45
 
             next_rear_tank_level = (0.2 * pitch_rear_tank) + (
                 0.8 * depth_controller_output

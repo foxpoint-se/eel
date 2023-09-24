@@ -8,7 +8,10 @@ import time
 from adafruit_mcp3xxx.analog_in import AnalogIn
 from gpiozero import MCP3208
 
-# channel 1 is rear (?) and 0 is front (?)
+# channel 1 is rear and 0 is front
+# Rear motor empty limit: 0.28726651202539366
+# Rear motor fill limit: 0.05945549993895738
+
 channel=1
 mcp = MCP3208(channel=channel, differential=False, max_voltage=3.3)
 
@@ -35,8 +38,3 @@ print(f"TEST SCRIPT INIT {channel=} {mcp=}")
 while True:
     print(f"Raw value{mcp.value} in percentage {translate_from_range_to_range(mcp.value, rear_floor, rear_ceiling, 0.0, 1.0)}")
     time.sleep(1)
-
-
-
-# Rear motor empty limit: 0.28726651202539366
-# Rear motor fill limit: 0.05945549993895738
