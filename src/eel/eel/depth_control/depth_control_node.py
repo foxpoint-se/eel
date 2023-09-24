@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from ..utils.utils import clamp
 from ..utils.pid_tuning import get_simulation_pid_settings, get_production_pid_settings, lookup_zieglernichols_gains
+from ..utils.pid_controller import PidController
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float32
@@ -62,49 +63,6 @@ SIMULATION_VEHICLE_LENGTH = 1  # meters
 
 SIMULATION_PRESSURE_SENSOR_REAR_DISPLACEMENT = 0.5 - SIMULATION_VEHICLE_LENGTH
 SIMULATION_PRESSURE_SENSOR_FRONT_DISPLACEMENT = SIMULATION_VEHICLE_LENGTH - 0.5
-
-
-class PidController:
-    def __init__(self, set_point, kP=0.0, kI=0.0, kD=0.0, on_log_error=None) -> None:
-        self.kP = kP  # proportional gain
-        self.kI = kI  # integral gain
-        self.kD = kD  # derivative gain
-        self.set_point = set_point
-        self.last_computed_at = None
-        self.cumulative_error = 0.0
-        self.last_error = 0.0
-        self.on_log_error = on_log_error
-
-    def compute(self, system_current_value):
-        now = time()
-
-        if self.last_computed_at is None:
-            self.last_computed_at = now
-
-        error = self.set_point - system_current_value
-
-        if self.on_log_error:
-            self.on_log_error(error)
-
-        p = self.kP * error
-
-        time_delta = now - self.last_computed_at
-        self.cumulative_error += error * time_delta
-
-        i = self.cumulative_error * self.kI
-
-        error_delta = error - self.last_error
-
-        rate_of_error = 0.0
-        if time_delta > 0:
-            rate_of_error = error_delta / time_delta
-
-        d = rate_of_error * self.kD
-
-        self.last_error = error
-
-        self.last_computed_at = now
-        return p + i + d
 
 
 class DepthControlNode(Node):

@@ -9,7 +9,7 @@ from ..utils.nav import (
     get_next_rudder_turn,
 )
 from ..utils.topics import (
-    RUDDER_CMD,
+    RUDDER_HORIZONTAL_CMD,
     MOTOR_CMD,
     IMU_STATUS,
     GNSS_STATUS,
@@ -50,7 +50,7 @@ class NavigationNode(Node):
         )
 
         self.motor_publisher = self.create_publisher(Float32, MOTOR_CMD, 10)
-        self.rudder_publisher = self.create_publisher(Float32, RUDDER_CMD, 10)
+        self.rudder_publisher = self.create_publisher(Float32, RUDDER_HORIZONTAL_CMD, 10)
         self.nav_publisher = self.create_publisher(
             NavigationStatus, NAVIGATION_STATUS, 10
         )
