@@ -299,14 +299,6 @@ class TankNode(Node):
         self.publish_status(current_level)
 
     def check_against_target(self, current_level, target_level):
-        if (
-            self.pump_motor_control.get_is_emptying()
-            or self.pump_motor_control.get_is_filling_up()
-        ) and abs(self.current_velocity) < 0.005:
-            self.get_logger().error(
-                "{} Running, but too low velocty. So should stop now.".format(round(self.current_velocity, 5))
-            )
-
         if is_within_accepted_target_boundaries(current_level, target_level):
             self.pump_motor_control.stop()
             self.stop_checking_against_target()
