@@ -7,8 +7,8 @@ help:
 
 .DEFAULT_GOAL := help
 
-clean: 		## clean workspace
-	rm -rf .venv
+# clean: 		## clean workspace
+# 	rm -rf .venv
 
 install-py:		## setup venv and install py dependencies
 	( \
@@ -106,3 +106,42 @@ test-py:		## run tests specific to eel only
 	source source_me.sh && pytest src/eel/test/eel
 
 test: test-py		## run all tests
+
+
+clean:		## clean workspace
+	rm -rf .venv build install log
+
+source-env:		## basj
+	source source_me.sh
+
+# sudo for pigpiod asks for password
+
+install-all: install-py install-depth-sensor install-pigpio install-i2c install-voltage-sensor		## install everything
+
+install-system-dependencies:
+	sudo apt install python3-venv
+
+hello: install-py test		## Hello
+# @python hello.py;
+# source source_me.sh && pytest src/eel/test/eel;
+
+install2:		## setup venv and install py dependencies
+	( \
+		python3 -m venv .venv; \
+		touch .venv/COLCON_IGNORE; \
+       	source .venv/bin/activate; \
+       	pip install wheel; \
+       	python -m pip install -r requirementsCLEANED.txt; \
+    )
+
+build-sym2:		## build with symlink
+	source source_me.sh && colcon build --symlink-install
+
+# FORTSÄTT
+# dev-requirements.txt
+# bryt ut saker dit och få dom att funka tillsammans
+# pytest ska ligga där
+# se om jag kan få pytest att köra tester i bygget i docker
+# lägg varje dependency på varsin rad, för bättre cachning?
+
+# kanske argument python-version? så kan man fortfarande har nån versionmatris?

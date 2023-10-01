@@ -1,0 +1,31 @@
+# FROM ros:humble-ros-core-jammy
+# FROM osrf/ros2:testing
+FROM osrf/ros2:devel
+
+# Basic setup
+RUN apt-get update -y && apt-get upgrade -y
+
+# # Install basic system dependencies
+ARG essential_packages="build-essential python3.10 python-is-python3 python3-venv python3-dev"
+RUN apt-get install -y ${essential_packages}
+
+RUN mkdir /ros2_ws
+RUN mkdir /ros2_ws/src
+
+COPY . /ros2_ws/
+
+WORKDIR /ros2_ws
+
+RUN echo $(python --version)
+
+RUN make install2
+
+# RUN make build-sym2
+
+# # RUN make hello
+
+# RUN colcon
+
+# RUN echo $(python --version)
+# CMD tail -f /dev/null
+# CMD ["bash"]

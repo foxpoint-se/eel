@@ -16,3 +16,10 @@ services:
       dockerfile: Dockerfile.rpi
     # to keep it running when running locally. we don't want that in CI for example
     command: ["tail", "-f", "/dev/null"]
+
+  rpi2:
+    build:
+      context: .
+      dockerfile: Dockerfile.rpi2
+    command: ["tail", "-f", "/dev/null"]
+    # command: ["bash"]
