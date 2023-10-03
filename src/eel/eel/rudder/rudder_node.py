@@ -3,6 +3,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.executors import ExternalShutdownException
 from std_msgs.msg import Float32
+from geometry_msgs.msg import Vector3
 import sys
 import math
 from eel_interfaces.msg import ImuStatus
@@ -13,6 +14,7 @@ from ..utils.topics import (
     RUDDER_HORIZONTAL_STATUS,
     RUDDER_VERTICAL_CMD,
     RUDDER_VERTICAL_STATUS,
+    RUDDER_STATUS,
     IMU_STATUS,
 )
 from ..utils.constants import SIMULATE_PARAM
@@ -44,6 +46,9 @@ class Rudder(Node):
         self.vertical_status_publisher = self.create_publisher(
             Float32, RUDDER_VERTICAL_STATUS, 10
         )
+        self.rudder_status_publisher = self.create_publisher(
+            Vector3, RUDDER_STATUS, 10
+        )
 
         self.imu_subscription = self.create_subscription(
             ImuStatus, IMU_STATUS, self._handle_imu_msg, 10
@@ -55,9 +60,11 @@ class Rudder(Node):
 
         if self.should_simulate:
             simulator = RudderSimulator()
-            self.detach = simulator.detach
-            self.set_value = simulator.set_value
-            raise Exception("not implemented")
+            self.horizontal_detach = simulator.horizontal_detach
+            self.horizontal_set_value = simulator.horizontal_set_value
+            self.vertical_detach = simulator.vertical_detach
+            self.vertical_set_value = simulator.vertical_set_value
+
         if not self.should_simulate:
             horizontal_servo = RudderServo(
                 pin=13,
@@ -120,6 +127,11 @@ class Rudder(Node):
 
         self.horizontal_set_value(x2)
         self.vertical_set_value(y2)
+
+        status_vector_msg = Vector3()
+        status_vector_msg.x = x2
+        status_vector_msg.y = y2
+        self.rudder_status_publisher.publish(status_vector_msg)
 
     def handle_vertical_msg(self, msg):
         new_vertical = msg.data
