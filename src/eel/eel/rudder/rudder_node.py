@@ -125,6 +125,9 @@ class Rudder(Node):
         x2 = math.cos(rotation) * x - math.sin(rotation) * y
         y2 = math.sin(rotation) * x + math.cos(rotation) * y
 
+        x2 = float(clamp(x2, -1, 1))
+        y2 = float(clamp(y2, -1, 1))
+
         self.horizontal_set_value(x2)
         self.vertical_set_value(y2)
 
