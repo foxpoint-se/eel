@@ -23,3 +23,10 @@ services:
       dockerfile: Dockerfile.rpi2
     command: ["tail", "-f", "/dev/null"]
     # command: ["bash"]
+
+  ubuntu:
+    build:
+      context: .
+      dockerfile: Dockerfile.ubuntu
+    command: ["tail", "-f", "/dev/null"]
+    # command: ["bash"]
