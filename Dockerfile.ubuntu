@@ -1,6 +1,7 @@
 # Assuming we use Ubuntu Server 22.04
 FROM ubuntu:jammy
 
+# For sourcing `setup.bash` instead of `setup.sh`
 SHELL ["/bin/bash", "-c"]
 
 RUN apt-get update -y && apt-get upgrade -y
@@ -37,9 +38,23 @@ RUN apt install ros-humble-ros-base -y
 
 RUN apt install ros-dev-tools -y
 
-RUN source /opt/ros/humble/setup.bash
-
 # ================================================
 # === END: OFFICIAL INSTALLATION INSTRUCTIONS  ===
 # ================================================
 
+# =====================================
+# === START: SETUP EEL ENVIRONMENT  ===
+# =====================================
+
+RUN mkdir /eel
+COPY . /eel/
+WORKDIR /eel
+
+# NOTE: fix for making `colcon build` work in ROS Humble
+# Stolen from: https://github.com/ament/ament_cmake/issues/382
+# TODO: probably need to make this a more standardized fix outside of this Dockerfile
+ENV PYTHONWARNINGS="ignore:setup.py install is deprecated::setuptools.command.install"
+
+RUN source /opt/ros/humble/setup.bash && colcon build
+RUN colcon test
+RUN colcon test-result --verbose

@@ -30,3 +30,8 @@ services:
       dockerfile: Dockerfile.ubuntu
     command: ["tail", "-f", "/dev/null"]
     # command: ["bash"]
+    volumes:
+      - .:/eel
+      - /eel/build/
+      - /eel/install/
+      - /eel/log/

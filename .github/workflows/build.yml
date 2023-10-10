@@ -11,4 +11,4 @@ jobs:
       - uses: actions/checkout@v3
       - name: Build docker image
         working-directory: .
-        run: docker compose build rpi
+        run: docker compose build ubuntu
