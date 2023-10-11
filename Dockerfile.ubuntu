@@ -56,9 +56,6 @@ WORKDIR /eel
 # TODO: probably need to make this a more standardized fix outside of this Dockerfile
 ENV PYTHONWARNINGS="ignore:setup.py install is deprecated::setuptools.command.install"
 
-# TODO: do something about this
-RUN touch ./spidev-3.6/COLCON_IGNORE
-
 RUN source /opt/ros/humble/setup.bash && colcon build
 RUN colcon test
 RUN colcon test-result --verbose

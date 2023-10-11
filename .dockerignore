@@ -2,7 +2,7 @@
 build
 install
 log
-spidev
+spidev*
 .vscode
 templates
 .github
