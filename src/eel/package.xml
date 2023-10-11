@@ -3,13 +3,14 @@
 <package format="3">
   <name>eel</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
-  <maintainer email="adamlecorney@gmail.com">bulingen</maintainer>
-  <license>TODO: License declaration</license>
+  <description>AUV Ålen (The Eel)</description>
+  <maintainer email="foxpoint.se@gmail.com">foxpoint-se</maintainer>
+  <license>Proprietary</license>
 
   <depend>rclpy</depend>
   <depend>eel_interfaces</depend>
   <depend>std_msgs</depend>
+  <depend>geometry_msgs</depend>
 
 
   <test_depend>ament_copyright</test_depend>
