@@ -7,8 +7,8 @@ help:
 
 .DEFAULT_GOAL := help
 
-# clean: 		## clean workspace
-# 	rm -rf .venv
+clean:		## clean workspace
+	rm -rf .venv build install log
 
 install-py:		## setup venv and install py dependencies
 	( \
