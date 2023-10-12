@@ -1,35 +1,11 @@
 version: "3"
 
 services:
-  dev:
+  eel:
     build:
       context: .
-      dockerfile: Dockerfile.dev
-    volumes:
-      - .:/ros2_ws
-      - /ros2_ws/build/
-      - /ros2_ws/install/
-      - /ros2_ws/log/
-  rpi:
-    build:
-      context: .
-      dockerfile: Dockerfile.rpi
-    # to keep it running when running locally. we don't want that in CI for example
+      dockerfile: Dockerfile.humble
     command: ["tail", "-f", "/dev/null"]
-
-  rpi2:
-    build:
-      context: .
-      dockerfile: Dockerfile.rpi2
-    command: ["tail", "-f", "/dev/null"]
-    # command: ["bash"]
-
-  ubuntu:
-    build:
-      context: .
-      dockerfile: Dockerfile.ubuntu
-    command: ["tail", "-f", "/dev/null"]
-    # command: ["bash"]
     volumes:
       - .:/eel
       - /eel/build/

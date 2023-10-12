@@ -16,7 +16,7 @@ jobs:
       - uses: docker/setup-buildx-action@v3
       - uses: docker/build-push-action@v5
         with:
-          file: Dockerfile.ubuntu
+          file: Dockerfile.humble
           context: .
           cache-from: type=gha
           cache-to: type=gha,mode=max
