@@ -103,4 +103,4 @@ detect-i2c:		## detect i2c
 	sudo i2cdetect -y 1
 
 test:		## run all tests
-	source source_me.sh && colcon test && colcon test-result --verbose
+	source source_me.sh && colcon test --event-handlers=console_direct+ --return-code-on-test-failure

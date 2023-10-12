@@ -57,5 +57,4 @@ WORKDIR /eel
 ENV PYTHONWARNINGS="ignore:setup.py install is deprecated::setuptools.command.install"
 
 RUN source /opt/ros/humble/setup.bash && colcon build
-RUN colcon test
-RUN colcon test-result --verbose
+RUN colcon test --event-handlers=console_direct+ --return-code-on-test-failure
