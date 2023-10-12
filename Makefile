@@ -7,8 +7,8 @@ help:
 
 .DEFAULT_GOAL := help
 
-clean: 		## clean workspace
-	rm -rf .venv
+clean:		## clean workspace
+	rm -rf .venv build install log
 
 install-py:		## setup venv and install py dependencies
 	( \
@@ -102,7 +102,5 @@ install-voltage-sensor:		## install stuff needed for depth senson
 detect-i2c:		## detect i2c
 	sudo i2cdetect -y 1
 
-test-py:		## run tests specific to eel only
-	source source_me.sh && pytest src/eel/test/eel
-
-test: test-py		## run all tests
+test:		## run all tests
+	source source_me.sh && colcon test && colcon test-result --verbose

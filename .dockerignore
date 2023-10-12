@@ -1,0 +1,12 @@
+.venv
+build
+install
+log
+spidev*
+.vscode
+templates
+.github
+ms58*
+pid_tuning_images
+scripts
+services

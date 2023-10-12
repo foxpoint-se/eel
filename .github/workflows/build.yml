@@ -1,4 +1,4 @@
-name: Test Eel
+name: Build & test Eel
 
 on:
   push:
@@ -6,39 +6,33 @@ on:
   pull_request:
     branches: [main]
 
-
 jobs:
-  test:
+  build:
     if: always()
+    name: Build with Docker
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.8", "3.9", "3.10"]
-
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v5
         with:
-          python-version: ${{ matrix.python-version }}
-          cache: 'pip'
-      - name: Install dependencies
-        run: make install-py
-      - name: Run tests
-        run: make test
+          file: Dockerfile.humble
+          context: .
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
     outputs: 
       status: ${{ job.status }}
 
   notify:
     if: ${{ github.event_name == 'push' }}
     runs-on: ubuntu-latest
-    needs: test
+    needs: build
     steps:
       - uses: sarisia/actions-status-discord@v1
         if: always()
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK_BUILD_CHANNEL }}
           status: ${{ needs.test.outputs.status == 'success' && 'success' || 'failure' }}
-          title: "Test Eel"
+          title: "Build & test Eel"
           username: GitHub Actions
           avatar_url: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"

@@ -23,7 +23,7 @@ source $(echo $PWD)/install/setup.$(echo $FILE_EXT) || echo -e "\nHave you run '
 source .venv/bin/activate
 
 # source ROS to be able to use it
-source /opt/ros/foxy/setup.$(echo $FILE_EXT)
+source /opt/ros/$(echo $ROS_DISTRO)/setup.$(echo $FILE_EXT)
 
 # colcon
 source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.$(echo $FILE_EXT)
