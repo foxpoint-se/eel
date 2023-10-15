@@ -1,16 +1,26 @@
-pyserial==3.5
-pynmea2==1.18.0
-wheel==0.37.1
-numpy==1.22.0
-adafruit-circuitpython-bno055==5.3.2
-black==21.12b0
-gpiozero==1.6.2
+# https://raw.githubusercontent.com/ros/rosdistro/master/rosdep/python.yaml
+
+setuptools==58.2.0
+PyYAML==6.0.1
+lark==1.0.0
+catkin-pkg==0.4.24
+empy==3.3.4
+pyserial==3.5 # python3-serial 
+pynmea2==1.18.0 # python3-pynmea2
+wheel==0.37.1 # python-wheel
+numpy==1.22.0 # python3-numpy
+adafruit-circuitpython-bno055==5.3.2 # python3-adafruit-circuitpython-bno055-pip
+black==21.12b0 # python3-flake8-black
+gpiozero==1.6.2 # python3-gpiozero
 pigpio==1.78
-RPi.GPIO==0.7.1
-geopy==2.2.0
+RPi.GPIO==0.7.1 # python-rpi.gpio-pip
+geopy==2.2.0 # python3-geopy
 adafruit-circuitpython-vl53l0x==3.6.0
 adafruit-circuitpython-vl53l1x==1.0.2
-adafruit-circuitpython-ads1x15==2.2.21
-pyOpenSSL==23.1.1
+adafruit-circuitpython-ads1x15==2.2.21 # python3-adafruit-circuitpython-ads1x15-pip
+pyOpenSSL==23.1.1 # python-openssl
 adafruit-circuitpython-mcp3xxx==1.4.15
-pytest==7.3.1
+pytest==7.3.1 # python3-pytest
+
+# kolla här
+# https://answers.ros.org/question/380740/best-practice-installing-custom-dependencies-for-ros2/

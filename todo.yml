@@ -1,0 +1,19 @@
+
+- [ ] source:a på nåt sätt
+- [ ] PYTHONWARNINGS, vad göra
+- [x] hur påverkar underscore i setup.cfg i foxy? verkar funka bra!
+- [x] COLCON_IGNORE i spidev-3.6 
+- [ ] ta bort radio-node --> ros2dict --> numpy???
+- [ ] få python deps att installera
+- [ ] kunna köra en nod (inte i CI men ändå)
+- [ ] nåt integrationstest kanske?
+- [x] byta ut nuvarande workflow mot denna
+- [ ] dev-requirements? pytest och black kan ligga där kanske?
+- [ ] kanske python och/eller ros-distro och/eller ubuntu-distro som argument. så kan man köra matris. men det kommer ta lång tid
+- [ ] sista två raderna i dockerfilen, dom sourcar inte. dom borde kanske köra make-targets där. men det hänger på att det finns venv osv
+- [ ] mypy osv...
+
+fortsätta med vpn? client och server typ.
+målet är att kunna logga in på min rpi,
+git clone:a repot
+bygga och köra saker

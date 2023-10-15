@@ -11,3 +11,4 @@ services:
       - /eel/build/
       - /eel/install/
       - /eel/log/
+      - /eel/.venv/
