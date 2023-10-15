@@ -1,3 +1,8 @@
+PITCH_CORRECTION = 1.69
+
+def get_corrected_pitch(pitch: float):
+    return pitch + PITCH_CORRECTION
+
 class ImuSensor:
     def __init__(self):
         import adafruit_bno055
@@ -15,4 +20,7 @@ class ImuSensor:
 
     def get_euler(self):
         heading, roll, pitch = self.sensor.euler
-        return float(heading or 0), float(roll or 0), -float(pitch or 0)
+        heading = float(heading or 0)
+        roll = float(roll or 0)
+        pitch = get_corrected_pitch(-float(pitch or 0))
+        return heading, roll, pitch
