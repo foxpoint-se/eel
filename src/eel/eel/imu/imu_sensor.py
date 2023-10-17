@@ -1,7 +1,14 @@
 PITCH_CORRECTION = 1.69
+ROLL_CORRECTION = 0.0
+
 
 def get_corrected_pitch(pitch: float):
     return pitch + PITCH_CORRECTION
+
+
+def get_corrected_roll(roll: float):
+    return roll + ROLL_CORRECTION
+
 
 class ImuSensor:
     def __init__(self):
@@ -21,6 +28,6 @@ class ImuSensor:
     def get_euler(self):
         heading, roll, pitch = self.sensor.euler
         heading = float(heading or 0)
-        roll = float(roll or 0)
+        roll = get_corrected_roll(float(roll or 0))
         pitch = get_corrected_pitch(-float(pitch or 0))
         return heading, roll, pitch
