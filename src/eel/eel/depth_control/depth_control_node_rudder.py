@@ -33,7 +33,7 @@ class DepthControlNode(Node):
         self.max_dive_angle = 30.0
         self.max_rudder_output = 1.0
 
-        self.inner_pid_target_angle = PidController(0.0, kP=-25.0)
+        self.inner_pid_target_angle = PidController(0.0, kP=-12.5)
         self.out_pid_rudder_output = PidController(0.0, kP=1 / 30)
 
         self.current_pitch = 0.0

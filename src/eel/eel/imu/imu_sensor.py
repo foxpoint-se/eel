@@ -1,5 +1,5 @@
 PITCH_CORRECTION = 1.69
-ROLL_CORRECTION = 0.0
+ROLL_CORRECTION = 5.0
 
 
 def get_corrected_pitch(pitch: float):
