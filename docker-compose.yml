@@ -1,14 +1,25 @@
 version: "3"
 
 services:
-  eel:
+  # eel:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.humble
+  #   command: ["tail", "-f", "/dev/null"]
+  #   volumes:
+  #     - .:/eel
+  #     - /eel/build/
+  #     - /eel/install/
+  #     - /eel/log/
+  #     - /eel/.venv/
+  ws:
     build:
       context: .
-      dockerfile: Dockerfile.humble
+      dockerfile: Dockerfile
     command: ["tail", "-f", "/dev/null"]
-    volumes:
-      - .:/eel
-      - /eel/build/
-      - /eel/install/
-      - /eel/log/
-      - /eel/.venv/
+    # volumes:
+    #   - .:/eel
+    #   - /eel/build/
+    #   - /eel/install/
+    #   - /eel/log/
+    #   - /eel/.venv/
