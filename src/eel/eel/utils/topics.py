@@ -33,3 +33,6 @@ DEPTH_CONTROL_CMD = "depth_control/cmd"
 
 # Battery
 BATTERY_STATUS = "battery/status"
+
+# Modem
+MODEM_STATUS = "modem/status"
