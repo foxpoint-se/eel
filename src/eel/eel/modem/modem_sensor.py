@@ -4,7 +4,7 @@ import serial
 import time
 
 
-AT_COMMAND_TIMEOUT_MS = 100
+AT_COMMAND_TIMEOUT_MS = 5000
 
 
 def get_time_with_ms():
@@ -14,22 +14,23 @@ def get_time_with_ms():
 class ModemSensor:
     def __init__(self, p="/dev/ttyUSB2", b=115200):
         self.serial_connection = serial.Serial(port=p, baudrate=b)
+        self.serial_connection.parity = serial.PARITY_NONE
+        self.serial_connection.stopbits = serial.STOPBITS_ONE
+        self.serial_connection.bytesize = serial.EIGHTBITS
 
     def get_response(self, timeout_ms=AT_COMMAND_TIMEOUT_MS):
         """Reads a response from the modem, reading is done over serial and response can 
         take up 100 milliseconds to be read.
         
-        :param timeout_ms: Time out in milli seconds for the serial read function
+        :param timeout_ms: Time out in milliseconds for the serial read function
         :return: Response read from the modem in string format UTF-8 decoded
         """
         response = ""
         
         start_time = get_time_with_ms()
         while get_time_with_ms() - start_time < timeout_ms:
-
-           while self.serial_connection.in_waiting():
-               response += self.serial_connection.read(
-                   self.serial_connection.in_waiting()).decode("utf-8")
+            while self.serial_connection.inWaiting():
+                response += self.serial_connection.read(self.serial_connection.inWaiting()).decode("utf-8")
 
         return response
 
@@ -92,6 +93,6 @@ class ModemSensor:
 if __name__ == "__main__":
     modem = ModemSensor()
     reg_status = modem.get_registration_status()
-    signal_strenght = modem.get_recieved_signal_strength_indicator()
+    signal_strength = modem.get_recieved_signal_strength_indicator()
 
-    print(f"Registration status: {reg_status}\nSignal strength: {signal_strenght}")
+    print(f"Registration status: {reg_status}\nSignal strength: {signal_strength}")
