@@ -59,7 +59,6 @@ class PressureNode(Node):
 
         self.create_subscription(ImuStatus, IMU_STATUS, self.handle_imu_msg, 10)
 
-
         self.publisher = self.create_publisher(PressureStatus, PRESSURE_STATUS, 10)
         self.updater = self.create_timer(1.0 / PUBLISH_FREQUENCY, self.publish_status)
 
@@ -73,29 +72,24 @@ class PressureNode(Node):
         self.current_pitch = msg.pitch
 
     def publish_status(self):
-        try:
-            depth_reading = self.sensor.get_current_depth()
+        depth_reading = self.sensor.get_current_depth()
+        current_depth = calculate_center_depth(depth_reading, self.current_pitch)
+        validated_depth = validate_depth(current_depth, self.last_depth_reading)
 
-            current_depth = calculate_center_depth(depth_reading, self.current_pitch)
+        now = time()
 
-            validated_depth = validate_depth(current_depth, self.last_depth_reading)
+        depth_velocity = get_depth_velocity(validated_depth, self.last_depth_reading, now, self.last_depth_at)
 
-            now = time()
-
-            depth_velocity = get_depth_velocity(validated_depth, self.last_depth_reading, now, self.last_depth_at)
-            
-            msg = PressureStatus()
-            msg.depth = validated_depth
-            msg.depth_velocity = depth_velocity
-            # if self.should_simulate:
-            #     msg.depth = current_depth
-            # else:
-            #     msg.depth = calculate_center_depth_USE_THIS(current_depth, self.current_pitch)
-            self.last_depth_reading = validated_depth
-            self.last_depth_at = now
-            self.publisher.publish(msg)
-        except (OSError, IOError) as err:
-            self.get_logger().error(str(err))
+        msg = PressureStatus()
+        msg.depth = validated_depth
+        msg.depth_velocity = depth_velocity
+        # if self.should_simulate:
+        #     msg.depth = current_depth
+        # else:
+        #     msg.depth = calculate_center_depth_USE_THIS(current_depth, self.current_pitch)
+        self.last_depth_reading = validated_depth
+        self.last_depth_at = now
+        self.publisher.publish(msg)
 
 
 def main(args=None):
