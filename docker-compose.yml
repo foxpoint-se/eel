@@ -51,17 +51,21 @@ services:
 
   talker:
     extends: base
+    image: eel:talker
     command: ros2 run demo_nodes_cpp talker
 
   listener:
     extends: base
+    image: eel:listener
     command: ros2 run demo_nodes_cpp listener
   
   imu:
     extends: base
+    image: eel:imu
     command: ros2 run eel imu --ros-args -p simulate:=true
 
   motor:
     extends: base
+    image: eel:motor
     command: ros2 run eel motor --ros-args -p simulate:=true
   
