@@ -68,4 +68,14 @@ services:
     extends: base
     image: eel:motor
     command: ros2 run eel motor --ros-args -p simulate:=true
+
+  nav-sim:
+    extends: base
+    image: eel:nav-sim
+    command: ros2 launch eel_bringup sim_navigation.launch.py
+
+  depth-sim:
+    extends: base
+    image: eel:depth-sim
+    command: ros2 launch eel_bringup sim_depth.launch.py
   
