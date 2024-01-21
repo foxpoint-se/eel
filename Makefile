@@ -10,6 +10,10 @@ help:
 clean: 		## clean workspace
 	rm -rf .venv
 
+ros-clean:		## clean ROS build
+	rm -rf build install log
+	mkdir build install log
+
 install-py:		## setup venv and install py dependencies
 	( \
 		python3 -m venv .venv; \
