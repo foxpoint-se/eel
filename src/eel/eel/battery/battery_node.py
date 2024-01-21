@@ -18,7 +18,11 @@ class BatteryNode(Node):
         # hertz (publications per second)
         self.update_frequency = 2
 
-        sensor = BatterySensor() if not self.should_simulate else BatterySimulator
+        sensor = (
+            BatterySensor()
+            if not self.should_simulate
+            else BatterySimulator(parent_node=self)
+        )
         self.get_voltage = sensor.get_voltage
         self.get_current = sensor.get_current
         self.get_power = sensor.get_power
@@ -26,7 +30,9 @@ class BatteryNode(Node):
         self.get_shunt_voltage = sensor.get_shunt_voltage
         self.get_voltage_percent = sensor.get_voltage_percent
 
-        self.updater = self.create_timer(1.0 / self.update_frequency, self.publish_battery)
+        self.updater = self.create_timer(
+            1.0 / self.update_frequency, self.publish_battery
+        )
 
         self.get_logger().info("Battery node started")
 
@@ -47,6 +53,7 @@ def main(args=None):
     node = BatteryNode()
     rclpy.spin(node)
     rclpy.shutdown()
+
 
 if __name__ == "__main__":
     main()

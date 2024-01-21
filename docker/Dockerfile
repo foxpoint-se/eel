@@ -9,14 +9,14 @@ ENV ROS_DISTRO=${ROS_DISTRO}
 SHELL ["/bin/bash", "-c"]
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
- git python3-pip
+ git python3-pip wget unzip
 
 # Use Cyclone DDS as middleware
 RUN apt-get update && apt-get install -y --no-install-recommends \
  ros-${ROS_DISTRO}-rmw-cyclonedds-cpp
 ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 
-# Install Eel specific dependencies
+# Install Eel specific python dependencies
 RUN pip3 install \
  pynmea2 \
  pyserial \
@@ -24,6 +24,13 @@ RUN pip3 install \
  gpiozero \
  pigpio \
  RPi.GPIO
+
+# Install voltage sensor dependency
+RUN mkdir -p /pi_ina226
+WORKDIR /pi_ina226
+RUN wget https://github.com/e71828/pi_ina226/archive/refs/heads/main.zip -O voltage-lib.zip
+RUN unzip voltage-lib.zip
+RUN pip install pi_ina226-main/
 
 # Create Colcon workspace with external dependencies
 RUN mkdir -p /eel/src
