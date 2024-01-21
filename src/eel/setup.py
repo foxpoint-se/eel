@@ -26,7 +26,7 @@ setup(
             "rudder = eel.rudder.rudder_node:main",
             "motor = eel.motor.motor_node:main",
             "tank = eel.tank.tank_node:main",
-            # "pressure = eel.pressure.pressure_node:main",
+            "pressure = eel.pressure.pressure_node:main",
             # "depth_control = eel.depth_control.depth_control_node:main",
             # "battery = eel.battery.battery_node:main",
             # "depth_control_rudder = eel.depth_control.depth_control_node_rudder:main",
