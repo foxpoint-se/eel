@@ -13,7 +13,7 @@ def generate_launch_description():
     should_simulate_arg = DeclareLaunchArgument(
         SIMULATE_PARAM,
         default_value="false",
-        description="Set to false to disable hardware. However, you'll have to run `make serial-sim` to make radio node work.",
+        description="Set to false to disable hardware.",
     )
 
     navigation_node = Node(
@@ -33,13 +33,6 @@ def generate_launch_description():
         package="eel",
         executable="imu",
         name="imu_node",
-        parameters=[{SIMULATE_PARAM: LaunchConfiguration(SIMULATE_PARAM)}],
-    )
-
-    radio_node = Node(
-        package="eel",
-        executable="radio",
-        name="radio_node",
         parameters=[{SIMULATE_PARAM: LaunchConfiguration(SIMULATE_PARAM)}],
     )
 
@@ -65,7 +58,6 @@ def generate_launch_description():
     ld.add_action(should_simulate_arg)
     ld.add_action(gnss_node)
     ld.add_action(imu_node)
-    ld.add_action(radio_node)
     ld.add_action(rudder_node)
     ld.add_action(motor_node)
     ld.add_action(battery_node)

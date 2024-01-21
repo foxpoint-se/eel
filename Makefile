@@ -21,12 +21,6 @@ install-py:		## setup venv and install py dependencies
 
 install: install-py		## install everything (not really, but should be)
 
-# Run to create a virtual serial communication instead of HC12 radio link.
-# Send and listen to /tmp/virtual_serial_eel on Eel side, and
-# /tmp/virtual_serial_connect on the other (where you run ground-control application)
-virtual-serial:		## /tmp/virtual_serial_eel <-> /tmp/virtual_serial_connect
-	socat -d -d pty,raw,echo=0,link=/tmp/virtual_serial_eel pty,raw,echo=0,link=/tmp/virtual_serial_connect
-
 start-pigpio:		## start pigpio
 	sudo pigpiod
 
