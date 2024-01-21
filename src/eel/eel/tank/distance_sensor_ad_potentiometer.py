@@ -1,10 +1,5 @@
 #!/usr/bin/python3
 
-import busio
-import digitalio
-import board
-
-from adafruit_mcp3xxx.analog_in import AnalogIn
 from gpiozero import MCP3208
 
 
@@ -32,8 +27,10 @@ def cap_value(value, floor, ceiling):
         return min([ceiling, floor])
     return value
 
+
 # channel 0 is front
 # channel 1 is rear
+
 
 # range front: floor 0.66, ceiling 0.16
 # range rear: floor 0.288, ceiling 0.005
@@ -47,11 +44,19 @@ class DistanceSensorADPotentiometer:
 
         if channel is None or channel not in [0, 1]:
             raise Exception("Channel should be 1 or 0. Currently:", channel)
-        
+
         self.floor = floor
         self.ceiling = ceiling
-        
-        self.mcp = MCP3208(channel=self.channel,differential=False,max_voltage=3.3,clock_pin=11,mosi_pin=10,miso_pin=9,select_pin=8)
+
+        self.mcp = MCP3208(
+            channel=self.channel,
+            differential=False,
+            max_voltage=3.3,
+            clock_pin=11,
+            mosi_pin=10,
+            miso_pin=9,
+            select_pin=8,
+        )
 
     def __get_raw_value(self):
         return self.mcp.value
@@ -66,8 +71,8 @@ class DistanceSensorADPotentiometer:
             0.0,
             1.0,
         )
-        
+
         return level
 
-    def get_level(self) -> float:        
+    def get_level(self) -> float:
         return self.__get_pretty_value()

@@ -22,7 +22,8 @@ RUN pip3 install \
  pyserial \
  geopy \
  gpiozero \
- pigpio
+ pigpio \
+ RPi.GPIO
 
 # Create Colcon workspace with external dependencies
 RUN mkdir -p /eel/src
