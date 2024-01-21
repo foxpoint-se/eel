@@ -12,9 +12,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
  git python3-pip
 
 # Use Cyclone DDS as middleware
-# RUN apt-get update && apt-get install -y --no-install-recommends \
-#  ros-${ROS_DISTRO}-rmw-cyclonedds-cpp
-# ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+RUN apt-get update && apt-get install -y --no-install-recommends \
+ ros-${ROS_DISTRO}-rmw-cyclonedds-cpp
+ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 
 # Create Colcon workspace with external dependencies
 RUN mkdir -p /eel/src
