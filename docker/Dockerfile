@@ -20,7 +20,9 @@ ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 RUN pip3 install \
  pynmea2 \
  pyserial \
- geopy
+ geopy \
+ gpiozero \
+ pigpio
 
 # Create Colcon workspace with external dependencies
 RUN mkdir -p /eel/src
