@@ -2,8 +2,6 @@
 import rclpy
 from rclpy.node import Node
 from eel_interfaces.msg import GnssStatus
-from .gnss_sensor import GnssSensor
-from .gnss_sim import GnssSimulator
 from ..utils.constants import SIMULATE_PARAM
 from ..utils.topics import GNSS_STATUS
 
@@ -20,9 +18,13 @@ class GNSS(Node):
         self.should_simulate = self.get_parameter(SIMULATE_PARAM).value
 
         if not self.should_simulate:
+            from .gnss_sensor import GnssSensor
+
             sensor = GnssSensor()
             self.get_current_position = sensor.get_current_position
         else:
+            from .gnss_sim import GnssSimulator
+
             simulator = GnssSimulator(self)
             self.get_current_position = simulator.get_current_position
 

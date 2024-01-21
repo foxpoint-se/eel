@@ -16,6 +16,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
  ros-${ROS_DISTRO}-rmw-cyclonedds-cpp
 ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 
+# Install Eel specific dependencies
+RUN pip3 install \
+ pynmea2 \
+ pyserial \
+ geopy
+
 # Create Colcon workspace with external dependencies
 RUN mkdir -p /eel/src
 WORKDIR /eel/src

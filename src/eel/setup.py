@@ -21,7 +21,7 @@ setup(
     entry_points={
         "console_scripts": [
             "navigation = eel.navigation.navigation_node:main",
-            # "gnss = eel.gnss.gnss_node:main",
+            "gnss = eel.gnss.gnss_node:main",
             "imu = eel.imu.imu_node:main",
             # "rudder = eel.rudder.rudder_node:main",
             "motor = eel.motor.motor_node:main",
