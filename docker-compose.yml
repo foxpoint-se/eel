@@ -56,3 +56,12 @@ services:
   listener:
     extends: base
     command: ros2 run demo_nodes_cpp listener
+  
+  imu:
+    extends: base
+    command: ros2 run eel imu --ros-args -p simulate:=true
+
+  motor:
+    extends: base
+    command: ros2 run eel motor --ros-args -p simulate:=true
+  
