@@ -29,6 +29,13 @@ services:
     # Needed to display graphical applications
     privileged: true
 
+  rpi:
+    extends: base
+    image: eelrpi:base
+    build:
+      args:
+        - ARCH=arm64v8/
+
   # Developer container
   dev:
     extends: base
@@ -86,4 +93,20 @@ services:
     extends: base
     image: eel:depth-sim
     command: ros2 launch eel_bringup sim_depth.launch.py
+
+# RPI
+  rpi-talker:
+    extends: rpi
+    image: eelrpi:talker
+    command: ros2 run demo_nodes_cpp talker
+
+  rpi-listener:
+    extends: rpi
+    image: eelrpi:listener
+    command: ros2 run demo_nodes_cpp listener
+  
+  rpi-imu:
+    extends: rpi
+    image: eelrpi:imu
+    command: ros2 run eel imu --ros-args -p simulate:=true
   
