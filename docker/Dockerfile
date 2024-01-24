@@ -1,10 +1,14 @@
 # ROS distribution to use
 ARG ROS_DISTRO=foxy
 
+# Pass in "arm64v8/" for when building for RPI.
+ARG ARCH=""
+
 ######################
 # Base Image for Eel #
 ######################
-FROM osrf/ros:${ROS_DISTRO}-desktop as base
+FROM ${ARCH}ros:${ROS_DISTRO} as base
+
 ENV ROS_DISTRO=${ROS_DISTRO}
 SHELL ["/bin/bash", "-c"]
 
