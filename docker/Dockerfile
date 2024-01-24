@@ -61,8 +61,8 @@ ARG UID=1000
 ARG GID=${UID}
 
 # Install extra tools for development
-RUN apt-get update && apt-get install -y --no-install-recommends \
- nano
+# RUN apt-get update && apt-get install -y --no-install-recommends \
+#  nano
 
 # Create new user and home directory
 RUN groupadd --gid $GID $USERNAME \
