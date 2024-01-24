@@ -58,6 +58,14 @@ services:
     extends: base
     image: eel:listener
     command: ros2 run demo_nodes_cpp listener
+
+  humble-listener:
+    extends: base
+    image: eel:humblelistener
+    build:
+      args:
+        - ROS_DISTRO=humble
+    command: ros2 run demo_nodes_cpp listener
   
   imu:
     extends: base
