@@ -1,0 +1,5 @@
+.env
+
+# ignore docker-compose.yml so that we can have different setups in each environment.
+# copy one template and rename it to docker-compose.yml
+docker-compose.yml

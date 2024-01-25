@@ -2,12 +2,14 @@
 ARG ROS_DISTRO=foxy
 
 # Pass in "arm64v8/" for when building for RPI.
-ARG ARCH=""
+ARG ARCH_PREFIX=""
+
+ARG BASE_IMAGE=${ARCH_PREFIX}ros:${ROS_DISTRO}
 
 ######################
 # Base Image for Eel #
 ######################
-FROM ${ARCH}ros:${ROS_DISTRO} as base
+FROM ${BASE_IMAGE} as base
 
 ENV ROS_DISTRO=${ROS_DISTRO}
 SHELL ["/bin/bash", "-c"]
@@ -35,7 +37,8 @@ RUN pip3 install --no-cache-dir \
  geopy \
  gpiozero \
  pigpio \
- RPi.GPIO
+ RPi.GPIO \
+ adafruit-circuitpython-bno055
 
 # Install voltage sensor dependency
 RUN mkdir -p /pi_ina226

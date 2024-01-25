@@ -1,0 +1,115 @@
+# Usage:
+#
+# To build the images:
+#   docker compose build
+#
+# To start up a specific service by name:
+#   docker compose up <service_name>
+#
+# To open an interactive shell to a running container:
+#   docker compose exec <service_name> bash
+
+version: "3.9"
+services:
+  # Base image containing dependencies.
+  base:
+    # image: eel:amd
+    image: eel:latest
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        ROS_DISTRO: foxy
+        ARCH: ""
+      target: base
+    # Interactive shell
+    stdin_open: true
+    tty: true
+    # Networking and IPC for ROS 2
+    network_mode: host
+    ipc: host
+    # Needed to display graphical applications
+    privileged: true
+
+#   rpi:
+#     extends: base
+#     image: eelrpi:base
+#     build:
+#       args:
+#         ROS_DISTRO: foxy
+#         ARCH: arm64v8/
+
+#   # Developer container
+#   dev:
+#     extends: base
+#     image: eel:dev
+#     build:
+#       context: .
+#       dockerfile: docker/Dockerfile
+#       target: dev
+#       args:
+#         - UID=${UID:-1000}
+#         - GID=${UID:-1000}
+#         - USERNAME=${USERNAME:-devuser}
+#     volumes:
+#       - ./src/:/eel/src/:rw
+#       - ./build/:/eel/build/:rw
+#       - ./install/:/eel/install/:rw
+#       - ./log/:/eel/log/:rw
+#     user: ${USERNAME:-devuser}
+#     command: sleep infinity
+
+  talker:
+    extends: base
+    # image: eel:talker
+    command: ros2 run demo_nodes_cpp talker
+
+  listener:
+    extends: base
+    # image: eel:listener
+    command: ros2 run demo_nodes_cpp listener
+
+#   humble-listener:
+#     extends: base
+#     image: eel:humblelistener
+#     build:
+#       args:
+#         - ROS_DISTRO=humble
+#     command: ros2 run demo_nodes_cpp listener
+  
+#   imu:
+#     extends: base
+#     image: eel:imu
+#     command: ros2 run eel imu --ros-args -p simulate:=true
+
+#   motor:
+#     extends: base
+#     image: eel:motor
+#     command: ros2 run eel motor --ros-args -p simulate:=true
+
+#   nav-sim:
+#     extends: base
+#     image: eel:nav-sim
+#     command: ros2 launch eel_bringup sim_navigation.launch.py
+
+#   depth-sim:
+#     extends: base
+#     image: eel:depth-sim
+#     command: ros2 launch eel_bringup sim_depth.launch.py
+
+# # RPI
+#   rpi-talker:
+#     extends: rpi
+#     image: eelrpi:talker
+#     command: ros2 run demo_nodes_cpp talker
+
+#   rpi-listener:
+#     extends: rpi
+#     image: eelrpi:listener
+#     command: ros2 run demo_nodes_cpp listener
+  
+#   rpi-imu:
+#     extends: rpi
+#     image: eelrpi:imu
+#     command: ros2 run eel imu --ros-args -p simulate:=true
+  

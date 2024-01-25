@@ -1,0 +1,16 @@
+version: "3.9"
+services:
+  imu:
+    image: foxpoint/eel:foxy-${CURRENT_ARCHITECTURE}
+    command: ros2 run eel imu
+    # stdin_open: true
+    # tty: true
+    # network_mode: host
+    # ipc: host
+    # privileged: true
+    devices:
+      - "/dev/i2c-1:/dev/i2c-1"
+
+  motor:
+    image: foxpoint/eel:foxy-${CURRENT_ARCHITECTURE}
+    command: ros2 run eel motor
