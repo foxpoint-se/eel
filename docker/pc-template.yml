@@ -1,17 +1,17 @@
 version: "3.9"
 services:
   imu:
-    image: foxpoint/eel:foxy-${CURRENT_ARCHITECTURE}
+    image: foxpoint/eel:foxy
     command: ros2 run eel imu --ros-args -p simulate:=true
     network_mode: host
     ipc: host
 
   motor:
-    image: foxpoint/eel:foxy-${CURRENT_ARCHITECTURE}
+    image: foxpoint/eel:foxy
     command: ros2 run eel motor --ros-args -p simulate:=true
 
   dev:
-    image: foxpoint/eel-dev:foxy-${CURRENT_ARCHITECTURE}
+    image: foxpoint/eel-dev:foxy
     build:
       context: ..
       dockerfile: docker/Dockerfile
