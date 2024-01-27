@@ -69,28 +69,28 @@ ENTRYPOINT [ "/entrypoint.sh" ]
 #####################
 # Development Image #
 #####################
-# FROM target-$TARGETOS$TARGETARCH as dev
+FROM target-$TARGETOS$TARGETARCH as dev
 
-# # Dev container arguments
-# ARG USERNAME=devuser
-# ARG UID=1000
-# ARG GID=${UID}
+# Dev container arguments
+ARG USERNAME=devuser
+ARG UID=1000
+ARG GID=${UID}
 
-# # Install extra tools for development
-# # RUN apt-get update && apt-get install -y --no-install-recommends \
-# #  nano
+# Install extra tools for development
+# RUN apt-get update && apt-get install -y --no-install-recommends \
+#  nano
 
-# # Create new user and home directory
-# RUN groupadd --gid $GID $USERNAME \
-#  && useradd --uid ${GID} --gid ${UID} --create-home ${USERNAME} \
-#  && echo ${USERNAME} ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/${USERNAME} \
-#  && chmod 0440 /etc/sudoers.d/${USERNAME} \
-#  && mkdir -p /home/${USERNAME} \
-#  && chown -R ${UID}:${GID} /home/${USERNAME}
+# Create new user and home directory
+RUN groupadd --gid $GID $USERNAME \
+ && useradd --uid ${GID} --gid ${UID} --create-home ${USERNAME} \
+ && echo ${USERNAME} ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/${USERNAME} \
+ && chmod 0440 /etc/sudoers.d/${USERNAME} \
+ && mkdir -p /home/${USERNAME} \
+ && chown -R ${UID}:${GID} /home/${USERNAME}
 
-# # Set the ownership of the overlay workspace to the new user
-# RUN chown -R ${UID}:${GID} /eel/
+# Set the ownership of the overlay workspace to the new user
+RUN chown -R ${UID}:${GID} /eel/
 
-# # Set the user and source entrypoint in the user's .bashrc file
-# USER ${USERNAME}
-# RUN echo "source /entrypoint.sh" >> /home/${USERNAME}/.bashrc
+# Set the user and source entrypoint in the user's .bashrc file
+USER ${USERNAME}
+RUN echo "source /entrypoint.sh" >> /home/${USERNAME}/.bashrc

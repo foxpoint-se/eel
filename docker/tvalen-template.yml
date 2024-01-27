@@ -14,3 +14,5 @@ services:
   motor:
     image: foxpoint/eel:foxy
     command: ros2 run eel motor
+    privileged: true
+
