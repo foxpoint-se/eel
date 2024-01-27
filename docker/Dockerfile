@@ -69,7 +69,7 @@ ENTRYPOINT [ "/entrypoint.sh" ]
 #####################
 # Development Image #
 #####################
-FROM target-$TARGETOS$TARGETARCH as dev
+FROM base as dev
 
 # Dev container arguments
 ARG USERNAME=devuser
