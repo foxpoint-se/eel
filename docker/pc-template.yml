@@ -9,3 +9,21 @@ services:
   motor:
     image: foxpoint/eel:foxy-${CURRENT_ARCHITECTURE}
     command: ros2 run eel motor --ros-args -p simulate:=true
+
+  dev:
+    image: foxpoint/eel-dev:foxy-${CURRENT_ARCHITECTURE}
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: dev
+      args:
+        - UID=${UID:-1000}
+        - GID=${UID:-1000}
+        - USERNAME=${USERNAME:-devuser}
+    volumes:
+      - ./src/:/eel/src/:rw
+      - ./build/:/eel/build/:rw
+      - ./install/:/eel/install/:rw
+      - ./log/:/eel/log/:rw
+    user: ${USERNAME:-devuser}
+    command: sleep infinity
