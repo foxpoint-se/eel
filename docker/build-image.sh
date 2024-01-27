@@ -38,3 +38,5 @@ echo "Building Docker image"
 echo $full_command
 
 $full_command
+
+# docker build --platform linux/amd64 --build-arg ROS_DISTRO=$ros_distro --target base -t foxpoint/eel:test -f ./Dockerfile ..
