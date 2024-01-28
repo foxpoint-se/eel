@@ -30,6 +30,7 @@ setup(
             "depth_control = eel.depth_control.depth_control_node:main",
             "depth_control_rudder = eel.depth_control.depth_control_node_rudder:main",
             "battery = eel.battery.battery_node:main",
+            "mqtt_bridge = eel.mqtt_bridge.node:main",
         ],
     },
 )
