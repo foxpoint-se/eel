@@ -10,6 +10,12 @@ services:
     image: foxpoint/eel:foxy
     command: ros2 run eel motor --ros-args -p simulate:=true
 
+  mqtt_brigde:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel mqtt_brigde --ros-args -p path_for_config:=/eel/local_certs_and_config/iot_config.json
+    volumes:
+      - ../fleet/local_certs_and_config/:/eel/local_certs_and_config/
+
   dev:
     image: foxpoint/eel-dev:foxy
     build:
