@@ -39,7 +39,8 @@ RUN pip3 install --no-cache-dir \
  gpiozero \
  pigpio \
  RPi.GPIO \
- adafruit-circuitpython-bno055
+ adafruit-circuitpython-bno055 \
+ awsiotsdk
 
 # Install voltage sensor dependency
 RUN mkdir -p /pi_ina226
