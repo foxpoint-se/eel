@@ -21,8 +21,20 @@ class CertData(TypedDict):
     clientID: str
 
 
+class ImuStatusMqtt(TypedDict):
+    is_calibrated: bool
+    sys: int
+    gyro: int
+    accel: int
+    mag: int
+    heading: float
+    roll: float
+    pitch: float
+    pitch_velocity: float
+
+
 # usage:
-# ros2 run eel mqtt_bridge --ros-args -p robot_name:=alen -p path_for_config:=/path/to/config.json
+# ros2 run eel mqtt_bridge --ros-args -p path_for_config:=/path/to/config.json
 class MqttBridge(Node):
     def __init__(self):
         super().__init__("mqtt_bridge_node")
@@ -30,15 +42,10 @@ class MqttBridge(Node):
         self.mqtt_conn: Optional[mqtt.Connection] = None
 
         self.declare_parameter("path_for_config", "")
-        self.declare_parameter("robot_name", "")
 
         # self.motor_publisher = self.create_publisher(Float32, MOTOR_CMD, 10)
         path_for_config = (
             self.get_parameter("path_for_config").get_parameter_value().string_value
-        )
-
-        self.robot_name: str = (
-            self.get_parameter("robot_name").get_parameter_value().string_value
         )
 
         self.get_logger().info("MQTT bridge node starting...")
@@ -46,6 +53,7 @@ class MqttBridge(Node):
         with open(path_for_config) as f:
             cert_data = json.load(f)
             cert_data = cast(CertData, cert_data)
+            self.robot_name = cert_data["clientID"]
 
         self.get_logger().info("Connecting directly to endpoint")
         self.connect_to_endpoint(cert_data)
@@ -75,9 +83,23 @@ class MqttBridge(Node):
         )
 
     def imu_status_callback(self, msg: ImuStatus) -> None:
+        topic = f"{self.robot_name}/{IMU_STATUS}"
+        mqtt_message: ImuStatusMqtt = {
+            "accel": msg.accel,
+            "gyro": msg.gyro,
+            "heading": msg.heading,
+            "is_calibrated": msg.is_calibrated,
+            "mag": msg.mag,
+            "pitch": msg.pitch,
+            "pitch_velocity": msg.pitch_velocity,
+            "roll": msg.roll,
+            "sys": msg.sys,
+        }
+
+        json_payload = json.dumps(mqtt_message)
         self.mqtt_conn.publish(
-            topic=f"{self.robot_name}/{IMU_STATUS}",
-            payload=msg,
+            topic=topic,
+            payload=json_payload,
             qos=mqtt.QoS.AT_LEAST_ONCE,
         )
 
