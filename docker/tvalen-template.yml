@@ -11,6 +11,12 @@ services:
     devices:
       - "/dev/i2c-1:/dev/i2c-1"
 
+  mqtt_bridge:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel mqtt_bridge --ros-args -p path_for_config:=/home/ubuntu/fleet/local_certs_and_config/iot_config.json
+    volumes:
+      - ../../fleet/local_certs_and_config/:/home/ubuntu/fleet/local_certs_and_config/:r
+
   motor:
     image: foxpoint/eel:foxy
     command: ros2 run eel motor
