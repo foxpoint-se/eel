@@ -33,6 +33,10 @@ class ImuStatusMqtt(TypedDict):
     pitch_velocity: float
 
 
+class MotorCmdMqtt(TypedDict):
+    data: float
+
+
 # usage:
 # ros2 run eel mqtt_bridge --ros-args -p path_for_config:=/path/to/config.json
 class MqttBridge(Node):
@@ -43,7 +47,6 @@ class MqttBridge(Node):
 
         self.declare_parameter("path_for_config", "")
 
-        # self.motor_publisher = self.create_publisher(Float32, MOTOR_CMD, 10)
         path_for_config = (
             self.get_parameter("path_for_config").get_parameter_value().string_value
         )
@@ -59,6 +62,8 @@ class MqttBridge(Node):
         self.connect_to_endpoint(cert_data)
 
         self.init_subs()
+        self.init_ros_pubs()
+        self.init_mqtt_subs()
 
     def connect_to_endpoint(self, cert_data: CertData) -> None:
         self.get_logger().info(
@@ -76,6 +81,33 @@ class MqttBridge(Node):
         connected_future = self.mqtt_conn.connect()
         connected_future.result()
         self.get_logger().info("Connected!")
+
+    def init_mqtt_subs(self) -> None:
+        topic = f"{self.robot_name}/{MOTOR_CMD}"
+        self.mqtt_conn.subscribe(
+            topic=topic,
+            qos=mqtt.QoS.AT_LEAST_ONCE,
+            callback=self.handle_incoming_motor_cmd,
+        )
+        self.get_logger().info(f"Subscribed to MQTT topic {topic}")
+
+    def handle_incoming_motor_cmd(
+        self,
+        topic: str,
+        payload: bytes,
+        dup: bool,
+        qos: mqtt.QoS,
+        retain: bool,
+        **kwargs,
+    ) -> None:
+        converted = cast(MotorCmdMqtt, json.loads(payload))
+        motor_value = float(converted["data"])
+        motor_msg = Float32()
+        motor_msg.data = motor_value
+        self.motor_publisher.publish(motor_msg)
+
+    def init_ros_pubs(self) -> None:
+        self.motor_publisher = self.create_publisher(Float32, MOTOR_CMD, 10)
 
     def init_subs(self) -> None:
         self.imu_subscription = self.create_subscription(
