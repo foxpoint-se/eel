@@ -22,3 +22,8 @@ services:
     command: ros2 run eel motor
     privileged: true
 
+  rudder:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel rudder
+    privileged: true
+
