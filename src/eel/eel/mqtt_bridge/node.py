@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
-from typing import Optional, TypedDict, cast
+from typing import Callable, Optional, TypedDict, cast, Sequence
 import json
 
 from awscrt import mqtt, io
@@ -9,7 +9,12 @@ from awsiot import mqtt_connection_builder
 from std_msgs.msg import Float32
 from eel_interfaces.msg import ImuStatus
 
-from ..utils.topics import MOTOR_CMD, IMU_STATUS
+from ..utils.topics import (
+    MOTOR_CMD,
+    IMU_STATUS,
+    RUDDER_HORIZONTAL_CMD,
+    RUDDER_VERTICAL_CMD,
+)
 
 
 class CertData(TypedDict):
@@ -33,15 +38,28 @@ class ImuStatusMqtt(TypedDict):
     pitch_velocity: float
 
 
-class MotorCmdMqtt(TypedDict):
+class FloatMsg(TypedDict):
     data: float
+
+
+SubscriberCallback = Callable[[str, bytes, bool, mqtt.QoS, bool], None]
+
+
+def init_one_mqtt_sub(
+    mqtt_conn: mqtt.Connection, topic: str, callback: SubscriberCallback
+) -> None:
+    mqtt_conn.subscribe(
+        topic=topic,
+        qos=mqtt.QoS.AT_LEAST_ONCE,
+        callback=callback,
+    )
 
 
 # usage:
 # ros2 run eel mqtt_bridge --ros-args -p path_for_config:=/path/to/config.json
 class MqttBridge(Node):
     def __init__(self):
-        super().__init__("mqtt_bridge_node")
+        super().__init__("mqtt_bridge_node", parameter_overrides=[])
 
         self.mqtt_conn: Optional[mqtt.Connection] = None
 
@@ -83,13 +101,27 @@ class MqttBridge(Node):
         self.get_logger().info("Connected!")
 
     def init_mqtt_subs(self) -> None:
-        topic = f"{self.robot_name}/{MOTOR_CMD}"
-        self.mqtt_conn.subscribe(
-            topic=topic,
-            qos=mqtt.QoS.AT_LEAST_ONCE,
-            callback=self.handle_incoming_motor_cmd,
-        )
-        self.get_logger().info(f"Subscribed to MQTT topic {topic}")
+        topics_and_callbacks: Sequence[tuple[str, SubscriberCallback]] = [
+            (f"{self.robot_name}/{MOTOR_CMD}", self.handle_incoming_motor_cmd),
+            (
+                f"{self.robot_name}/{RUDDER_HORIZONTAL_CMD}",
+                self.handle_incoming_rudder_horizontal,
+            ),
+            (
+                f"{self.robot_name}/{RUDDER_VERTICAL_CMD}",
+                self.handle_incoming_rudder_vertical,
+            ),
+        ]
+        if self.mqtt_conn:
+            for t in topics_and_callbacks:
+                topic = t[0]
+                callback = t[1]
+                init_one_mqtt_sub(
+                    mqtt_conn=self.mqtt_conn, topic=topic, callback=callback
+                )
+                self.get_logger().info(f"Subscribed to MQTT topic {topic}")
+        else:
+            self.get_logger().info("Could not subscribe. Connection is undefined.")
 
     def handle_incoming_motor_cmd(
         self,
@@ -100,14 +132,50 @@ class MqttBridge(Node):
         retain: bool,
         **kwargs,
     ) -> None:
-        converted = cast(MotorCmdMqtt, json.loads(payload))
+        converted = cast(FloatMsg, json.loads(payload))
         motor_value = float(converted["data"])
         motor_msg = Float32()
         motor_msg.data = motor_value
         self.motor_publisher.publish(motor_msg)
 
+    def handle_incoming_rudder_horizontal(
+        self,
+        topic: str,
+        payload: bytes,
+        dup: bool,
+        qos: mqtt.QoS,
+        retain: bool,
+        **kwargs,
+    ) -> None:
+        converted = cast(FloatMsg, json.loads(payload))
+        value = float(converted["data"])
+        msg = Float32()
+        msg.data = value
+        self.rudder_horizontal_publisher.publish(msg)
+
+    def handle_incoming_rudder_vertical(
+        self,
+        topic: str,
+        payload: bytes,
+        dup: bool,
+        qos: mqtt.QoS,
+        retain: bool,
+        **kwargs,
+    ) -> None:
+        converted = cast(FloatMsg, json.loads(payload))
+        value = float(converted["data"])
+        msg = Float32()
+        msg.data = value
+        self.rudder_vertical_publisher.publish(msg)
+
     def init_ros_pubs(self) -> None:
         self.motor_publisher = self.create_publisher(Float32, MOTOR_CMD, 10)
+        self.rudder_horizontal_publisher = self.create_publisher(
+            Float32, RUDDER_HORIZONTAL_CMD, 10
+        )
+        self.rudder_vertical_publisher = self.create_publisher(
+            Float32, RUDDER_VERTICAL_CMD, 10
+        )
 
     def init_subs(self) -> None:
         self.imu_subscription = self.create_subscription(
@@ -115,25 +183,26 @@ class MqttBridge(Node):
         )
 
     def imu_status_callback(self, msg: ImuStatus) -> None:
-        topic = f"{self.robot_name}/{IMU_STATUS}"
-        mqtt_message: ImuStatusMqtt = {
-            "accel": msg.accel,
-            "gyro": msg.gyro,
-            "heading": msg.heading,
-            "is_calibrated": msg.is_calibrated,
-            "mag": msg.mag,
-            "pitch": msg.pitch,
-            "pitch_velocity": msg.pitch_velocity,
-            "roll": msg.roll,
-            "sys": msg.sys,
-        }
+        if self.mqtt_conn:
+            topic = f"{self.robot_name}/{IMU_STATUS}"
+            mqtt_message: ImuStatusMqtt = {
+                "accel": msg.accel,
+                "gyro": msg.gyro,
+                "heading": msg.heading,
+                "is_calibrated": msg.is_calibrated,
+                "mag": msg.mag,
+                "pitch": msg.pitch,
+                "pitch_velocity": msg.pitch_velocity,
+                "roll": msg.roll,
+                "sys": msg.sys,
+            }
 
-        json_payload = json.dumps(mqtt_message)
-        self.mqtt_conn.publish(
-            topic=topic,
-            payload=json_payload,
-            qos=mqtt.QoS.AT_LEAST_ONCE,
-        )
+            json_payload = json.dumps(mqtt_message)
+            self.mqtt_conn.publish(
+                topic=topic,
+                payload=json_payload,
+                qos=mqtt.QoS.AT_LEAST_ONCE,
+            )
 
 
 def main(args=None):
