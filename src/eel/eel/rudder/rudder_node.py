@@ -31,6 +31,11 @@ class Rudder(Node):
 
         self.declare_parameter(SIMULATE_PARAM, False)
         self.should_simulate = self.get_parameter(SIMULATE_PARAM).value
+
+        pigpiod_host_parameter = "pigpiod_host"
+        self.declare_parameter(pigpiod_host_parameter, "localhost")
+        self.pigpiod_host = self.get_parameter(pigpiod_host_parameter).value
+        
         self.rudder_calibration_term = (
             SIM_CALIBRATION_TERM if self.should_simulate else CALIBRATION_TERM
         )
@@ -73,6 +78,7 @@ class Rudder(Node):
                 flip_direction=True,
                 cap_min=-0.75,
                 cap_max=0.75,
+                pigpiod_host=self.pigpiod_host
             )
             self.horizontal_detach = horizontal_servo.detach
             self.horizontal_set_value = horizontal_servo.set_value
@@ -84,6 +90,7 @@ class Rudder(Node):
                 flip_direction=False,
                 cap_min=-0.75,
                 cap_max=0.75,
+                pigpiod_host=self.pigpiod_host
             )
             self.vertical_detach = vertical_servo.detach
             self.vertical_set_value = vertical_servo.set_value

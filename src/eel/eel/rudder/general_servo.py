@@ -15,8 +15,9 @@ class RudderServo:
         flip_direction: bool,
         cap_min: float = -1.0,
         cap_max: float = 1.0,
+        pigpiod_host: str = "localhost"
     ) -> None:
-        factory = PiGPIOFactory()
+        factory = PiGPIOFactory(host=pigpiod_host)
         self.servo = Servo(
             pin,
             pin_factory=factory,
