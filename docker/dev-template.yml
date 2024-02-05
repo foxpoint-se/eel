@@ -1,3 +1,19 @@
+# Have not figured out a good way to do this.
+# If we mount the build/, install/ and log/ folders from the host to the container,
+# then we mess up the build on the host, and have to rebuild there.
+# If we don't mount the folders at all, then we have to rebuild them in the container ever so often.
+# When we have a dedicated volume for those folders, they still have to be built once again. But at least
+# we keep the build between restarts. Or something... :thinking_face:
+
+# Anyway:
+# Use like this:
+# docker compose -f dev-template.yml build
+# docker compose -f dev-template.yml up -d
+# docker compose -f dev-template.yml exec dev bash
+# colcon build --symlink-install
+# source install/setup.bash
+# ros2 run eel <whatever>
+
 version: "3.9"
 services:
   dev:
@@ -12,9 +28,29 @@ services:
         - USERNAME=${USERNAME:-devuser}
     volumes:
       - ../src/:/eel/src/:rw
-      - ../build/:/eel/build/:rw
-      - ../install/:/eel/install/:rw
-      - ../log/:/eel/log/:rw
+      # - ../build/:/eel/build/:rw
+      # - ../install/:/eel/install/:rw
+      # - ../log/:/eel/log/:rw
+      - ros_build:/eel/build/:rw
+      - ros_build:/eel/install/:rw
+      - ros_build:/eel/log/:rw
       - ../../fleet/local_certs_and_config/:/home/ubuntu/fleet/local_certs_and_config/:r
     user: ${USERNAME:-devuser}
     command: sleep infinity
+    privileged: true
+    # ports:
+    #   - "8888:8888"
+    devices:
+      - "/dev/i2c-1:/dev/i2c-1"
+    depends_on:
+      - pigpiod
+  
+  # docker run -it -p 8888:8888 --privileged zinen2/alpine-pigpiod
+  pigpiod:
+    image: zinen2/alpine-pigpiod
+    # ports:
+    #   - "8888:8888"
+    privileged: true
+
+volumes:
+  ros_build:
