@@ -24,6 +24,11 @@ services:
 
   rudder:
     image: foxpoint/eel:foxy
-    command: ros2 run eel rudder
+    command: ros2 run eel rudder --ros-args -p pigpiod_host:=pigpiod
     privileged: true
+    depends_on:
+      - pigpiod
 
+  pigpiod:
+    image: zinen2/alpine-pigpiod
+    privileged: true
