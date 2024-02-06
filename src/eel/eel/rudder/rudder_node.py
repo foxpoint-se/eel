@@ -34,8 +34,8 @@ class Rudder(Node):
 
         pigpiod_host_parameter = "pigpiod_host"
         self.declare_parameter(pigpiod_host_parameter, "localhost")
-        self.pigpiod_host = self.get_parameter(pigpiod_host_parameter).value
-        
+        self.pigpiod_host = str(self.get_parameter(pigpiod_host_parameter).value)
+
         self.rudder_calibration_term = (
             SIM_CALIBRATION_TERM if self.should_simulate else CALIBRATION_TERM
         )
@@ -51,9 +51,7 @@ class Rudder(Node):
         self.vertical_status_publisher = self.create_publisher(
             Float32, RUDDER_VERTICAL_STATUS, 10
         )
-        self.rudder_status_publisher = self.create_publisher(
-            Vector3, RUDDER_STATUS, 10
-        )
+        self.rudder_status_publisher = self.create_publisher(Vector3, RUDDER_STATUS, 10)
 
         self.imu_subscription = self.create_subscription(
             ImuStatus, IMU_STATUS, self._handle_imu_msg, 10
@@ -78,7 +76,7 @@ class Rudder(Node):
                 flip_direction=True,
                 cap_min=-0.75,
                 cap_max=0.75,
-                pigpiod_host=self.pigpiod_host
+                pigpiod_host=self.pigpiod_host,
             )
             self.horizontal_detach = horizontal_servo.detach
             self.horizontal_set_value = horizontal_servo.set_value
@@ -90,15 +88,13 @@ class Rudder(Node):
                 flip_direction=False,
                 cap_min=-0.75,
                 cap_max=0.75,
-                pigpiod_host=self.pigpiod_host
+                pigpiod_host=self.pigpiod_host,
             )
             self.vertical_detach = vertical_servo.detach
             self.vertical_set_value = vertical_servo.set_value
 
         self.get_logger().info(
-            "{}Rudder node started.".format(
-                "SIMULATE " if self.should_simulate else ""
-            )
+            "{}Rudder node started.".format("SIMULATE " if self.should_simulate else "")
         )
 
     def shutdown(self):
