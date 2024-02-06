@@ -6,6 +6,7 @@ from time import time
 from eel_interfaces.msg import PressureStatus
 from ..utils.constants import SIMULATE_PARAM
 from ..utils.topics import PRESSURE_STATUS, IMU_STATUS
+from .pressure_source import PressureSource
 from eel_interfaces.msg import ImuStatus
 
 PUBLISH_FREQUENCY = 5
@@ -24,7 +25,7 @@ def get_depth_velocity(depth, previous_depth, now, previous_depth_at):
     return velocity
 
 
-def get_pressure_sensor(should_simulate: bool, parent_node: Node):
+def get_pressure_sensor(should_simulate: bool, parent_node: Node) -> PressureSource:
     if should_simulate:
         from .pressure_sim import PressureSensorSimulator
 
@@ -68,28 +69,29 @@ class PressureNode(Node):
             )
         )
 
-    def handle_imu_msg(self, msg):
+    def handle_imu_msg(self, msg: ImuStatus):
         self.current_pitch = msg.pitch
 
     def publish_status(self):
         depth_reading = self.sensor.get_current_depth()
-        current_depth = calculate_center_depth(depth_reading, self.current_pitch)
-        validated_depth = validate_depth(current_depth, self.last_depth_reading)
+        if depth_reading:
+            current_depth = calculate_center_depth(depth_reading, self.current_pitch)
+            validated_depth = validate_depth(current_depth, self.last_depth_reading)
 
-        now = time()
+            now = time()
 
-        depth_velocity = get_depth_velocity(validated_depth, self.last_depth_reading, now, self.last_depth_at)
+            depth_velocity = get_depth_velocity(validated_depth, self.last_depth_reading, now, self.last_depth_at)
 
-        msg = PressureStatus()
-        msg.depth = validated_depth
-        msg.depth_velocity = depth_velocity
-        # if self.should_simulate:
-        #     msg.depth = current_depth
-        # else:
-        #     msg.depth = calculate_center_depth_USE_THIS(current_depth, self.current_pitch)
-        self.last_depth_reading = validated_depth
-        self.last_depth_at = now
-        self.publisher.publish(msg)
+            msg = PressureStatus()
+            msg.depth = validated_depth
+            msg.depth_velocity = depth_velocity
+            # if self.should_simulate:
+            #     msg.depth = current_depth
+            # else:
+            #     msg.depth = calculate_center_depth_USE_THIS(current_depth, self.current_pitch)
+            self.last_depth_reading = validated_depth
+            self.last_depth_at = now
+            self.publisher.publish(msg)
 
 
 def main(args=None):
