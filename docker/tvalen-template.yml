@@ -39,3 +39,8 @@ services:
     devices:
       - "/dev/i2c-1:/dev/i2c-1"
 
+  pressure:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel pressure
+    devices:
+      - "/dev/ttyUSB0:/dev/ttyUSB0"
