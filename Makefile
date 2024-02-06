@@ -58,6 +58,10 @@ install-i2c:		## install i2c stuff
 		echo "now restart your rpi"; \
 	)
 
+.PHONY: spidev-permissions
+spidev-permissions:		## setup spidev permissions
+	sudo ./scripts/spidev-permissions.sh
+
 start:		## start eel
 	ros2 launch eel_bringup eel.launch.py
 
