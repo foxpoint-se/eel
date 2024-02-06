@@ -44,3 +44,9 @@ services:
     command: ros2 run eel pressure
     devices:
       - "/dev/ttyUSB0:/dev/ttyUSB0"
+
+  gnss:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel gnss
+    devices:
+      - "/dev/ttyUSB0:/dev/ttyUSB0"
