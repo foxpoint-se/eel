@@ -39,6 +39,8 @@ RUN pip3 install --no-cache-dir \
  gpiozero \
  pigpio \
  RPi.GPIO \
+ spidev \
+ lgpio \
  adafruit-circuitpython-bno055 \
  awsiotsdk
 
