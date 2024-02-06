@@ -32,3 +32,10 @@ services:
   pigpiod:
     image: zinen2/alpine-pigpiod
     privileged: true
+
+  battery:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel battery
+    devices:
+      - "/dev/i2c-1:/dev/i2c-1"
+
