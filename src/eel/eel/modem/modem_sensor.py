@@ -3,6 +3,7 @@ import re
 from typing import Union
 import serial
 import time
+from .modem_source import ModemSource
 
 
 AT_COMMAND_TIMEOUT_MS = 5000
@@ -12,7 +13,7 @@ def get_time_with_ms():
     return int(time.time() * 1000)
 
 
-class ModemSensor:
+class ModemSensor(ModemSource):
     def __init__(self, p="/dev/ttyUSB2", b=115200):
         self.serial_connection = serial.Serial(port=p, baudrate=b)
         self.serial_connection.parity = serial.PARITY_NONE

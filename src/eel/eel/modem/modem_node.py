@@ -5,6 +5,7 @@ from eel_interfaces.msg import ModemStatus
 from .modem_sensor import ModemSensor
 from ..utils.constants import SIMULATE_PARAM
 from ..utils.topics import MODEM_STATUS
+from .modem_simulator import ModemSimulator
 
 
 class ModemNode(Node):  # MODIFY NAME
@@ -20,9 +21,9 @@ class ModemNode(Node):  # MODIFY NAME
         if not self.should_simulate:
             self.sensor = ModemSensor()
         
-        if self.should_simulate:
-            raise ValueError("Simulation of Modem not yet implemented")
-        
+        elif self.should_simulate:
+            self.sensor = ModemSimulator()
+
         reg_status = self.sensor.get_registration_status()
         signal_strength = self.sensor.get_received_signal_strength_indicator()
         if not reg_status or not signal_strength:
