@@ -16,6 +16,10 @@ services:
     volumes:
       - ../../fleet/local_certs_and_config/:/home/ubuntu/fleet/local_certs_and_config/:r
 
+  modem:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel modem --ros-args -p simulate:=true
+
   dev:
     image: foxpoint/eel-dev:foxy
     build:
