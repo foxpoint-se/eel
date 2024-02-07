@@ -24,7 +24,7 @@ class ModemNode(Node):  # MODIFY NAME
             raise ValueError("Simulation of Modem not yet implemented")
         
         reg_status = self.sensor.get_registration_status()
-        signal_strength = self.sensor.get_recieved_signal_strength_indicator()
+        signal_strength = self.sensor.get_received_signal_strength_indicator()
         if not reg_status or not signal_strength:
             raise Exception("Could not start modem node. Not getting registration status and/or signal strength.")
 
@@ -34,7 +34,7 @@ class ModemNode(Node):  # MODIFY NAME
 
     def publish_modem(self):
         reg_status = self.sensor.get_registration_status()
-        signal_strength = self.sensor.get_recieved_signal_strength_indicator()
+        signal_strength = self.sensor.get_received_signal_strength_indicator()
 
         msg = ModemStatus()
         msg.reg_status = reg_status

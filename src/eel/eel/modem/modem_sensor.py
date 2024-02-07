@@ -73,7 +73,7 @@ class ModemSensor:
 
         return None
 
-    def get_recieved_signal_strength_indicator(self) -> Union[int, None]:
+    def get_received_signal_strength_indicator(self) -> Union[int, None]:
         """Sends the AT+CSQ command to the modem to read the received signal strength indicator.
             The received signal strength indicator is a value 0-31 where 0 is the worst possible signal
             strength and 31 is the best. Possible values are listed in this table
@@ -103,6 +103,6 @@ class ModemSensor:
 if __name__ == "__main__":
     modem = ModemSensor()
     reg_status = modem.get_registration_status()
-    signal_strength = modem.get_recieved_signal_strength_indicator()
+    signal_strength = modem.get_received_signal_strength_indicator()
 
     print(f"Registration status: {reg_status}\nSignal strength: {signal_strength}")
