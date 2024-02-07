@@ -22,6 +22,11 @@ class ModemNode(Node):  # MODIFY NAME
         
         if self.should_simulate:
             raise ValueError("Simulation of Modem not yet implemented")
+        
+        reg_status = self.sensor.get_registration_status()
+        signal_strength = self.sensor.get_recieved_signal_strength_indicator()
+        if not reg_status or not signal_strength:
+            raise Exception("Could not start modem node. Not getting registration status and/or signal strength.")
 
         self.updater = self.create_timer(1.0 / self.update_frequency, self.publish_modem)
 
