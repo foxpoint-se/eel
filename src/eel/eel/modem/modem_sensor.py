@@ -29,8 +29,8 @@ class ModemSensor:
         
         start_time = get_time_with_ms()
         while get_time_with_ms() - start_time < timeout_ms:
-            while self.serial_connection.inWaiting():
-                response += self.serial_connection.read(self.serial_connection.inWaiting()).decode("utf-8")
+            while self.serial_connection.in_waiting:
+                response += self.serial_connection.read(self.serial_connection.in_waiting).decode("utf-8")
 
         return response
 
