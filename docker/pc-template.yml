@@ -1,0 +1,35 @@
+version: "3.9"
+services:
+  imu:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel imu --ros-args -p simulate:=true
+    network_mode: host
+    ipc: host
+
+  motor:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel motor --ros-args -p simulate:=true
+
+  mqtt_bridge:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel mqtt_bridge --ros-args -p path_for_config:=/home/ubuntu/fleet/local_certs_and_config/iot_config.json
+    volumes:
+      - ../../fleet/local_certs_and_config/:/home/ubuntu/fleet/local_certs_and_config/:r
+
+  dev:
+    image: foxpoint/eel-dev:foxy
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: dev
+      args:
+        - UID=${UID:-1000}
+        - GID=${UID:-1000}
+        - USERNAME=${USERNAME:-devuser}
+    volumes:
+      - ./src/:/eel/src/:rw
+      - ./build/:/eel/build/:rw
+      - ./install/:/eel/install/:rw
+      - ./log/:/eel/log/:rw
+    user: ${USERNAME:-devuser}
+    command: sleep infinity

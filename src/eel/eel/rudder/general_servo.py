@@ -8,21 +8,22 @@ from gpiozero.pins.pigpio import PiGPIOFactory
 
 
 class RudderServo:
-    def __init__(self,
+    def __init__(
+        self,
         pin: int,
         max_pulse_width: float,
         min_pulse_width: float,
         flip_direction: bool,
         cap_min: float = -1.0,
         cap_max: float = 1.0,
+        pigpiod_host: str = "localhost",
     ) -> None:
-        factory = PiGPIOFactory()
+        factory = PiGPIOFactory(host=pigpiod_host)
         self.servo = Servo(
             pin,
             pin_factory=factory,
             min_pulse_width=min_pulse_width,
             max_pulse_width=max_pulse_width,
-
         )
         self.flip_direction = flip_direction
         self.cap_min = cap_min

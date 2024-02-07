@@ -1,0 +1,67 @@
+version: "3.9"
+services:
+  imu:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel imu
+    # stdin_open: true
+    # tty: true
+    # network_mode: host
+    # ipc: host
+    # privileged: true
+    devices:
+      - "/dev/i2c-1:/dev/i2c-1"
+
+  mqtt_bridge:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel mqtt_bridge --ros-args -p path_for_config:=/home/ubuntu/fleet/local_certs_and_config/iot_config.json
+    volumes:
+      - ../../fleet/local_certs_and_config/:/home/ubuntu/fleet/local_certs_and_config/:r
+
+  motor:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel motor
+    privileged: true
+
+  rudder:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel rudder --ros-args -p pigpiod_host:=pigpiod
+    privileged: true
+    depends_on:
+      - pigpiod
+
+  pigpiod:
+    image: zinen2/alpine-pigpiod
+    privileged: true
+
+  battery:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel battery
+    devices:
+      - "/dev/i2c-1:/dev/i2c-1"
+
+  pressure:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel pressure
+    devices:
+      - "/dev/ttyUSB0:/dev/ttyUSB0"
+
+  gnss:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel gnss
+    devices:
+      - "/dev/ttyUSB0:/dev/ttyUSB0"
+
+  front_tank:
+    image: foxpoint/eel:foxy
+    command: ros2 launch eel_bringup tank.launch.py simulate:=false tank:=front
+    devices:
+      - "/dev/ttyUSB0:/dev/ttyUSB0"
+    privileged: true
+
+  rear_tank:
+    image: foxpoint/eel:foxy
+    command: ros2 launch eel_bringup tank.launch.py simulate:=false tank:=rear
+    devices:
+      - "/dev/ttyUSB0:/dev/ttyUSB0"
+    privileged: true
+

@@ -10,6 +10,10 @@ help:
 clean: 		## clean workspace
 	rm -rf .venv
 
+ros-clean:		## clean ROS build
+	rm -rf build install log
+	mkdir build install log
+
 install-py:		## setup venv and install py dependencies
 	( \
 		python3 -m venv .venv; \
@@ -20,12 +24,6 @@ install-py:		## setup venv and install py dependencies
     )
 
 install: install-py		## install everything (not really, but should be)
-
-# Run to create a virtual serial communication instead of HC12 radio link.
-# Send and listen to /tmp/virtual_serial_eel on Eel side, and
-# /tmp/virtual_serial_connect on the other (where you run ground-control application)
-virtual-serial:		## /tmp/virtual_serial_eel <-> /tmp/virtual_serial_connect
-	socat -d -d pty,raw,echo=0,link=/tmp/virtual_serial_eel pty,raw,echo=0,link=/tmp/virtual_serial_connect
 
 start-pigpio:		## start pigpio
 	sudo pigpiod
@@ -59,6 +57,10 @@ install-i2c:		## install i2c stuff
 		sudo usermod -a -G i2c ubuntu; \
 		echo "now restart your rpi"; \
 	)
+
+.PHONY: spidev-permissions
+spidev-permissions:		## setup spidev permissions
+	sudo ./scripts/spidev-permissions.sh
 
 start:		## start eel
 	ros2 launch eel_bringup eel.launch.py

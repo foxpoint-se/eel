@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
-from ..utils.utils import clamp
-from ..utils.pid_tuning import get_simulation_pid_settings, get_production_pid_settings, lookup_zieglernichols_gains
+from ..utils.pid_tuning import get_production_pid_settings
 from ..utils.pid_controller import PidController
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float32
 from time import time
-import math
 
 from eel_interfaces.msg import (
     DepthControlStatus,
@@ -104,8 +102,12 @@ class DepthControlNode(Node):
         # TODO: enable these conditionally, for use when tuning PID
         self.pid_publisher = self.create_publisher(Float32, "pid_error", 10)
         self.pid_publisher_base = self.create_publisher(Float32, "pid_error_target", 10)
-        self.front_tank_depth_publisher = self.create_publisher(Float32, "front_depth_pid", 10)
-        self.front_tank_pitch_publisher = self.create_publisher(Float32, "front_pitch_pid", 10)
+        self.front_tank_depth_publisher = self.create_publisher(
+            Float32, "front_depth_pid", 10
+        )
+        self.front_tank_pitch_publisher = self.create_publisher(
+            Float32, "front_pitch_pid", 10
+        )
 
         self.create_subscription(
             DepthControlCmd, DEPTH_CONTROL_CMD, self.handle_cmd_msg, 10
@@ -173,7 +175,7 @@ class DepthControlNode(Node):
                 msg.pitch_target, msg.p_value, msg.i_value, msg.d_value
             )
         )
-        
+
         self.pitch_target = msg.pitch_target
         self.pitch_pid_controller = PidController(
             self.pitch_target,
@@ -282,7 +284,7 @@ class DepthControlNode(Node):
 
             pitch_front_tank = pitch_controller_output
             pitch_rear_tank = -pitch_controller_output
-            
+
             next_front_tank_level = pitch_front_tank
 
             next_rear_tank_level = pitch_rear_tank
@@ -290,7 +292,6 @@ class DepthControlNode(Node):
             self.log_pid_error(self.pitch_target - self.current_pitch)
 
             self.message_tanks(next_front_tank_level, next_rear_tank_level)
-
 
     def loop_OLD(self):
         if self.depth_pid_controller:
@@ -312,7 +313,6 @@ class DepthControlNode(Node):
 
     def loop(self):
         if self.pitch_pid_controller and self.depth_pid_controller:
-
             # if self.last_pitch_controller_output and abs(self.pitch_target - self.current_pitch) <= 1.5:
             #     pitch_controller_output = self.last_pitch_controller_output
             # else:
@@ -371,7 +371,7 @@ class DepthControlNode(Node):
             # status_msg.is_adjusting_depth = self.should_control_depth
             # status_msg.is_adjusting_pitch = self.should_control_pitch
             # self.publisher.publish(status_msg)
-    
+
     def publish_debug_values(self, depth_front_tank, pitch_front_tank):
         depth_front_msg = Float32()
         depth_front_msg.data = depth_front_tank

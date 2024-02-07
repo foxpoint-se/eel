@@ -1,0 +1,53 @@
+name: Docker build & test Eel
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    if: always()
+    name: Build with Docker
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        ros-distro: ["foxy", "humble"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build for ${{ matrix.ros-distro }}
+        uses: docker/build-push-action@v5
+        with:
+          file: docker/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          target: base
+          build-args:
+            ROS_DISTRO=${{ matrix.ros-distro }}
+          context: .
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          push: false
+          tags: foxpoint/eel:${{ matrix.ros-distro }}
+    outputs: 
+      status: ${{ job.status }}
+
+  notify:
+    if: ${{ github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: sarisia/actions-status-discord@v1
+        if: always()
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK_BUILD_CHANNEL }}
+          status: ${{ needs.build.outputs.status == 'success' && 'success' || 'failure' }}
+          title: "Docker build & test Eel (foxy & humble)"
+          username: GitHub Actions
+          avatar_url: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
