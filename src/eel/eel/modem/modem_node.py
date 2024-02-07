@@ -2,10 +2,8 @@
 import rclpy
 from rclpy.node import Node
 from eel_interfaces.msg import ModemStatus
-from .modem_sensor import ModemSensor
 from ..utils.constants import SIMULATE_PARAM
 from ..utils.topics import MODEM_STATUS
-from .modem_simulator import ModemSimulator
 
 
 class ModemNode(Node):  # MODIFY NAME
@@ -19,9 +17,13 @@ class ModemNode(Node):  # MODIFY NAME
         self.update_frequency = 0.10
 
         if not self.should_simulate:
+            from .modem_sensor import ModemSensor
+
             self.sensor = ModemSensor()
-        
+
         elif self.should_simulate:
+            from .modem_simulator import ModemSimulator
+
             self.sensor = ModemSimulator()
 
         reg_status = self.sensor.get_registration_status()
