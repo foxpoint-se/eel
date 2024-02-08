@@ -26,6 +26,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 
+# Install ros bridge for access to local websockets
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ros-${ROS_DISTRO}-rosbridge-suite && \
+    rm -rf /var/lib/apt/lists/*
+
 # Install Eel specific python dependencies
 RUN pip3 install --no-cache-dir \
  pynmea2 \
