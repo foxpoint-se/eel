@@ -19,11 +19,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git python3-pip wget unzip && \
     rm -rf /var/lib/apt/lists/*
 
-RUN apt-get update && apt-get install -y \
-    ros-${ROS_DISTRO}-demo-nodes-cpp \
-    ros-${ROS_DISTRO}-demo-nodes-py && \
-    rm -rf /var/lib/apt/lists/*
-
 # Use Cyclone DDS as middleware
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-${ROS_DISTRO}-rmw-cyclonedds-cpp && \
