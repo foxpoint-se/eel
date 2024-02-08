@@ -2,10 +2,8 @@
 import rclpy
 from rclpy.node import Node
 from eel_interfaces.msg import ModemStatus
-from .modem_sensor import ModemSensor
 from ..utils.constants import SIMULATE_PARAM
 from ..utils.topics import MODEM_STATUS
-from .modem_simulator import ModemSimulator
 
 
 class ModemNode(Node):  # MODIFY NAME
@@ -19,19 +17,29 @@ class ModemNode(Node):  # MODIFY NAME
         self.update_frequency = 0.10
 
         if not self.should_simulate:
+            from .modem_sensor import ModemSensor
+
             self.sensor = ModemSensor()
-        
+
         elif self.should_simulate:
+            from .modem_simulator import ModemSimulator
+
             self.sensor = ModemSimulator()
 
         reg_status = self.sensor.get_registration_status()
         signal_strength = self.sensor.get_received_signal_strength_indicator()
         if not reg_status or not signal_strength:
-            raise Exception("Could not start modem node. Not getting registration status and/or signal strength.")
+            raise Exception(
+                "Could not start modem node. Not getting registration status and/or signal strength."
+            )
 
-        self.updater = self.create_timer(1.0 / self.update_frequency, self.publish_modem)
+        self.updater = self.create_timer(
+            1.0 / self.update_frequency, self.publish_modem
+        )
 
-        self.get_logger().info(f"{'Simulate ' if self.should_simulate else ''}Modem node started")
+        self.get_logger().info(
+            f"{'Simulate ' if self.should_simulate else ''}Modem node started"
+        )
 
     def publish_modem(self):
         reg_status = self.sensor.get_registration_status()

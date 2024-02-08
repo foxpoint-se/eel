@@ -65,3 +65,9 @@ services:
       - "/dev/ttyUSB0:/dev/ttyUSB0"
     privileged: true
 
+  modem:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel modem
+    devices:
+      - "/dev/ttyUSB2:/dev/ttyUSB2"
+    privileged: true
