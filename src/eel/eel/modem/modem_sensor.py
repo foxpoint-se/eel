@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 import re
+from typing import Union
 import serial
 import time
+from .modem_source import ModemSource
 
 
 AT_COMMAND_TIMEOUT_MS = 5000
@@ -11,7 +13,7 @@ def get_time_with_ms():
     return int(time.time() * 1000)
 
 
-class ModemSensor:
+class ModemSensor(ModemSource):
     def __init__(self, p="/dev/ttyUSB2", b=115200):
         self.serial_connection = serial.Serial(port=p, baudrate=b)
         self.serial_connection.parity = serial.PARITY_NONE
@@ -29,8 +31,8 @@ class ModemSensor:
         
         start_time = get_time_with_ms()
         while get_time_with_ms() - start_time < timeout_ms:
-            while self.serial_connection.inWaiting():
-                response += self.serial_connection.read(self.serial_connection.inWaiting()).decode("utf-8")
+            while self.serial_connection.in_waiting:
+                response += self.serial_connection.read(self.serial_connection.in_waiting).decode("utf-8")
 
         return response
 
@@ -44,7 +46,7 @@ class ModemSensor:
         self.serial_connection.reset_input_buffer()
         self.serial_connection.write(composed_message.encode())
     
-    def get_registration_status(self):
+    def get_registration_status(self) -> Union[int, None]:
         """Sends the AT+CREG command to the modem to read the network registration status.
         
             0,0 Not registered, ME is not currently searching a new operator to register to
@@ -62,12 +64,17 @@ class ModemSensor:
         self.send_at_command(at_command)
 
         response = self.get_response()
-        # Regexp is almost never a clean solution, retrives the last digit in a 0,x combination
-        registration_status = re.search(r"0,\d", response).group(0)[-1]
+        if response:
+            # Regexp is almost never a clean solution, retrives the last digit in a 0,x combination
+            match = re.search(r"0,\d", response)
+            if match:
+                first_group = match.group(0)
+                last_digit = first_group[-1]
+                return int(last_digit)
 
-        return int(registration_status)
+        return None
 
-    def get_recieved_signal_strength_indicator(self):
+    def get_received_signal_strength_indicator(self) -> Union[int, None]:
         """Sends the AT+CSQ command to the modem to read the received signal strength indicator.
             The received signal strength indicator is a value 0-31 where 0 is the worst possible signal
             strength and 31 is the best. Possible values are listed in this table
@@ -84,15 +91,19 @@ class ModemSensor:
         self.send_at_command(at_command)
 
         response = self.get_response()
-        # Regexp is almost never a clean solution, retrives the last digit in a 0,x combination
-        recieved_signal_strenght = re.search(r"\d+,\d+", response).group(0).split(",")[-1]
-
-        return int(recieved_signal_strenght)
+        if response:
+            # Regexp is almost never a clean solution, retrives the last digit in a 0,x combination
+            match = re.search(r"\d+,\d+", response)
+            if match:
+                first_group = match.group(0)
+                last_number = first_group.split(",")[-1]
+                return int(last_number)
+        return None
 
 
 if __name__ == "__main__":
     modem = ModemSensor()
     reg_status = modem.get_registration_status()
-    signal_strength = modem.get_recieved_signal_strength_indicator()
+    signal_strength = modem.get_received_signal_strength_indicator()
 
     print(f"Registration status: {reg_status}\nSignal strength: {signal_strength}")
