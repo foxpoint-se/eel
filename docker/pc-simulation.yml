@@ -1,0 +1,63 @@
+version: "3.9"
+services:
+  imu:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel imu --ros-args -p simulate:=true
+
+  motor:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel motor --ros-args -p simulate:=true
+
+  modem:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel modem --ros-args -p simulate:=true
+
+  rudder:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel rudder --ros-args -p simulate:=true
+  
+  battery:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel battery --ros-args -p simulate:=true
+  
+  pressure:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel pressure --ros-args -p simulate:=true
+
+  gnss:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel gnss --ros-args -p simulate:=true
+
+  front_tank:
+    image: foxpoint/eel:foxy
+    command: ros2 launch eel_bringup tank.launch.py simulate:=true tank:=front
+
+  rear_tank:
+    image: foxpoint/eel:foxy
+    command: ros2 launch eel_bringup tank.launch.py simulate:=true tank:=rear
+
+  navigation:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel navigation
+
+  depth_control:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel depth_control_rudder
+
+  # NOTE: Use the same network_mode for the ros_brigde and the nodes.
+  # With network_mode: host, the ros_bridge will only discover the services that
+  # also uses that. Without it, the ros_bridge will only discover the services on the
+  # docker network. Also: with network_mode: host, the ports mapping is redundant.
+  ros_bridge:
+    image: foxpoint/eel:foxy
+    command: ros2 launch rosbridge_server rosbridge_websocket_launch.xml
+    ports:
+      - "9090:9090"
+    # network_mode: host
+
+  # TODO: need to figure out how to deal with path to certs folder. Since it varies depending on environment.
+  # mqtt_bridge:
+  #   image: foxpoint/eel:foxy
+  #   command: ros2 run eel mqtt_bridge --ros-args -p path_for_config:=/home/ubuntu/fleet/local_certs_and_config/iot_config.json
+  #   volumes:
+  #     - ../../fleet/local_certs_and_config/:/home/ubuntu/fleet/local_certs_and_config/:r
