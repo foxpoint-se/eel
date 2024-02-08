@@ -1,0 +1,5 @@
+# Configs and certificates for the mqtt bridge
+*.crt
+*.json
+*.pem
+*.key
