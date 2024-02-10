@@ -31,7 +31,7 @@ services:
       - ros_build:/eel/build/:rw
       - ros_build:/eel/install/:rw
       - ros_build:/eel/log/:rw
-      - ../../fleet/local_certs_and_config/:/home/ubuntu/fleet/local_certs_and_config/:r
+      - ./local_certs_and_config/:/eel/local_certs_and_config/:r
     user: ${USERNAME:-devuser}
     command: sleep infinity
     privileged: true
