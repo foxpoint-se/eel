@@ -8,10 +8,6 @@ services:
     image: foxpoint/eel:foxy
     command: ros2 run eel motor --ros-args -p simulate:=true
 
-  modem:
-    image: foxpoint/eel:foxy
-    command: ros2 run eel modem --ros-args -p simulate:=true
-
   rudder:
     image: foxpoint/eel:foxy
     command: ros2 run eel rudder --ros-args -p simulate:=true
@@ -43,6 +39,10 @@ services:
   depth_control:
     image: foxpoint/eel:foxy
     command: ros2 run eel depth_control_rudder
+
+  modem:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel modem --ros-args -p simulate:=true
 
   # NOTE: Use the same network_mode for the ros_brigde and the nodes.
   # With network_mode: host, the ros_bridge will only discover the services that
