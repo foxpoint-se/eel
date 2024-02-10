@@ -49,7 +49,7 @@ class PressureNode(Node):
     def __init__(self):
         super().__init__("pressure_node")
         self.declare_parameter(SIMULATE_PARAM, False)
-        self.should_simulate = self.get_parameter(SIMULATE_PARAM).value
+        self.should_simulate = bool(self.get_parameter(SIMULATE_PARAM).value)
 
         self.sensor = get_pressure_sensor(self.should_simulate, self)
 
