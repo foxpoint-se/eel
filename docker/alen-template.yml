@@ -1,0 +1,87 @@
+version: "3.9"
+services:
+  imu:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel imu
+    devices:
+      - "/dev/i2c-1:/dev/i2c-1"
+
+  motor:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel motor
+    privileged: true
+
+  rudder:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel rudder --ros-args -p pigpiod_host:=pigpiod
+    privileged: true
+    depends_on:
+      - pigpiod
+
+  pigpiod:
+    image: zinen2/alpine-pigpiod
+    privileged: true
+
+  battery:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel battery
+    devices:
+      - "/dev/i2c-1:/dev/i2c-1"
+
+  pressure:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel pressure
+    devices:
+      - "/dev/ttyUSB0:/dev/ttyUSB0"
+
+  gnss:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel gnss
+    devices:
+      - "/dev/ttyUSB0:/dev/ttyUSB0"
+
+  front_tank:
+    image: foxpoint/eel:foxy
+    command: ros2 launch eel_bringup tank.launch.py simulate:=false tank:=front
+    devices:
+      - "/dev/ttyUSB0:/dev/ttyUSB0"
+    privileged: true
+
+  rear_tank:
+    image: foxpoint/eel:foxy
+    command: ros2 launch eel_bringup tank.launch.py simulate:=false tank:=rear
+    devices:
+      - "/dev/ttyUSB0:/dev/ttyUSB0"
+    privileged: true
+
+  navigation:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel navigation
+
+  depth_control:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel depth_control_rudder
+
+  modem:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel modem
+    devices:
+      - "/dev/ttyUSB2:/dev/ttyUSB2"
+    privileged: true
+
+  # NOTE: Use the same network_mode for the ros_brigde and the nodes.
+  # With network_mode: host, the ros_bridge will only discover the services that
+  # also uses that. Without it, the ros_bridge will only discover the services on the
+  # docker network. Also: with network_mode: host, the ports mapping is redundant.
+  ros_bridge:
+    image: foxpoint/eel:foxy
+    command: ros2 launch rosbridge_server rosbridge_websocket_launch.xml
+    ports:
+      - "9090:9090"
+    # network_mode: host
+
+  mqtt_bridge:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel mqtt_bridge --ros-args -p path_for_config:=/home/ubuntu/fleet/local_certs_and_config/iot_config.json
+    volumes:
+      - ../../fleet/local_certs_and_config/:/home/ubuntu/fleet/local_certs_and_config/:r
