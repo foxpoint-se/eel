@@ -28,28 +28,12 @@ services:
         - USERNAME=${USERNAME:-devuser}
     volumes:
       - ../src/:/eel/src/:rw
-      # - ../build/:/eel/build/:rw
-      # - ../install/:/eel/install/:rw
-      # - ../log/:/eel/log/:rw
       - ros_build:/eel/build/:rw
       - ros_build:/eel/install/:rw
       - ros_build:/eel/log/:rw
-      - ../../fleet/local_certs_and_config/:/home/ubuntu/fleet/local_certs_and_config/:r
+      - ./local_certs_and_config/:/eel/local_certs_and_config/:r
     user: ${USERNAME:-devuser}
     command: sleep infinity
-    privileged: true
-    # ports:
-    #   - "8888:8888"
-    devices:
-      - "/dev/i2c-1:/dev/i2c-1"
-    depends_on:
-      - pigpiod
-  
-  # docker run -it -p 8888:8888 --privileged zinen2/alpine-pigpiod
-  pigpiod:
-    image: zinen2/alpine-pigpiod
-    # ports:
-    #   - "8888:8888"
     privileged: true
 
 volumes:

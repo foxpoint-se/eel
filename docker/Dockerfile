@@ -19,17 +19,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git python3-pip wget unzip && \
     rm -rf /var/lib/apt/lists/*
 
-RUN apt-get update && apt-get install -y \
-    ros-${ROS_DISTRO}-demo-nodes-cpp \
-    ros-${ROS_DISTRO}-demo-nodes-py && \
-    rm -rf /var/lib/apt/lists/*
-
 # Use Cyclone DDS as middleware
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-${ROS_DISTRO}-rmw-cyclonedds-cpp && \
     rm -rf /var/lib/apt/lists/*
 
 ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+
+# Install ros bridge for access to local websockets
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ros-${ROS_DISTRO}-rosbridge-suite && \
+    rm -rf /var/lib/apt/lists/*
 
 # Install Eel specific python dependencies
 RUN pip3 install --no-cache-dir \
