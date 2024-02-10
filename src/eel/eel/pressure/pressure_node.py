@@ -10,11 +10,13 @@ from .pressure_source import PressureSource
 from eel_interfaces.msg import ImuStatus
 
 PUBLISH_FREQUENCY = 5
-DEPTH_MOVEMENT_TOLERANCE = 0.1 # meters
+DEPTH_MOVEMENT_TOLERANCE = 0.1  # meters
+
 
 def calculate_center_depth(main_depth, pitch_deg, displacement=0.375):
     pitch_rad = math.radians(pitch_deg)
     return main_depth - (displacement * math.sin(pitch_rad))
+
 
 def get_depth_velocity(depth, previous_depth, now, previous_depth_at):
     if previous_depth is None or previous_depth_at is None:
@@ -35,14 +37,16 @@ def get_pressure_sensor(should_simulate: bool, parent_node: Node) -> PressureSou
 
         return PressureSensor(parent_node=parent_node)
 
+
 def validate_depth(current_depth, last_depth_reading):
     if last_depth_reading is None:
         return current_depth
-    
+
     if abs(current_depth - last_depth_reading) < DEPTH_MOVEMENT_TOLERANCE:
         return current_depth
 
     return last_depth_reading
+
 
 # example usage: ros2 run eel pressure
 class PressureNode(Node):
@@ -80,7 +84,9 @@ class PressureNode(Node):
 
             now = time()
 
-            depth_velocity = get_depth_velocity(validated_depth, self.last_depth_reading, now, self.last_depth_at)
+            depth_velocity = get_depth_velocity(
+                validated_depth, self.last_depth_reading, now, self.last_depth_at
+            )
 
             msg = PressureStatus()
             msg.depth = validated_depth
