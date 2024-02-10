@@ -2,6 +2,7 @@ import random
 from rclpy.node import Node
 from eel_interfaces.msg import TankStatus
 from time import time
+from .pressure_source import PressureSource
 from ..utils.topics import FRONT_TANK_STATUS, REAR_TANK_STATUS
 
 NEUTRAL_LEVEL = 0.5
@@ -56,7 +57,7 @@ def cap_depth(depth, min, max):
     return depth
 
 
-class PressureSensorSimulator:
+class PressureSensorSimulator(PressureSource):
     def __init__(self, parent_node: Node) -> None:
         parent_node.create_subscription(
             TankStatus, FRONT_TANK_STATUS, self._handle_front_tank_msg, 10
