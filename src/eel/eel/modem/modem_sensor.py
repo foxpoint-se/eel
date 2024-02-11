@@ -3,6 +3,7 @@ import re
 from typing import Union
 import serial
 import time
+
 from .modem_source import ModemSource
 
 
@@ -14,7 +15,7 @@ def get_time_with_ms():
 
 
 class ModemSensor(ModemSource):
-    def __init__(self, p="/dev/ttyUSB2", b=115200):
+    def __init__(self, p="/dev/ttyUSB4", b=115200):
         self.serial_connection = serial.Serial(port=p, baudrate=b)
         self.serial_connection.parity = serial.PARITY_NONE
         self.serial_connection.stopbits = serial.STOPBITS_ONE
@@ -27,12 +28,8 @@ class ModemSensor(ModemSource):
         :param timeout_ms: Time out in milliseconds for the serial read function
         :return: Response read from the modem in string format UTF-8 decoded
         """
-        response = ""
-        
-        start_time = get_time_with_ms()
-        while get_time_with_ms() - start_time < timeout_ms:
-            while self.serial_connection.in_waiting:
-                response += self.serial_connection.read(self.serial_connection.in_waiting).decode("utf-8")
+        time.sleep(0.1)
+        response = self.serial_connection.read_all().decode("utf-8")
 
         return response
 
@@ -60,7 +57,7 @@ class ModemSensor(ModemSource):
 
             :return: int 0-5 indicating the registration status
         """
-        at_command = "AT+CREG"
+        at_command = "AT+CREG?"
         self.send_at_command(at_command)
 
         response = self.get_response()
@@ -96,7 +93,7 @@ class ModemSensor(ModemSource):
             match = re.search(r"\d+,\d+", response)
             if match:
                 first_group = match.group(0)
-                last_number = first_group.split(",")[-1]
+                last_number = first_group.split(",")[0]
                 return int(last_number)
         return None
 

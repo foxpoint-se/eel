@@ -77,7 +77,7 @@ services:
     image: foxpoint/eel:foxy
     command: ros2 run eel modem
     devices:
-      - "/dev/ttyUSB2:/dev/ttyUSB2"
+      - "/dev/ttyUSB4:/dev/ttyUSB4"
     privileged: true
     network_mode: ${NETWORK_MODE:-bridge}
 
