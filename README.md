@@ -342,30 +342,6 @@ In a modem connect script we can search for the expected ipv4 address that we wo
 If we do not find that address under ifconfig after 20 seconds then we start the modem.
 
 ```#!/bin/bash
-
-LAN_IP_ADDRESS="192.168.0.222"
-NOF_TRYS=20
-TRY_NR=1
-
-echo "Looking for ip ${LAN_IP_ADDRESS} among interfaces"
-while [ $TRY_NR -le $NOF_TRYS ]
-do
-  IF_CONFIG=$(ifconfig | grep $LAN_IP_ADDRESS)
-
-  if [[ "$IF_CONFIG" == *"$LAN_IP_ADDRESS"*  ]]; then
-    break
-  fi
-
-  ((TRY_NR++))
-  sleep 1
-done
-
-if [ $TRY_NR -le $NOF_TRYS ]; then
-  echo "Found address ${LAN_IP_ADDRESS} no need for modem"
-  exit 0
-fi
-
-echo "Did not find address ${LAN_IP_ADDRESS} starting modem"
 quectel-CM -s 4g.tele2.se
 ```
 
