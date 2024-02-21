@@ -22,7 +22,7 @@ def create_pigpio_factory(host: str, retries: int, sleep_time: int) -> PiGPIOFac
             logger.info("Could not create pigpio factory, trying again")
             sleep(sleep_time)
         finally:
-            retries += 2
+            retries += 1
     return factory
 
 
