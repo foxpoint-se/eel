@@ -95,11 +95,11 @@ install-depth-sensor:		## install stuff needed for depth senson
 install-modem:		## Steps on how to install modem both software and service file for auto connecting
 	@( \
 		echo "Run these commands:"; \
-		echo "cd ./scripts"; \
+		echo "cd ./scripts/modem"; \
 		echo "sudo ./install_modem_software.sh"; \
 		echo ""; \
 		echo "Wait for reboot, then run"; \
-		echo "cd ./scripts"; \
+		echo "cd ./scripts/modem"; \
 		echo "sudo ./install_modem_service.sh"; \
 	)
 
