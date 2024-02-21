@@ -42,7 +42,7 @@ install-i2c:		## install i2c stuff
 
 .PHONY: spidev-permissions
 spidev-permissions:		## setup spidev permissions
-	sudo ./scripts/spidev-permissions.sh
+	sudo ./scripts/spidev/spidev-permissions.sh
 
 start:		## start eel
 	ros2 launch eel_bringup eel.launch.py
