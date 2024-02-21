@@ -18,13 +18,6 @@ services:
     command: ros2 run eel rudder --ros-args -p pigpiod_host:=${PIGPIOD_HOST:-pigpiod}
     privileged: true
     network_mode: ${NETWORK_MODE:-bridge}
-    depends_on:
-      - pigpiod
-
-  pigpiod:
-    image: zinen2/alpine-pigpiod
-    privileged: true
-    network_mode: ${NETWORK_MODE:-bridge}
 
   battery:
     image: foxpoint/eel:foxy

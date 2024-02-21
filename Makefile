@@ -31,24 +31,6 @@ start-pigpio:		## start pigpio
 stop-pigpio:		## stop pigpio
 	sudo killall pigpiod
 
-# Stolen from https://abyz.me.uk/rpi/pigpio/download.html 
-install-pigpio:		## install pigpio in this folder
-	( \
-		wget https://github.com/joan2937/pigpio/archive/master.zip; \
-		unzip master.zip; \
-		touch pigpio-master/COLCON_IGNORE; \
-		cd pigpio-master; \
-		make; \
-		sudo make install; \
-	)
-install-pigpio-service:		## installs pigpio systemd service to run at boot
-	( \
-		sudo cp services/start-pigpio /usr/bin/start-pigpio; \
-		sudo cp services/pigpio.service /etc/systemd/system/pigpio.service; \
-		sudo chmod 644 /etc/systemd/system/pigpio.service; \
-		sudo systemctl enable pigpio; \
-		sudo systemctl start pigpio; \
-	)
 install-i2c:		## install i2c stuff
 	( \
 		sudo apt update; \
@@ -60,7 +42,7 @@ install-i2c:		## install i2c stuff
 
 .PHONY: spidev-permissions
 spidev-permissions:		## setup spidev permissions
-	sudo ./scripts/spidev-permissions.sh
+	sudo ./scripts/spidev/spidev-permissions.sh
 
 start:		## start eel
 	ros2 launch eel_bringup eel.launch.py
@@ -92,14 +74,22 @@ install-depth-sensor:		## install stuff needed for depth senson
 		pip install ms5837-python-master/; \
 	)
 
+install-pigpiod:		## Steps on how to install pigpiod software and service
+	@( \
+		echo "Run these commands:"; \
+		echo "cd ./scripts/pigpiod"; \
+		echo "sudo ./install_pigpiod_software.sh"; \
+		echo "sudo ./install_pigpiod_service.sh"; \
+	)
+
 install-modem:		## Steps on how to install modem both software and service file for auto connecting
 	@( \
 		echo "Run these commands:"; \
-		echo "cd ./scripts"; \
+		echo "cd ./scripts/modem"; \
 		echo "sudo ./install_modem_software.sh"; \
 		echo ""; \
 		echo "Wait for reboot, then run"; \
-		echo "cd ./scripts"; \
+		echo "cd ./scripts/modem"; \
 		echo "sudo ./install_modem_service.sh"; \
 	)
 

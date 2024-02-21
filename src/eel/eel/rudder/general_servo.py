@@ -1,10 +1,29 @@
 from gpiozero import Servo
 from gpiozero.pins.pigpio import PiGPIOFactory
+from time import sleep
+from rclpy.logging import get_logger
+
+logger = get_logger(__name__)
 
 # horizontal pin: 13
 # horizontal min pulse width: 0.81 / 1000
 # horizontal max pulse width: 2.2 / 1000
 # horizontal flip direction: True
+
+
+def create_pigpio_factory(host: str, retries: int, sleep_time: int) -> PiGPIOFactory:
+    attempts = 0
+    factory = None
+    while attempts < retries and factory is None:
+        try:
+            factory = PiGPIOFactory(host=host, port=8888)
+        except OSError:
+            factory = None
+            logger.info("Could not create pigpio factory, trying again")
+            sleep(sleep_time)
+        finally:
+            retries += 1
+    return factory
 
 
 class RudderServo:
@@ -18,7 +37,9 @@ class RudderServo:
         cap_max: float = 1.0,
         pigpiod_host: str = "localhost",
     ) -> None:
-        factory = PiGPIOFactory(host=pigpiod_host)
+        factory = create_pigpio_factory(host=pigpiod_host, retries=5, sleep_time=3)
+        if not factory:
+            raise ValueError("Could not create pigpio factory, exiting")
         self.servo = Servo(
             pin,
             pin_factory=factory,
