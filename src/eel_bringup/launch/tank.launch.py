@@ -14,6 +14,7 @@ class TankConfig(TypedDict):
     tank_floor_value: str
     tank_ceiling_value: str
 
+
 front_tank_config: TankConfig = {
     "simulate": False,
     "cmd_topic": "tank_front/cmd",
@@ -22,7 +23,7 @@ front_tank_config: TankConfig = {
     "direction_pin": "18",
     "distance_sensor_channel": "0",
     "tank_floor_value": "0.66",
-    "tank_ceiling_value": "0.16"
+    "tank_ceiling_value": "0.16",
 }
 
 rear_tank_config: TankConfig = {
@@ -33,7 +34,7 @@ rear_tank_config: TankConfig = {
     "direction_pin": "25",
     "distance_sensor_channel": "1",
     "tank_floor_value": "0.288",
-    "tank_ceiling_value": "0.005"
+    "tank_ceiling_value": "0.005",
 }
 
 
@@ -60,7 +61,9 @@ for arg in sys.argv:
 
 
 if simulate_value is None or current_config is None:
-    raise Exception(f"Missing parameters. Please call with {SIMULATE_PARAM}:=<true | false> {TANK_PARAM}:=<front | rear>")
+    raise AttributeError(
+        f"Missing parameters. Please call with {SIMULATE_PARAM}:=<true | false> {TANK_PARAM}:=<front | rear>"
+    )
 
 
 current_config["simulate"] = simulate_value
@@ -70,8 +73,11 @@ LaunchParameters = List[Dict[str, Union[str, bool]]]
 launch_parameters: LaunchParameters = []
 
 for key, value in current_config.items():
-    param = {key: value}
-    launch_parameters.append(param)
+    if isinstance(value, str) or isinstance(value, bool):
+        param = {key: value}
+        launch_parameters.append(param)
+    else:
+        raise TypeError("Value has to be either bool or str.")
 
 
 def generate_launch_description():
@@ -85,5 +91,5 @@ def generate_launch_description():
     )
 
     ld.add_action(front_tank_node)
-    
+
     return ld
