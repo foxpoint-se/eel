@@ -3,13 +3,15 @@ import rclpy
 from rclpy.node import Node
 from rclpy.executors import ExternalShutdownException
 from geometry_msgs.msg import Vector3
+from std_msgs.msg import Float32
 import sys
 import math
 from eel_interfaces.msg import ImuStatus
 
 from ..utils.topics import (
     RUDDER_STATUS,
-    RUDDER_CMD,
+    RUDDER_X_CMD,
+    RUDDER_Y_CMD,
     IMU_STATUS,
 )
 from ..utils.constants import SIMULATE_PARAM
@@ -38,14 +40,20 @@ class Rudder(Node):
         self.declare_parameter(pigpiod_host_parameter, "localhost")
         self.pigpiod_host = str(self.get_parameter(pigpiod_host_parameter).value)
 
-        self.cmd_subscription = self.create_subscription(
-            Vector3, RUDDER_CMD, self.handle_cmd, 10
+        self.x_subscription = self.create_subscription(
+            Float32, RUDDER_X_CMD, self.handle_x_cmd, 10
+        )
+        self.y_subscription = self.create_subscription(
+            Float32, RUDDER_Y_CMD, self.handle_y_cmd, 10
         )
         self.rudder_status_publisher = self.create_publisher(Vector3, RUDDER_STATUS, 10)
 
         self.imu_subscription = self.create_subscription(
             ImuStatus, IMU_STATUS, self._handle_imu_msg, 10
         )
+
+        self.current_x_cmd: float = float()
+        self.current_y_cmd: float = float()
 
         self.current_roll = 0.0
         self.current_rudder_status: Vector2d = {"x": 0.0, "y": 0.0}
@@ -64,22 +72,29 @@ class Rudder(Node):
 
     def _handle_imu_msg(self, msg: ImuStatus):
         self.current_roll = msg.roll
+        self.merge_and_handle_commands()
 
-        self.calc_and_send(
-            self.current_rudder_status,
-            self.current_roll,
-        )
+    def handle_x_cmd(self, msg: Float32) -> None:
+        self.current_x_cmd = msg.data
+        self.merge_and_handle_commands()
 
-    def handle_cmd(self, msg: Vector3):
-        rudder_direction: Vector2d = {"x": msg.x, "y": msg.y}
-        self.calc_and_send(rudder_direction, self.current_roll)
+    def handle_y_cmd(self, msg: Float32) -> None:
+        self.current_y_cmd = msg.data
+        self.merge_and_handle_commands()
+
+    def merge_and_handle_commands(self) -> None:
+        direction: Vector2d = {
+            "x": self.current_x_cmd,
+            "y": self.current_y_cmd,
+        }
+        self.calc_and_send(rudder_direction=direction, roll_degrees=self.current_roll)
 
     def calc_and_send(self, rudder_direction: Vector2d, roll_degrees: float):
         rotation = -roll_degrees
         compensated = rotate_vector(vector=rudder_direction, rotation_degrees=rotation)
         clamped: Vector2d = {
-            "x": clamp(compensated["x"], -1, 1),
-            "y": clamp(compensated["y"], -1, 1),
+            "x": float(clamp(compensated["x"], -1, 1)),
+            "y": float(clamp(compensated["y"], -1, 1)),
         }
 
         self.rudder_status = clamped
