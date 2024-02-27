@@ -1,1 +1,5 @@
+# for being able to use different envs for different envs
 .env
+
+# for being able to use different set of services for different envs
+docker-compose.yml
