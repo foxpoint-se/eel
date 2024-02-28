@@ -1,5 +1,4 @@
 import RPi.GPIO as GPIO
-from .pump_state_control import PumpStateControl
 
 FILL_GPIO_LEVEL = GPIO.HIGH
 EMPTY_GPIO_LEVEL = GPIO.LOW
@@ -11,8 +10,8 @@ STOP_GPIO_LEVEL = GPIO.LOW
 PWM_FREQUENCY = 19200
 
 
-class PumpMotorControl(PumpStateControl):
-    def __init__(self, motor_pin, direction_pin) -> None:
+class RealPump:
+    def __init__(self, motor_pin: int, direction_pin: int) -> None:
         self.motor_pin = motor_pin
         self.direction_pin = direction_pin
 
@@ -40,15 +39,12 @@ class PumpMotorControl(PumpStateControl):
         self.pwm_output.stop()
 
     def stop(self):
-        super().stop()
         self._stop_motor()
 
     def fill(self):
-        super().fill()
         self._set_filling_up()
         self._start_motor()
 
     def empty(self):
-        super().empty()
         self._set_emptying()
         self._start_motor()

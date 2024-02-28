@@ -3,11 +3,6 @@
 from gpiozero import MCP3208
 
 
-# NOTE: range when using full range of potentiometer
-# floor = 1.0
-# ceiling = 0.0
-
-
 def translate_from_range_to_range(value, from_min, from_max, to_min, to_max):
     # Figure out how 'wide' each range is
     left_span = from_max - from_min
@@ -28,23 +23,10 @@ def cap_value(value, floor, ceiling):
     return value
 
 
-# channel 0 is front
-# channel 1 is rear
-
-
-# range front: floor 0.66, ceiling 0.16
-# range rear: floor 0.288, ceiling 0.005
-class DistanceSensorADPotentiometer:
-    def __init__(self, floor=None, ceiling=None, channel=None) -> None:
+class RealDistanceSensor:
+    def __init__(self, floor: float, ceiling: float, channel: int) -> None:
         super().__init__()
         self.channel = channel
-
-        if floor is None or ceiling is None:
-            raise Exception("Floor or ceiling not set: Floor, ceiling", floor, ceiling)
-
-        if channel is None or channel not in [0, 1]:
-            raise Exception("Channel should be 1 or 0. Currently:", channel)
-
         self.floor = floor
         self.ceiling = ceiling
 
@@ -58,10 +40,10 @@ class DistanceSensorADPotentiometer:
             select_pin=8,
         )
 
-    def __get_raw_value(self):
+    def __get_raw_value(self) -> float:
         return self.mcp.value
 
-    def __get_pretty_value(self):
+    def __get_pretty_value(self) -> float:
         raw = self.__get_raw_value()
         capped = cap_value(raw, self.floor, self.ceiling)
         level = translate_from_range_to_range(

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import sys
+from typing import Literal, Optional, Union
 import rclpy
 from time import time
 from rclpy.node import Node
@@ -18,8 +19,7 @@ from ..utils.constants import (
     TANK_CEILING_VALUE_PARAM,
 )
 from ..utils.utils import clamp
-from .pump_motor_simulator import PumpMotorControlSimulator
-from .distance_sensor_simulator import DistanceSensorSimulator
+from .tank_utils.create_tank import create_tank
 
 TANK_FILL_TIME_S = 22
 # change depending on how big of an error we accept
@@ -47,17 +47,17 @@ LEVEL_CEILING = 1.0
 # UPDATE_FREQUENCY = 10 should therefore be plenty.
 UPDATE_FREQUENCY = 10
 
-DISTANCE_SENSOR_ERROR = "distance_sensor_error"
-TARGET_REACHED = "target_reached"
-CEILING_REACHED = "ceiling_reached"
-FLOOR_REACHED = "floor_reached"
-NO_TARGET = "no_target"
-ADJUSTING = "adjusting"
+
+TargetStatus = Literal[
+    "target_reached", "ceiling_reached", "floor_reached", "no_target", "adjusting"
+]
 
 
 # TODO:
 # '<=' not supported between instances of 'float' and 'NoneType'
-def is_within_accepted_target_boundaries(current_level, target_level):
+def is_within_accepted_target_boundaries(
+    current_level: Optional[float], target_level: Optional[float]
+) -> bool:
     if current_level is None or target_level is None:
         return False
     low_threshold = target_level - (TARGET_TOLERANCE / 2)
@@ -66,62 +66,30 @@ def is_within_accepted_target_boundaries(current_level, target_level):
     return is_within_target
 
 
-def is_above_target(current_level, target_level):
+def is_above_target(current_level: float, target_level: float) -> bool:
     high_threshold = target_level + (TARGET_TOLERANCE / 2)
     return current_level > high_threshold
 
 
-def is_below_target(current_level, target_level):
+def is_below_target(current_level: float, target_level: float) -> bool:
     low_threshold = target_level - (TARGET_TOLERANCE / 2)
     return current_level < low_threshold
 
 
-def is_at_floor(current_level):
+def is_at_floor(current_level: float) -> bool:
     return current_level <= (LEVEL_FLOOR + TARGET_TOLERANCE)
 
 
-def is_at_ceiling(current_level):
+def is_at_ceiling(current_level: float) -> bool:
     return current_level >= (LEVEL_CEILING - TARGET_TOLERANCE)
 
 
-def should_fill(current_level, target_level):
-    return current_level < target_level
-
-
-def should_empty(current_level, target_level):
-    return current_level > target_level
-
-
-def add_to_last_readings(current_level, last_readings, size=5):
-    last_readings.append(current_level)
-    if len(last_readings) > size:
-        last_readings.pop(0)
-    return last_readings
-
-
-def get_movement(readings):
-    if len(readings) == 0:
-        return None
-    first = readings[0]
-    last = readings[len(readings) - 1]
-    diff = last - first
-    return diff
-
-
-LEVEL_MOVEMENT_TOLERANCE = 0.05
-
-
-def filter_level(current_level, previous_level):
-    if previous_level is None:
-        return current_level
-
-    if abs(current_level - previous_level) < LEVEL_MOVEMENT_TOLERANCE:
-        return current_level
-
-    return previous_level
-
-
-def get_level_velocity(level, previous_level, now, previous_level_at):
+def get_level_velocity(
+    level: float,
+    previous_level: Optional[float],
+    now: float,
+    previous_level_at: Optional[float],
+) -> float:
     if previous_level is None or previous_level_at is None:
         return 0.0
     level_delta = level - previous_level
@@ -140,7 +108,7 @@ def get_level_velocity(level, previous_level, now, previous_level_at):
 
 class TankNode(Node):
     def __init__(self):
-        super().__init__("tank_node")
+        super().__init__("tank_node", parameter_overrides=[])
         self.declare_parameter(SIMULATE_PARAM, False)
         self.declare_parameter(CMD_TOPIC_PARAM)
         self.declare_parameter(STATUS_TOPIC_PARAM)
@@ -150,76 +118,66 @@ class TankNode(Node):
         self.declare_parameter(TANK_FLOOR_VALUE_PARAM)
         self.declare_parameter(TANK_CEILING_VALUE_PARAM)
 
-        self.should_simulate = self.get_parameter(SIMULATE_PARAM).value
-        self.motor_pin = int(self.get_parameter(MOTOR_PIN_PARAM).value)
-        self.direction_pin = int(self.get_parameter(DIRECTION_PIN_PARAM).value)
-        self.distance_sensor_channel = int(
-            self.get_parameter(DISTANCE_SENSOR_CHANNEL_PARAM).value
+        should_simulate = bool(self.get_parameter(SIMULATE_PARAM).value)
+        motor_pin = int(
+            self.get_parameter(MOTOR_PIN_PARAM).get_parameter_value().integer_value
         )
-        self.floor_value = float(
-            self.get_parameter(TANK_FLOOR_VALUE_PARAM).value
+        direction_pin = int(
+            self.get_parameter(DIRECTION_PIN_PARAM).get_parameter_value().integer_value
         )
-        self.ceiling_value = float(
-            self.get_parameter(TANK_CEILING_VALUE_PARAM).value
+        distance_sensor_channel = int(
+            self.get_parameter(DISTANCE_SENSOR_CHANNEL_PARAM)
+            .get_parameter_value()
+            .integer_value
+        )
+        floor_value = float(
+            self.get_parameter(TANK_FLOOR_VALUE_PARAM)
+            .get_parameter_value()
+            .double_value
+        )
+        ceiling_value = float(
+            self.get_parameter(TANK_CEILING_VALUE_PARAM)
+            .get_parameter_value()
+            .double_value
         )
 
-        self.is_autocorrecting = False
-        self.target_level = None
-        self.target_status = (
-            NO_TARGET  # only used for passing information to frontend
-        )
-        self.current_level = None
-        self.current_range = None
-        self.last_five_readings = []
-        self.current_velocity = 0.0
-        self.previous_level = None
-        self.previous_level_at = None
+        self.is_autocorrecting: bool = False
+        self.target_level: Optional[float] = None
 
-        self.cmd_topic = self.get_parameter(CMD_TOPIC_PARAM).value
-        self.status_topic = self.get_parameter(STATUS_TOPIC_PARAM).value
-        if not self.cmd_topic or not self.status_topic:
+        # only used for passing information to frontend
+        self.target_status: TargetStatus = "no_target"
+
+        self.current_level: Optional[float] = None
+        self.current_velocity: float = float()
+        self.previous_level: Optional[float] = None
+        self.previous_level_at: Optional[float] = None
+
+        cmd_topic = str(
+            self.get_parameter(CMD_TOPIC_PARAM).get_parameter_value().string_value
+        )
+        status_topic = str(
+            self.get_parameter(STATUS_TOPIC_PARAM).get_parameter_value().string_value
+        )
+        if not cmd_topic or not status_topic:
             raise TypeError(
                 "Missing topic arguments ({}, {})".format(
                     CMD_TOPIC_PARAM, STATUS_TOPIC_PARAM
                 )
             )
 
-        self.debug_topic = "{}_debug".format(self.status_topic)
-
         self.level_cmd_subscription = self.create_subscription(
-            Float32, self.cmd_topic, self.handle_tank_cmd, 10
+            Float32, cmd_topic, self.handle_tank_cmd, 10
         )
-        self.publisher = self.create_publisher(
-            TankStatus, self.status_topic, 10
+        self.publisher = self.create_publisher(TankStatus, status_topic, 10)
+
+        self.tank = create_tank(
+            simulate=should_simulate,
+            motor_pin=motor_pin,
+            direction_pin=direction_pin,
+            floor=floor_value,
+            ceiling=ceiling_value,
+            channel=distance_sensor_channel,
         )
-        self.debug_publisher = self.create_publisher(
-            Float32, self.debug_topic, 10
-        )
-
-        if self.should_simulate:
-            self.pump_motor_control = PumpMotorControlSimulator()
-            self.distance_sensor = DistanceSensorSimulator(
-                initial_measurement_percent=1.0,
-                update_frequency_hz=UPDATE_FREQUENCY,
-                create_timer=self.create_timer,
-                get_is_motor_filling_up=self.pump_motor_control.get_is_filling_up,
-                get_is_motor_emptying=self.pump_motor_control.get_is_emptying,
-            )
-        else:
-            from .pump_motor_control import PumpMotorControl
-            from .distance_sensor_ad_potentiometer import (
-                DistanceSensorADPotentiometer,
-            )
-
-            self.pump_motor_control = PumpMotorControl(
-                motor_pin=self.motor_pin, direction_pin=self.direction_pin
-            )
-
-            self.distance_sensor = DistanceSensorADPotentiometer(
-                floor=self.floor_value,
-                ceiling=self.ceiling_value,
-                channel=self.distance_sensor_channel,
-            )
 
         self.check_target_updater = self.create_timer(
             1.0 / UPDATE_FREQUENCY, self.target_loop
@@ -227,15 +185,15 @@ class TankNode(Node):
 
         self.get_logger().info(
             "{}Tank node started. Motor pin: {}, Direction pin: {}, Distance sensor channel: {}, Update frequency: {}, Range: {} - {} mm, CMD topic: {}, status topic: {}".format(
-                "SIMULATE " if self.should_simulate else "",
-                self.motor_pin,
-                self.direction_pin,
-                self.distance_sensor_channel,
+                "SIMULATE " if should_simulate else "",
+                motor_pin,
+                direction_pin,
+                distance_sensor_channel,
                 UPDATE_FREQUENCY,
-                self.floor_value,
-                self.ceiling_value,
-                self.cmd_topic,
-                self.status_topic,
+                floor_value,
+                ceiling_value,
+                cmd_topic,
+                status_topic,
             )
         )
 
@@ -247,32 +205,25 @@ class TankNode(Node):
         self.target_level = None
         self.is_autocorrecting = False
 
-    def handle_tank_cmd(self, msg):
+    def handle_tank_cmd(self, msg: Float32):
         requested_target_level = msg.data
-        current_level = self.get_level()
-        target_level = clamp(
-            requested_target_level, LEVEL_FLOOR, LEVEL_CEILING
-        )
+        current_level = self.tank.get_level()
+        target_level = clamp(requested_target_level, LEVEL_FLOOR, LEVEL_CEILING)
 
-        if not is_within_accepted_target_boundaries(
-            current_level, target_level
-        ):
+        if not is_within_accepted_target_boundaries(current_level, target_level):
             self.start_checking_against_target(target_level)
             self.start_motor_towards_target(current_level, target_level)
-            self.target_status = ADJUSTING
+            self.target_status = "adjusting"
 
     def start_motor_towards_target(self, current_level, target_level):
         if current_level > target_level:
-            self.pump_motor_control.empty()
+            self.tank.empty()
         else:
-            self.pump_motor_control.fill()
+            self.tank.fill()
 
-    def publish_status(self, current_level):
+    def publish_status(self, current_level: Optional[float]) -> None:
         if current_level is not None:
             msg = TankStatus()
-
-            # TODO: ensure float
-            # The 'current_level' field must be of type 'float'
             msg.current_level = float(current_level)
             msg.target_level = []
             if self.target_level:
@@ -281,14 +232,9 @@ class TankNode(Node):
             msg.target_status = self.target_status
             self.publisher.publish(msg)
 
-            msg2 = Float32()
-            msg2.data = float(self.current_range or 0.0)
-            self.debug_publisher.publish(msg2)
-
-    def target_loop(self):
+    def target_loop(self) -> None:
         current_level = self.get_level()
         self.current_level = current_level
-        # self.last_five_readings = add_to_last_readings(current_level, self.last_five_readings)
         if (
             self.target_level is not None
             and current_level
@@ -298,46 +244,35 @@ class TankNode(Node):
 
         self.publish_status(current_level)
 
-    def check_against_target(self, current_level, target_level):
+    def check_against_target(self, current_level: float, target_level: float) -> None:
         if is_within_accepted_target_boundaries(current_level, target_level):
-            self.pump_motor_control.stop()
+            self.tank.stop()
             self.stop_checking_against_target()
-            self.target_status = TARGET_REACHED
+            self.target_status = "target_reached"
 
         # Do we need these safety checks? Will they ever happen?
         # I guess that they could if the target check frequency is to low, so that the target then is missed.
-        if (
-            is_at_floor(current_level)
-            and self.pump_motor_control.get_is_emptying()
-        ):
-            self.pump_motor_control.stop()
+        # if is_at_floor(current_level) and self.pump_motor_control.get_is_emptying():
+        if is_at_floor(current_level) and self.tank.is_emptying:
+            self.tank.stop()
             self.stop_checking_against_target()
-            self.target_status = FLOOR_REACHED
+            self.target_status = "floor_reached"
 
-        if (
-            is_at_ceiling(current_level)
-            and self.pump_motor_control.get_is_filling_up()
-        ):
-            self.pump_motor_control.stop()
+        if is_at_ceiling(current_level) and self.tank.is_filling:
+            self.tank.stop()
             self.stop_checking_against_target()
-            self.target_status = CEILING_REACHED
+            self.target_status = "ceiling_reached"
 
-        if (
-            self.pump_motor_control.get_is_filling_up()
-            and is_above_target(current_level, target_level)
-        ):
-            self.pump_motor_control.empty()
+        if self.tank.is_filling and is_above_target(current_level, target_level):
+            self.tank.empty()
 
-        if (
-            self.pump_motor_control.get_is_emptying()
-            and is_below_target(current_level, target_level)
-        ):
-            self.pump_motor_control.fill()
+        if self.tank.is_emptying and is_below_target(current_level, target_level):
+            self.tank.fill()
 
-    def get_level(self):
+    def get_level(self) -> Union[float, None]:
         try:
             now = time()
-            tank_level = self.distance_sensor.get_level()
+            tank_level = self.tank.get_level()
             current_velocity = get_level_velocity(
                 tank_level, self.previous_level, now, self.previous_level_at
             )
@@ -348,6 +283,10 @@ class TankNode(Node):
             return tank_level
         except (OSError, IOError) as err:
             self.get_logger().error(str(err))
+
+    def shutdown(self) -> None:
+        self.stop_checking_against_target()
+        self.tank.shutdown()
 
 
 def main(args=None):
@@ -361,8 +300,7 @@ def main(args=None):
     except ExternalShutdownException:
         sys.exit(1)
     finally:
-        node.pump_motor_control.stop()
-        node.stop_checking_against_target()
+        node.shutdown()
         rclpy.try_shutdown()
 
 
