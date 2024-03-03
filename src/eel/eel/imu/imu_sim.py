@@ -1,10 +1,11 @@
 from rclpy.node import Node
 from time import time
 from std_msgs.msg import Float32
+from geometry_msgs.msg import Vector3
 from eel_interfaces.msg import TankStatus
 from ..utils.sim import ANGULAR_VELOCITY
 from ..utils.topics import (
-    RUDDER_HORIZONTAL_STATUS,
+    RUDDER_STATUS,
     MOTOR_CMD,
     FRONT_TANK_STATUS,
     REAR_TANK_STATUS,
@@ -55,7 +56,7 @@ def calculate_angle_delta(angular_velocity, time_in_s):
 
 class ImuSimulator:
     def __init__(self, parent_node: Node) -> None:
-        self.current_rudder_status = float(0)
+        self.current_rudder_status = Vector3()
         self.current_heading = float(0)
         self.speed = 0
         self._front_tank_level = 0.0
@@ -63,7 +64,7 @@ class ImuSimulator:
         self._current_pitch = 0.0
         self.last_updated_at = time()
         self.rudder_subscription = parent_node.create_subscription(
-            Float32, RUDDER_HORIZONTAL_STATUS, self._handle_rudder_msg, 10
+            Vector3, RUDDER_STATUS, self._handle_rudder_msg, 10
         )
         self.motor_subscription = parent_node.create_subscription(
             Float32, MOTOR_CMD, self._handle_motor_msg, 10
@@ -80,8 +81,8 @@ class ImuSimulator:
             1.0 / (parent_node.update_frequency * 2), self._loop
         )
 
-    def _handle_rudder_msg(self, msg):
-        self.current_rudder_status = msg.data
+    def _handle_rudder_msg(self, msg: Vector3):
+        self.current_rudder_status = msg
 
     def _handle_motor_msg(self, msg):
         self.speed = msg.data
@@ -111,7 +112,7 @@ class ImuSimulator:
             now = time()
             time_delta = now - self.last_updated_at
             angle_delta = calculate_angle_delta(ANGULAR_VELOCITY, time_delta)
-            to_add = self.current_rudder_status * angle_delta
+            to_add = self.current_rudder_status.x * angle_delta
             self.current_heading = (self.current_heading + to_add) % 360
 
     def _handle_front_tank_msg(self, msg):
