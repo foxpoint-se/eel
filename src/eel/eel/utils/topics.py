@@ -1,9 +1,7 @@
 # Rudder
-RUDDER_HORIZONTAL_STATUS = "rudder_horizontal/status"
-RUDDER_VERTICAL_STATUS = "rudder_vertical/status"
-RUDDER_HORIZONTAL_CMD = "rudder_horizontal/cmd"
-RUDDER_VERTICAL_CMD = "rudder_vertical/cmd"
 RUDDER_STATUS = "rudder/status"
+RUDDER_X_CMD = "rudder/cmd_x"
+RUDDER_Y_CMD = "rudder/cmd_y"
 
 # Motor
 MOTOR_CMD = "motor/cmd"

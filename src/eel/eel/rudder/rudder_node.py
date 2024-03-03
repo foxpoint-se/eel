@@ -2,27 +2,31 @@
 import rclpy
 from rclpy.node import Node
 from rclpy.executors import ExternalShutdownException
-from std_msgs.msg import Float32
 from geometry_msgs.msg import Vector3
+from std_msgs.msg import Float32
 import sys
 import math
 from eel_interfaces.msg import ImuStatus
-from .general_servo import RudderServo
-from .rudder_sim import RudderSimulator
+
 from ..utils.topics import (
-    RUDDER_HORIZONTAL_CMD,
-    RUDDER_HORIZONTAL_STATUS,
-    RUDDER_VERTICAL_CMD,
-    RUDDER_VERTICAL_STATUS,
     RUDDER_STATUS,
+    RUDDER_X_CMD,
+    RUDDER_Y_CMD,
     IMU_STATUS,
 )
 from ..utils.constants import SIMULATE_PARAM
 from ..utils.utils import clamp
+from .actuator.actuator import get_xy_rudder
+from .actuator.types import Vector2d
 
 
-SIM_CALIBRATION_TERM = 0.0
-CALIBRATION_TERM = 0.0
+def rotate_vector(vector: Vector2d, rotation_degrees: float) -> Vector2d:
+    rotation_radians = math.radians(rotation_degrees)
+    x = vector["x"]
+    y = vector["y"]
+    rotated_x = math.cos(rotation_radians) * x - math.sin(rotation_radians) * y
+    rotated_y = math.sin(rotation_radians) * x + math.cos(rotation_radians) * y
+    return {"x": rotated_x, "y": rotated_y}
 
 
 class Rudder(Node):
@@ -30,26 +34,17 @@ class Rudder(Node):
         super().__init__("rudder_node")
 
         self.declare_parameter(SIMULATE_PARAM, False)
-        self.should_simulate = self.get_parameter(SIMULATE_PARAM).value
+        self.should_simulate = bool(self.get_parameter(SIMULATE_PARAM).value)
 
         pigpiod_host_parameter = "pigpiod_host"
         self.declare_parameter(pigpiod_host_parameter, "localhost")
         self.pigpiod_host = str(self.get_parameter(pigpiod_host_parameter).value)
 
-        self.rudder_calibration_term = (
-            SIM_CALIBRATION_TERM if self.should_simulate else CALIBRATION_TERM
+        self.x_subscription = self.create_subscription(
+            Float32, RUDDER_X_CMD, self.handle_x_cmd, 10
         )
-        self.horizontal_cmd_subscription = self.create_subscription(
-            Float32, RUDDER_HORIZONTAL_CMD, self.handle_horizontal_msg, 10
-        )
-        self.vertical_cmd_subscription = self.create_subscription(
-            Float32, RUDDER_VERTICAL_CMD, self.handle_vertical_msg, 10
-        )
-        self.horizontal_status_publisher = self.create_publisher(
-            Float32, RUDDER_HORIZONTAL_STATUS, 10
-        )
-        self.vertical_status_publisher = self.create_publisher(
-            Float32, RUDDER_VERTICAL_STATUS, 10
+        self.y_subscription = self.create_subscription(
+            Float32, RUDDER_Y_CMD, self.handle_y_cmd, 10
         )
         self.rudder_status_publisher = self.create_publisher(Vector3, RUDDER_STATUS, 10)
 
@@ -57,41 +52,15 @@ class Rudder(Node):
             ImuStatus, IMU_STATUS, self._handle_imu_msg, 10
         )
 
+        self.current_x_cmd: float = float()
+        self.current_y_cmd: float = float()
+
         self.current_roll = 0.0
-        self.current_vertical_control = 0.0
-        self.current_horizontal_control = 0.0
+        self.current_rudder_status: Vector2d = {"x": 0.0, "y": 0.0}
 
-        if self.should_simulate:
-            simulator = RudderSimulator()
-            self.horizontal_detach = simulator.horizontal_detach
-            self.horizontal_set_value = simulator.horizontal_set_value
-            self.vertical_detach = simulator.vertical_detach
-            self.vertical_set_value = simulator.vertical_set_value
-
-        if not self.should_simulate:
-            horizontal_servo = RudderServo(
-                pin=13,
-                min_pulse_width=0.81 / 1000,
-                max_pulse_width=2.2 / 1000,
-                flip_direction=True,
-                cap_min=-0.75,
-                cap_max=0.75,
-                pigpiod_host=self.pigpiod_host,
-            )
-            self.horizontal_detach = horizontal_servo.detach
-            self.horizontal_set_value = horizontal_servo.set_value
-
-            vertical_servo = RudderServo(
-                pin=19,
-                min_pulse_width=0.81 / 1000,
-                max_pulse_width=2.2 / 1000,
-                flip_direction=False,
-                cap_min=-0.75,
-                cap_max=0.75,
-                pigpiod_host=self.pigpiod_host,
-            )
-            self.vertical_detach = vertical_servo.detach
-            self.vertical_set_value = vertical_servo.set_value
+        self.xy_rudder = get_xy_rudder(
+            {"simulate": self.should_simulate, "pigpiod_host": self.pigpiod_host}
+        )
 
         self.get_logger().info(
             "{}Rudder node started.".format("SIMULATE " if self.should_simulate else "")
@@ -99,59 +68,43 @@ class Rudder(Node):
 
     def shutdown(self):
         self.get_logger().info("Rudder node shutting down...")
-        self.horizontal_detach()
-        self.vertical_detach()
+        self.xy_rudder.shutdown()
 
-    def _handle_imu_msg(self, msg):
+    def _handle_imu_msg(self, msg: ImuStatus):
         self.current_roll = msg.roll
+        self.merge_and_handle_commands()
 
-        self.calc_and_send(
-            self.current_horizontal_control,
-            self.current_vertical_control,
-            self.current_roll,
-        )
+    def handle_x_cmd(self, msg: Float32) -> None:
+        self.current_x_cmd = msg.data
+        self.merge_and_handle_commands()
 
-    def handle_horizontal_msg(self, msg):
-        new_horizontal = clamp(msg.data, -1, 1)
-        self.current_horizontal_control = new_horizontal
-        status_msg = Float32()
-        status_msg.data = float(new_horizontal)
-        self.horizontal_status_publisher.publish(status_msg)
+    def handle_y_cmd(self, msg: Float32) -> None:
+        self.current_y_cmd = msg.data
+        self.merge_and_handle_commands()
 
-        self.calc_and_send(
-            new_horizontal, self.current_vertical_control, self.current_roll
-        )
+    def merge_and_handle_commands(self) -> None:
+        direction: Vector2d = {
+            "x": self.current_x_cmd,
+            "y": self.current_y_cmd,
+        }
+        self.calc_and_send(rudder_direction=direction, roll_degrees=self.current_roll)
 
-    def calc_and_send(self, x, y, roll_degrees):
-        roll_radians = math.radians(roll_degrees)
-        rotation = -roll_radians
-        x2 = math.cos(rotation) * x - math.sin(rotation) * y
-        y2 = math.sin(rotation) * x + math.cos(rotation) * y
+    def calc_and_send(self, rudder_direction: Vector2d, roll_degrees: float):
+        rotation = -roll_degrees
+        compensated = rotate_vector(vector=rudder_direction, rotation_degrees=rotation)
+        clamped: Vector2d = {
+            "x": float(clamp(compensated["x"], -1, 1)),
+            "y": float(clamp(compensated["y"], -1, 1)),
+        }
 
-        x2 = float(clamp(x2, -1, 1))
-        y2 = float(clamp(y2, -1, 1))
+        self.rudder_status = clamped
 
-        self.horizontal_set_value(x2)
-        self.vertical_set_value(y2)
+        self.xy_rudder.set_rudder(clamped)
 
         status_vector_msg = Vector3()
-        status_vector_msg.x = x2
-        status_vector_msg.y = y2
+        status_vector_msg.x = clamped["x"]
+        status_vector_msg.y = clamped["y"]
         self.rudder_status_publisher.publish(status_vector_msg)
-
-    def handle_vertical_msg(self, msg):
-        new_vertical = msg.data
-        new_vertical = clamp(new_vertical, -1, 1)
-
-        self.current_vertical_control = new_vertical
-
-        self.calc_and_send(
-            self.current_horizontal_control, new_vertical, self.current_roll
-        )
-
-        status_msg = Float32()
-        status_msg.data = float(new_vertical)
-        self.vertical_status_publisher.publish(status_msg)
 
 
 def main(args=None):
