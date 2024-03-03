@@ -21,7 +21,7 @@ def get_pitch_velocity(pitch, previous_pitch, now, previous_pitch_at):
 # example usage: ros2 run eel imu
 class ImuNode(Node):
     def __init__(self):
-        super().__init__("imu_node")
+        super().__init__("imu_node", parameter_overrides=[])
         self.declare_parameter(SIMULATE_PARAM, False)
         self.should_simulate = self.get_parameter(SIMULATE_PARAM).value
         self.status_publisher = self.create_publisher(ImuStatus, IMU_STATUS, 10)
@@ -68,7 +68,9 @@ class ImuNode(Node):
 
             pitch_to_send = pitch
 
-            pitch_velocity = get_pitch_velocity(pitch_to_send, self.previous_pitch, now, self.previous_pitch_at)
+            pitch_velocity = get_pitch_velocity(
+                pitch_to_send, self.previous_pitch, now, self.previous_pitch_at
+            )
 
             msg.pitch = pitch_to_send
             msg.pitch_velocity = pitch_velocity
