@@ -4,7 +4,7 @@ from launch_ros.actions import Node
 SIMULATE_PARAM = "simulate"
 MOTOR_PIN_PARAM = "motor_pin"
 DIRECTION_PIN_PARAM = "direction_pin"
-DISTANCE_SENSOR_PIN_PARAM = "distance_sensor_pin"
+DISTANCE_SENSOR_CHANNEL_PARAM = "distance_sensor_channel"
 CMD_TOPIC_PARAM = "cmd_topic"
 STATUS_TOPIC_PARAM = "status_topic"
 
@@ -30,9 +30,9 @@ def generate_launch_description():
             {STATUS_TOPIC_PARAM: FRONT_TANK_STATUS},
             {MOTOR_PIN_PARAM: "23"},
             {DIRECTION_PIN_PARAM: "18"},
-            {DISTANCE_SENSOR_PIN_PARAM: "1"},
-            {TANK_FLOOR_VALUE_PARAM: "4736"},
-            {TANK_CEILING_VALUE_PARAM: "18256"},
+            {DISTANCE_SENSOR_CHANNEL_PARAM: "0"},
+            {TANK_FLOOR_VALUE_PARAM: "0.66"},
+            {TANK_CEILING_VALUE_PARAM: "0.16"},
         ],
     )
 
@@ -46,9 +46,9 @@ def generate_launch_description():
             {STATUS_TOPIC_PARAM: REAR_TANK_STATUS},
             {MOTOR_PIN_PARAM: "24"},
             {DIRECTION_PIN_PARAM: "25"},
-            {DISTANCE_SENSOR_PIN_PARAM: "0"},
-            {TANK_FLOOR_VALUE_PARAM: "6000"},
-            {TANK_CEILING_VALUE_PARAM: "15000"},
+            {DISTANCE_SENSOR_CHANNEL_PARAM: "1"},
+            {TANK_FLOOR_VALUE_PARAM: "0.288"},
+            {TANK_CEILING_VALUE_PARAM: "0.005"},
         ],
     )
 
