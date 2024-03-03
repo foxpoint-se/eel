@@ -13,7 +13,7 @@ from eel_interfaces.msg import (
 from ..utils.topics import (
     IMU_STATUS,
     PRESSURE_STATUS,
-    RUDDER_VERTICAL_CMD,
+    RUDDER_Y_CMD,
     DEPTH_CONTROL_CMD,
     DEPTH_CONTROL_STATUS,
 )
@@ -39,9 +39,7 @@ class DepthControlNode(Node):
         self.current_pitch = 0.0
         self.current_depth = 0.0
 
-        self.create_subscription(
-            ImuStatus, IMU_STATUS, self.handle_imu_msg, 10
-        )
+        self.create_subscription(ImuStatus, IMU_STATUS, self.handle_imu_msg, 10)
         self.create_subscription(
             PressureStatus, PRESSURE_STATUS, self.handle_pressure_msg, 10
         )
@@ -49,16 +47,12 @@ class DepthControlNode(Node):
             DepthControlCmd, DEPTH_CONTROL_CMD, self.handle_cmd_msg, 10
         )
 
-        self.rudder_publisher = self.create_publisher(
-            Float32, RUDDER_VERTICAL_CMD, 10
-        )
+        self.rudder_publisher = self.create_publisher(Float32, RUDDER_Y_CMD, 10)
         self.status_publisher = self.create_publisher(
             DepthControlStatus, DEPTH_CONTROL_STATUS, 10
         )
 
-        self.updater = self.create_timer(
-            1.0 / UPDATE_FREQUENCY, self.compute_and_send
-        )
+        self.updater = self.create_timer(1.0 / UPDATE_FREQUENCY, self.compute_and_send)
 
     def compute_and_send(self):
         angle_pid_output = self.compute_new_target_angle()
@@ -89,9 +83,7 @@ class DepthControlNode(Node):
         self.inner_pid_target_angle.update_set_point(msg.depth_target)
 
     def compute_new_target_angle(self):
-        pid_angle_output = self.inner_pid_target_angle.compute(
-            self.current_depth
-        )
+        pid_angle_output = self.inner_pid_target_angle.compute(self.current_depth)
 
         if abs(pid_angle_output) > self.max_dive_angle:
             pid_angle_output = (
