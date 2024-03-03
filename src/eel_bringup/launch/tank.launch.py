@@ -8,33 +8,33 @@ class TankConfig(TypedDict):
     simulate: bool
     cmd_topic: Literal["tank_front/cmd", "tank_rear/cmd"]
     status_topic: Literal["tank_front/status", "tank_rear/status"]
-    motor_pin: Literal["23", "24"]
-    direction_pin: Literal["18", "25"]
-    distance_sensor_channel: Literal["0", "1"]
-    tank_floor_value: str
-    tank_ceiling_value: str
+    motor_pin: Literal[23, 24]
+    direction_pin: Literal[18, 25]
+    distance_sensor_channel: Literal[0, 1]
+    tank_floor_value: float
+    tank_ceiling_value: float
 
 
 front_tank_config: TankConfig = {
     "simulate": False,
     "cmd_topic": "tank_front/cmd",
     "status_topic": "tank_front/status",
-    "motor_pin": "23",
-    "direction_pin": "18",
-    "distance_sensor_channel": "0",
-    "tank_floor_value": "0.66",
-    "tank_ceiling_value": "0.16",
+    "motor_pin": 23,
+    "direction_pin": 18,
+    "distance_sensor_channel": 0,
+    "tank_floor_value": 0.66,
+    "tank_ceiling_value": 0.16,
 }
 
 rear_tank_config: TankConfig = {
     "simulate": False,
     "cmd_topic": "tank_rear/cmd",
     "status_topic": "tank_rear/status",
-    "motor_pin": "24",
-    "direction_pin": "25",
-    "distance_sensor_channel": "1",
-    "tank_floor_value": "0.288",
-    "tank_ceiling_value": "0.005",
+    "motor_pin": 24,
+    "direction_pin": 25,
+    "distance_sensor_channel": 1,
+    "tank_floor_value": 0.288,
+    "tank_ceiling_value": 0.005,
 }
 
 

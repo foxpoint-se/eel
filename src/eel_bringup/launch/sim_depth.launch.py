@@ -28,11 +28,11 @@ def generate_launch_description():
             {SIMULATE_PARAM: True},
             {CMD_TOPIC_PARAM: FRONT_TANK_CMD},
             {STATUS_TOPIC_PARAM: FRONT_TANK_STATUS},
-            {MOTOR_PIN_PARAM: "23"},
-            {DIRECTION_PIN_PARAM: "18"},
-            {DISTANCE_SENSOR_CHANNEL_PARAM: "0"},
-            {TANK_FLOOR_VALUE_PARAM: "0.66"},
-            {TANK_CEILING_VALUE_PARAM: "0.16"},
+            {MOTOR_PIN_PARAM: 23},
+            {DIRECTION_PIN_PARAM: 18},
+            {DISTANCE_SENSOR_CHANNEL_PARAM: 0},
+            {TANK_FLOOR_VALUE_PARAM: 0.66},
+            {TANK_CEILING_VALUE_PARAM: 0.16},
         ],
     )
 
@@ -44,11 +44,11 @@ def generate_launch_description():
             {SIMULATE_PARAM: True},
             {CMD_TOPIC_PARAM: REAR_TANK_CMD},
             {STATUS_TOPIC_PARAM: REAR_TANK_STATUS},
-            {MOTOR_PIN_PARAM: "24"},
-            {DIRECTION_PIN_PARAM: "25"},
-            {DISTANCE_SENSOR_CHANNEL_PARAM: "1"},
-            {TANK_FLOOR_VALUE_PARAM: "0.288"},
-            {TANK_CEILING_VALUE_PARAM: "0.005"},
+            {MOTOR_PIN_PARAM: 24},
+            {DIRECTION_PIN_PARAM: 25},
+            {DISTANCE_SENSOR_CHANNEL_PARAM: 1},
+            {TANK_FLOOR_VALUE_PARAM: 0.288},
+            {TANK_CEILING_VALUE_PARAM: 0.005},
         ],
     )
 
