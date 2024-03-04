@@ -76,20 +76,11 @@ class ImuSimulator:
             TankStatus, REAR_TANK_STATUS, self._handle_rear_tank_msg, 10
         )
 
-        self.imu_updater = parent_node.create_timer(
-            1.0 / (parent_node.update_frequency * 2), self._loop
-        )
-
     def _handle_rudder_msg(self, msg: Vector3):
         self.current_rudder_status = msg
 
     def _handle_motor_msg(self, msg):
         self.speed = msg.data
-
-    def _loop(self):
-        self._update_heading()
-        self._update_pitch()
-        self.last_updated_at = time()
 
     def _update_pitch(self):
         momentum_difference = get_momentum_difference(
@@ -129,6 +120,9 @@ class ImuSimulator:
         return sys, gyro, accel, mag
 
     def get_euler(self):
+        self._update_heading()
+        self._update_pitch()
+        self.last_updated_at = time()
         return self.current_heading, 0.0, self._current_pitch
 
     def get_is_calibrated(self):
