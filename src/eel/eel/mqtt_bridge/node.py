@@ -12,8 +12,8 @@ from eel_interfaces.msg import ImuStatus
 from ..utils.topics import (
     MOTOR_CMD,
     IMU_STATUS,
-    RUDDER_HORIZONTAL_CMD,
-    RUDDER_VERTICAL_CMD,
+    RUDDER_X_CMD,
+    RUDDER_Y_CMD,
 )
 
 
@@ -104,11 +104,11 @@ class MqttBridge(Node):
         topics_and_callbacks: Sequence[tuple[str, SubscriberCallback]] = [
             (f"{self.robot_name}/{MOTOR_CMD}", self.handle_incoming_motor_cmd),
             (
-                f"{self.robot_name}/{RUDDER_HORIZONTAL_CMD}",
+                f"{self.robot_name}/{RUDDER_X_CMD}",
                 self.handle_incoming_rudder_horizontal,
             ),
             (
-                f"{self.robot_name}/{RUDDER_VERTICAL_CMD}",
+                f"{self.robot_name}/{RUDDER_Y_CMD}",
                 self.handle_incoming_rudder_vertical,
             ),
         ]
@@ -171,10 +171,10 @@ class MqttBridge(Node):
     def init_ros_pubs(self) -> None:
         self.motor_publisher = self.create_publisher(Float32, MOTOR_CMD, 10)
         self.rudder_horizontal_publisher = self.create_publisher(
-            Float32, RUDDER_HORIZONTAL_CMD, 10
+            Float32, RUDDER_X_CMD, 10
         )
         self.rudder_vertical_publisher = self.create_publisher(
-            Float32, RUDDER_VERTICAL_CMD, 10
+            Float32, RUDDER_Y_CMD, 10
         )
 
     def init_subs(self) -> None:
