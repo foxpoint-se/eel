@@ -9,12 +9,13 @@ from ..utils.nav import (
     get_next_rudder_turn,
 )
 from ..utils.topics import (
-    RUDDER_HORIZONTAL_CMD,
+    RUDDER_X_CMD,
     MOTOR_CMD,
     IMU_STATUS,
     GNSS_STATUS,
     NAVIGATION_STATUS,
     NAVIGATION_CMD,
+    NAVIGATION_COORDINATE_UPDATE,
 )
 
 TOLERANCE_IN_METERS = 5.0
@@ -24,14 +25,10 @@ class NavigationNode(Node):
     def __init__(self):
         super().__init__("navigation")
         self.should_navigate = False
-        self._travel_plan = [
-            {"lat": 59.30938741468102, "lon": 17.975370883941654},
-            {"lat": 59.30978752690931, "lon": 17.97597169876099},
-            {"lat": 59.30937966322808, "lon": 17.976068258285526},
-        ]
-        self.position_index = 0
+        self._coordinates = []
+        self.position_index = -1
         self.current_position = {"lat": None, "long": None}
-        self.target = self._travel_plan[self.position_index]
+        self.target = None
 
         self.distance_to_target = 0.0
         self.bearing_to_target = 0.0
@@ -49,18 +46,27 @@ class NavigationNode(Node):
             Bool, NAVIGATION_CMD, self.handle_nav_cmd, 10
         )
 
-        self.motor_publisher = self.create_publisher(Float32, MOTOR_CMD, 10)
-        self.rudder_publisher = self.create_publisher(Float32, RUDDER_HORIZONTAL_CMD, 10)
-        self.nav_publisher = self.create_publisher(
-            NavigationStatus, NAVIGATION_STATUS, 10
+        self.new_coordinate_subscriber = self.create_subscription(
+            Coordinate, NAVIGATION_COORDINATE_UPDATE, self.update_coordinates, 10
         )
 
-        self.get_logger().info("Navigation node started.")
+        self.motor_publisher = self.create_publisher(Float32, MOTOR_CMD, 10)
+        self.rudder_publisher = self.create_publisher(Float32, RUDDER_X_CMD, 10)
+        self.nav_publisher = self.create_publisher(NavigationStatus, NAVIGATION_STATUS, 10)
+
+        self.logger = self.get_logger()
+        self.logger.info("Navigation node started.")
 
     def handle_nav_cmd(self, msg):
         self.should_navigate = msg.data
-        self.publish_motor_cmd(0.0)
+
+        motor_value = 1.0 if self.should_navigate else 0.0
+        self.publish_motor_cmd(motor_value)
         self.publish_rudder_cmd(0.0)
+
+        # If navigation is true, there are coordinates but pos index is -1, we need to initiate
+        if self.should_navigate and len(self._coordinates) > 0 and self.position_index == -1:
+            self.update_target()
 
     def handle_imu_update(self, msg):
         self.current_heading = msg.heading
@@ -94,6 +100,7 @@ class NavigationNode(Node):
             coordinate = Coordinate()
             coordinate.lat = self.target["lat"]
             coordinate.lon = self.target["lon"]
+            coordinate.index = self.position_index
             nav_msg.next_target.append(coordinate)
         else:
             nav_msg.meters_to_target = 0.0
@@ -112,10 +119,10 @@ class NavigationNode(Node):
         self.motor_publisher.publish(motor_msg)
 
     def update_target(self):
-        has_next_target = self.position_index + 1 < len(self._travel_plan)
+        has_next_target = self.position_index + 1 < len(self._coordinates)
         if has_next_target:
             self.position_index += 1
-            self.target = self._travel_plan[self.position_index]
+            self.target = self._coordinates[self.position_index]
         else:
             self.position_index = None
             self.target = None
@@ -126,7 +133,6 @@ class NavigationNode(Node):
             self.update_target()
 
         if self.target:
-            motor_value = 1.0
             self.bearing_to_target = get_relative_bearing_in_degrees(
                 self.current_position["lat"],
                 self.current_position["lon"],
@@ -139,9 +145,28 @@ class NavigationNode(Node):
         else:
             motor_value = 0.0
             next_rudder_turn = 0.0
+            self.publish_motor_cmd(motor_value)
 
         self.publish_rudder_cmd(next_rudder_turn)
-        self.publish_motor_cmd(motor_value)
+    
+    def update_coordinates(self, msg):
+        index = msg.index
+
+        # Check if the index value is a positive int, if so verify against current index
+        if index >= 0 and self.position_index >= index:
+            self.logger.info("Coordinate index {index} not valid since current index at {self.position_index}. Will ignore.")
+        
+        coordinate_lat = float(msg.lat)
+        coordinate_lon = float(msg.lon)
+
+        if index != -1:
+            self._coordinates.insert(index, {"lat": coordinate_lat, "lon": coordinate_lon})
+        else:
+            self._coordinates.append({"lat": coordinate_lat, "lon": coordinate_lon})
+        
+        self.logger.info(f"Update coordinates with lat {coordinate_lat} and lon {coordinate_lon}")
+        self.logger.info(f"Coordinates now: {self._coordinates}")
+
 
 
 def main(args=None):
