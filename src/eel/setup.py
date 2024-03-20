@@ -37,6 +37,7 @@ setup(
             "modem = eel.modem.modem_node:main",
             "localization = eel.localization.localization:main",
             "data_logger = eel.data_logger.data_logger_node:main"
+            "leakage = eel.leakage.leakage_node:main",
         ],
     },
 )
