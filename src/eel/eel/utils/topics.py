@@ -34,3 +34,6 @@ BATTERY_STATUS = "battery/status"
 
 # Modem
 MODEM_STATUS = "modem/status"
+
+# Leakage
+LEAKAGE_STATUS = "leakage/status"
