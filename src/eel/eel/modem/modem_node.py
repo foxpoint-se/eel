@@ -6,14 +6,14 @@ from ..utils.constants import SIMULATE_PARAM
 from ..utils.topics import MODEM_STATUS
 
 
-class ModemNode(Node):  # MODIFY NAME
+class ModemNode(Node):
     def __init__(self):
         super().__init__("modem_node")
         self.declare_parameter(SIMULATE_PARAM, False)
         self.should_simulate = self.get_parameter(SIMULATE_PARAM).value
         self.status_publisher = self.create_publisher(ModemStatus, MODEM_STATUS, 10)
 
-        # hertz (publications per second)
+        # hertz (publications once per 10 seconds)
         self.update_frequency = 0.10
 
         if not self.should_simulate:

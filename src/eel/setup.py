@@ -32,6 +32,7 @@ setup(
             "battery = eel.battery.battery_node:main",
             "mqtt_bridge = eel.mqtt_bridge.node:main",
             "modem = eel.modem.modem_node:main",
+            "leakage = eel.leakage.leakage_node:main",
         ],
     },
 )

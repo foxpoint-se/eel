@@ -30,52 +30,11 @@ class BatterySensor:
         return self.ina.shunt_voltage()
 
 
-def read():
-    print("Bus Voltage    : %.3f V" % ina.voltage())
-    print("Bus Current    : %.3f mA" % ina.current())
-    print("Supply Voltage : %.3f V" % ina.supply_voltage())
-    print("Shunt voltage  : %.3f mV" % ina.shunt_voltage())
-    print("Power          : %.3f mW" % ina.power())
-
-
 if __name__ == "__main__":
-    ina = INA226(busnum=1, max_expected_amps=16, log_level=logging.INFO)
-    ina.configure()
-    # ina.set_low_battery(5)
-    sleep(3)
-    print("===================================================Begin to read")
-    # read()
-    # sleep(2)
-    """
-    print("===================================================Begin to reset")
-    ina.reset()
-    sleep(5)
-    ina.configure()
-    ina.set_low_battery(3)
-    sleep(5)
-    print("===================================================Begin to sleep")
-    ina.sleep()
-    sleep(2)
-    print("===================================================Begin to wake")
-    ina.wake()
-    sleep(0.2)
-    print("===================================================Read again")
-    read()
-    sleep(5)
-    print("===================================================Trigger test")
-    """
-    # ina.wake(3)
-    # sleep(0.2)
-    while True:
-        # ina.wake(3)
-        # sleep(3)
-        while 1:
-            if ina.is_conversion_ready():
-                sleep(3)
-                print(
-                    "===================================================Conversion ready"
-                )
-                read()
-                break
-        sleep(1)
-        print("===================================================Trigger again")
+    battery_sensor = BatterySensor()
+
+    print("Bus Voltage    : %.3f V" % battery_sensor.voltage())
+    print("Bus Current    : %.3f mA" % battery_sensor.current())
+    print("Supply Voltage : %.3f V" % battery_sensor.supply_voltage())
+    print("Shunt voltage  : %.3f mV" % battery_sensor.shunt_voltage())
+    print("Power          : %.3f mW" % battery_sensor.power())
