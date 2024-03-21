@@ -15,7 +15,8 @@ from ..utils.topics import (
     GNSS_STATUS,
     NAVIGATION_STATUS,
     NAVIGATION_CMD,
-    NAVIGATION_COORDINATE_UPDATE,
+    NAVIGATION_UPDATE_COORDINATE,
+    NAVIGATION_SET_TARGET
 )
 
 TOLERANCE_IN_METERS = 5.0
@@ -46,8 +47,12 @@ class NavigationNode(Node):
             Bool, NAVIGATION_CMD, self.handle_nav_cmd, 10
         )
 
-        self.new_coordinate_subscriber = self.create_subscription(
-            Coordinate, NAVIGATION_COORDINATE_UPDATE, self.update_coordinates, 10
+        self.update_coordinate_subscriber = self.create_subscription(
+            Coordinate, NAVIGATION_UPDATE_COORDINATE, self.update_coordinates, 10
+        )
+
+        self.set_target_subscriber = self.create_subscription(
+            Coordinate, NAVIGATION_SET_TARGET, self.set_target, 10
         )
 
         self.motor_publisher = self.create_publisher(Float32, MOTOR_CMD, 10)
@@ -100,7 +105,6 @@ class NavigationNode(Node):
             coordinate = Coordinate()
             coordinate.lat = self.target["lat"]
             coordinate.lon = self.target["lon"]
-            coordinate.index = self.position_index
             nav_msg.next_target.append(coordinate)
         else:
             nav_msg.meters_to_target = 0.0
@@ -150,24 +154,27 @@ class NavigationNode(Node):
         self.publish_rudder_cmd(next_rudder_turn)
     
     def update_coordinates(self, msg):
-        index = msg.index
-
-        # Check if the index value is a positive int, if so verify against current index
-        if index >= 0 and self.position_index >= index:
-            self.logger.info("Coordinate index {index} not valid since current index at {self.position_index}. Will ignore.")
-        
         coordinate_lat = float(msg.lat)
         coordinate_lon = float(msg.lon)
 
-        if index != -1:
-            self._coordinates.insert(index, {"lat": coordinate_lat, "lon": coordinate_lon})
-        else:
-            self._coordinates.append({"lat": coordinate_lat, "lon": coordinate_lon})
+        # Update coordinates always adds the new coordinate at the end of the coordinate plan
+        self._coordinates.append({"lat": coordinate_lat, "lon": coordinate_lon})
         
         self.logger.info(f"Update coordinates with lat {coordinate_lat} and lon {coordinate_lon}")
         self.logger.info(f"Coordinates now: {self._coordinates}")
+    
+    def set_target(self, msg):
+        coordinate = {"lat": float(msg.lat), "lon": float(msg.lon)}
 
+        # First set the current target to the newly provided coordinate
+        self.target = coordinate
+        self.logger.info(f"New target set to lat {coordinate.get('lat')} and lon {coordinate.get('lon')}")
 
+        # First update the coordinate list and add the new coordinate at the current index
+        new_coordinate_list = self._coordinates[:self.position_index] + [coordinate] + self._coordinates[self.position_index:]
+        self._coordinates = new_coordinate_list
+        self.logger.info(f"Coordinates now: {self._coordinates}")
+        
 
 def main(args=None):
     rclpy.init(args=args)
