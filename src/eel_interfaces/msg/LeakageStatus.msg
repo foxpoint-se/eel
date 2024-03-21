@@ -1,1 +1,0 @@
-bool leakage_value
