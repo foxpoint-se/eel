@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import qos_profile_sensor_data
 import math
 from time import time
 from eel_interfaces.msg import PressureStatus
@@ -62,9 +63,14 @@ class PressureNode(Node):
         self.last_depth_reading = None
         self.last_depth_at = None
 
-        self.create_subscription(ImuStatus, IMU_STATUS, self.handle_imu_msg, 10)
+        self.create_subscription(
+            ImuStatus, IMU_STATUS, self.handle_imu_msg, qos_profile=qos_profile_sensor_data
+        )
 
-        self.publisher = self.create_publisher(PressureStatus, PRESSURE_STATUS, 10)
+        self.publisher = self.create_publisher(
+            PressureStatus, PRESSURE_STATUS, qos_profile=qos_profile_sensor_data
+        )
+
         self.updater = self.create_timer(1.0 / PUBLISH_FREQUENCY, self.publish_status)
 
         self.get_logger().info(
@@ -94,10 +100,7 @@ class PressureNode(Node):
                 msg = PressureStatus()
                 msg.depth = validated_depth
                 msg.depth_velocity = depth_velocity
-                # if self.should_simulate:
-                #     msg.depth = current_depth
-                # else:
-                #     msg.depth = calculate_center_depth_USE_THIS(current_depth, self.current_pitch)
+
                 self.last_depth_reading = validated_depth
                 self.last_depth_at = now
                 self.publisher.publish(msg)

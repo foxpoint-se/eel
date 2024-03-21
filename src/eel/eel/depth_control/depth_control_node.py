@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-from ..utils.pid_tuning import get_production_pid_settings
-from ..utils.pid_controller import PidController
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import qos_profile_sensor_data
 from std_msgs.msg import Float32
 from time import time
+from ..utils.pid_tuning import get_production_pid_settings
+from ..utils.pid_controller import PidController
+
 
 from eel_interfaces.msg import (
     DepthControlStatus,
@@ -95,45 +97,30 @@ class DepthControlNode(Node):
 
         self.pid_lib_controller = None
 
-        self.publisher = self.create_publisher(
-            DepthControlStatus, DEPTH_CONTROL_STATUS, 10
-        )
+        self.publisher = self.create_publisher(DepthControlStatus, DEPTH_CONTROL_STATUS, 10)
 
         # TODO: enable these conditionally, for use when tuning PID
         self.pid_publisher = self.create_publisher(Float32, "pid_error", 10)
         self.pid_publisher_base = self.create_publisher(Float32, "pid_error_target", 10)
-        self.front_tank_depth_publisher = self.create_publisher(
-            Float32, "front_depth_pid", 10
-        )
-        self.front_tank_pitch_publisher = self.create_publisher(
-            Float32, "front_pitch_pid", 10
-        )
+        self.front_tank_depth_publisher = self.create_publisher(Float32, "front_depth_pid", 10)
+        self.front_tank_pitch_publisher = self.create_publisher(Float32, "front_pitch_pid", 10)
+
+        self.create_subscription(DepthControlCmd, DEPTH_CONTROL_CMD, self.handle_cmd_msg, 10)
+        
+        self.create_subscription(PidDepthCmd, "pid_depth/cmd", self.handle_pid_depth_msg, 10)
+        self.create_subscription(PidPitchCmd, "pid_pitch/cmd", self.handle_pid_pitch_msg, 10)
 
         self.create_subscription(
-            DepthControlCmd, DEPTH_CONTROL_CMD, self.handle_cmd_msg, 10
+            ImuStatus, IMU_STATUS, self.handle_imu_msg, qos_profile=qos_profile_sensor_data
         )
-
         self.create_subscription(
-            PidDepthCmd, "pid_depth/cmd", self.handle_pid_depth_msg, 10
-        )
-
-        self.create_subscription(
-            PidPitchCmd, "pid_pitch/cmd", self.handle_pid_pitch_msg, 10
-        )
-
-        self.create_subscription(ImuStatus, IMU_STATUS, self.handle_imu_msg, 10)
-        self.create_subscription(
-            PressureStatus, PRESSURE_STATUS, self.handle_pressure_msg, 10
+            PressureStatus, PRESSURE_STATUS, self.handle_pressure_msg, qos_profile=qos_profile_sensor_data
         )
 
         self.front_tank_pub = self.create_publisher(Float32, FRONT_TANK_CMD, 10)
         self.rear_tank_pub = self.create_publisher(Float32, REAR_TANK_CMD, 10)
-        self.create_subscription(
-            TankStatus, FRONT_TANK_STATUS, self.handle_front_tank_msg, 10
-        )
-        self.create_subscription(
-            TankStatus, REAR_TANK_STATUS, self.handle_rear_tank_msg, 10
-        )
+        self.create_subscription(TankStatus, FRONT_TANK_STATUS, self.handle_front_tank_msg, 10)
+        self.create_subscription(TankStatus, REAR_TANK_STATUS, self.handle_rear_tank_msg, 10)
 
         self.updater = self.create_timer(1.0 / UPDATE_FREQUENCY, self.loop)
 

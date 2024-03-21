@@ -10,8 +10,8 @@ class GNSS(Node):
     def __init__(self):
         super().__init__("gnss_node")
 
-        # hertz (updates per second)
-        self.update_frequency = 5
+        # hertz (updates per second), set to two since there is only one gnss msg per second
+        self.update_frequency = 2
 
         self.publisher = self.create_publisher(GnssStatus, GNSS_STATUS, 10)
         self.declare_parameter(SIMULATE_PARAM, False)

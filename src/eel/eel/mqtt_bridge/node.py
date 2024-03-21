@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import qos_profile_sensor_data
 from typing import Callable, Optional, TypedDict, cast, Sequence
 import json
 
@@ -179,7 +180,7 @@ class MqttBridge(Node):
 
     def init_subs(self) -> None:
         self.imu_subscription = self.create_subscription(
-            ImuStatus, IMU_STATUS, self.imu_status_callback, 10
+            ImuStatus, IMU_STATUS, self.imu_status_callback, qos_profile=qos_profile_sensor_data
         )
 
     def imu_status_callback(self, msg: ImuStatus) -> None:

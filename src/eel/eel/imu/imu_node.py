@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import qos_profile_sensor_data
 from eel_interfaces.msg import ImuStatus
 from time import time
 from .imu_sensor import ImuSensor
@@ -24,7 +25,7 @@ class ImuNode(Node):
         super().__init__("imu_node", parameter_overrides=[])
         self.declare_parameter(SIMULATE_PARAM, False)
         self.should_simulate = self.get_parameter(SIMULATE_PARAM).value
-        self.status_publisher = self.create_publisher(ImuStatus, IMU_STATUS, 10)
+        self.status_publisher = self.create_publisher(ImuStatus, IMU_STATUS, qos_profile=qos_profile_sensor_data)
         self.previous_pitch = None
         self.previous_pitch_at = None
 

@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import qos_profile_sensor_data
+
 from eel_interfaces.msg import BatteryStatus
 from .battery_sensor import BatterySensor
 from .battery_sim import BatterySimulator
@@ -13,7 +15,8 @@ class BatteryNode(Node):
         super().__init__("battery_node")
         self.declare_parameter(SIMULATE_PARAM, False)
         self.should_simulate = self.get_parameter(SIMULATE_PARAM).value
-        self.status_publisher = self.create_publisher(BatteryStatus, BATTERY_STATUS, 10)
+        self.status_publisher = self.create_publisher(
+            BatteryStatus, BATTERY_STATUS, qos_profile=qos_profile_sensor_data)
 
         # hertz (publications per second)
         self.update_frequency = 2
