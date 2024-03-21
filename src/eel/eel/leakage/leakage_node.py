@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
-from eel_interfaces.msg import LeakageStatus
+from std_msgs.msg import Bool
 from ..utils.topics import LEAKAGE_STATUS
 from ..utils.constants import SIMULATE_PARAM
 
@@ -13,7 +13,7 @@ class Leakage(Node):
         self.should_simulate = self.get_parameter(SIMULATE_PARAM).value
 
         self.update_frequency = 1
-        self.publisher = self.create_publisher(LeakageStatus, LEAKAGE_STATUS, 10)
+        self.publisher = self.create_publisher(Bool, LEAKAGE_STATUS, 10)
 
         if not self.should_simulate:
             from .leakage_sensor import LeakageSensor
@@ -31,9 +31,8 @@ class Leakage(Node):
     def publish(self):
         leakage_value = self.sensor.read_sensor()
 
-        msg = LeakageStatus()
-        msg.leakage_value = leakage_value
-
+        msg = Bool()
+        msg.data = leakage_value
         self.publisher.publish(msg)
 
 

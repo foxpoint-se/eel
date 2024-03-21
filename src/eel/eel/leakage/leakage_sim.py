@@ -7,10 +7,10 @@ SIMULATED_LEAKAGE_TIME_SECONDS = 120
 
 
 class LeakageSimulator(LeakageSource):
-    def __init__(self) -> None:
+    def __init__(self):
         self.start_time = time.time()
 
-    def read_sensor(self) -> bool | None:
+    def read_sensor(self):
         return_value = False
         
         # If more than X amount of seconds passed, start sending True
