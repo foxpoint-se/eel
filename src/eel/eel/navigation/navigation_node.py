@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import qos_profile_sensor_data
 from eel_interfaces.msg import GnssStatus, ImuStatus, NavigationStatus, Coordinate
 from std_msgs.msg import Float32, Bool
 from ..utils.nav import (
@@ -42,7 +43,7 @@ class NavigationNode(Node):
             GnssStatus, GNSS_STATUS, self.handle_gnss_update, 10
         )
         self.imu_subscription = self.create_subscription(
-            ImuStatus, IMU_STATUS, self.handle_imu_update, 10
+            ImuStatus, IMU_STATUS, self.handle_imu_update, qos_profile=qos_profile_sensor_data
         )
 
         self.nav_cmd_subscriber = self.create_subscription(
@@ -51,9 +52,7 @@ class NavigationNode(Node):
 
         self.motor_publisher = self.create_publisher(Float32, MOTOR_CMD, 10)
         self.rudder_publisher = self.create_publisher(Float32, RUDDER_HORIZONTAL_CMD, 10)
-        self.nav_publisher = self.create_publisher(
-            NavigationStatus, NAVIGATION_STATUS, 10
-        )
+        self.nav_publisher = self.create_publisher(NavigationStatus, NAVIGATION_STATUS, 10)
 
         self.get_logger().info("Navigation node started.")
 

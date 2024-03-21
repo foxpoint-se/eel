@@ -1,3 +1,4 @@
+from rclpy.qos import qos_profile_sensor_data
 from time import time
 from std_msgs.msg import Float32
 from geopy import distance
@@ -21,7 +22,7 @@ class GnssSimulator:
             Float32, MOTOR_CMD, self._handle_motor_msg, 10
         )
         self.imu_subscription = parent_node.create_subscription(
-            ImuStatus, IMU_STATUS, self._handle_imu_msg, 10
+            ImuStatus, IMU_STATUS, self._handle_imu_msg, qos_profile=qos_profile_sensor_data
         )
 
         self.gnss_updater = parent_node.create_timer(

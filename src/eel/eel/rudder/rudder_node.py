@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import qos_profile_sensor_data
 from rclpy.executors import ExternalShutdownException
 from geometry_msgs.msg import Vector3
 from std_msgs.msg import Float32
@@ -49,7 +50,7 @@ class Rudder(Node):
         self.rudder_status_publisher = self.create_publisher(Vector3, RUDDER_STATUS, 10)
 
         self.imu_subscription = self.create_subscription(
-            ImuStatus, IMU_STATUS, self._handle_imu_msg, 10
+            ImuStatus, IMU_STATUS, self._handle_imu_msg, qos_profile=qos_profile_sensor_data
         )
 
         self.current_x_cmd: float = float()

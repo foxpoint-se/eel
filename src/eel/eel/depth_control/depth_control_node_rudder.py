@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import qos_profile_sensor_data
 from ..utils.pid_controller import PidController
 from std_msgs.msg import Float32
 
@@ -39,9 +40,11 @@ class DepthControlNode(Node):
         self.current_pitch = 0.0
         self.current_depth = 0.0
 
-        self.create_subscription(ImuStatus, IMU_STATUS, self.handle_imu_msg, 10)
         self.create_subscription(
-            PressureStatus, PRESSURE_STATUS, self.handle_pressure_msg, 10
+            ImuStatus, IMU_STATUS, self.handle_imu_msg, qos_profile=qos_profile_sensor_data
+        )
+        self.create_subscription(
+            PressureStatus, PRESSURE_STATUS, self.handle_pressure_msg, qos_profile=qos_profile_sensor_data
         )
         self.create_subscription(
             DepthControlCmd, DEPTH_CONTROL_CMD, self.handle_cmd_msg, 10
