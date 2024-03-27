@@ -1,2 +1,0 @@
-int8 reg_status
-int8 signal_strength
