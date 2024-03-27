@@ -56,8 +56,18 @@ class NavigationActionClient(Node):
         self.logger.info(f"Updated goals, new goal lat: {goal_msg.lat}, lon: {goal_msg.lon}")
         self.logger.info(f"Currently {len(self.goals)} goals in queue.")
     
-    def set_goal(self, lat, lon):
-        pass
+    def set_goal(self, msg):
+        # Create goal and insert it from the left into the goal queue
+        goal_msg = Navigate.Goal()
+        goal_msg.lat = msg.lat
+        goal_msg.lon = msg.lon
+        
+        self.logger.info(f"New target recieved with lat: {msg.lat} and lon {msg.lon}")
+        self.goals.appendleft(goal_msg)
+
+        # Now we need to cancel all goals sent to server and resend them to have the correct order
+        self.cancel_goals_in_progress()
+        self.send_goals_to_server()
 
     def handle_nav_cmd(self, msg):
         self.auto_mode = msg.data
