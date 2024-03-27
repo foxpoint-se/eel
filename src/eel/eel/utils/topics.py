@@ -15,6 +15,8 @@ IMU_STATUS = "imu/status"
 # Navigation
 NAVIGATION_STATUS = "nav/status"
 NAVIGATION_CMD = "nav/cmd"
+NAVIGATION_UPDATE_COORDINATE = "nav/update_coordinate"
+NAVIGATION_SET_TARGET = "nav/set_target"
 
 # Tanks
 FRONT_TANK_CMD = "tank_front/cmd"

@@ -20,7 +20,8 @@ setup(
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "navigation = eel.navigation.navigation_node:main",
+            "navigate = eel.navigation.navigation_action_server:main",
+            "navigate_client = eel.navigation.navigation_action_client:main",
             "gnss = eel.gnss.gnss_node:main",
             "imu = eel.imu.imu_node:main",
             "rudder = eel.rudder.rudder_node:main",
