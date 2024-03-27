@@ -1,9 +1,10 @@
 import random
 from rclpy.node import Node
 from eel_interfaces.msg import TankStatus
+from std_msgs.msg import Float32
 from time import time
 from .pressure_source import PressureSource
-from ..utils.topics import FRONT_TANK_STATUS, REAR_TANK_STATUS
+from ..utils.topics import FRONT_TANK_STATUS, REAR_TANK_STATUS, RUDDER_Y_CMD
 
 NEUTRAL_LEVEL = 0.5
 NEUTRAL_TOLERANCE = 0.02
@@ -66,10 +67,15 @@ class PressureSensorSimulator(PressureSource):
             TankStatus, REAR_TANK_STATUS, self._handle_rear_tank_msg, 10
         )
 
+        parent_node.create_subscription(
+            Float32, RUDDER_Y_CMD, self._handle_rudder_msg, 10
+        )
+
         self._last_updated_at = time()
         self._current_depth = 0.0
         self._front_tank_level = 0.0
         self._rear_tank_level = 0.0
+        self._current_rudder_y_value = 0.0
 
         self.logger = parent_node.get_logger()
 
@@ -81,6 +87,11 @@ class PressureSensorSimulator(PressureSource):
         self._rear_tank_level = msg.current_level
         self._calculate_depth()
 
+    def _handle_rudder_msg(self, msg):
+        self._current_rudder_y_value = msg.data
+        self.logger.info(f"New rudder Y value: {self._current_rudder_y_value}")
+        self._calculate_depth()
+
     def _calculate_depth(self):
         average_bouyancy = get_average_bouyancy(
             self._front_tank_level,
@@ -88,7 +99,10 @@ class PressureSensorSimulator(PressureSource):
             NEUTRAL_LEVEL,
             NEUTRAL_TOLERANCE,
         )
-        velocity = get_velocity(TERMINAL_VELOCITY_MPS, average_bouyancy)
+        tank_velocity = get_velocity(TERMINAL_VELOCITY_MPS, average_bouyancy)
+        rudder_velocity = get_velocity(TERMINAL_VELOCITY_MPS, self._current_rudder_y_value)
+        velocity = tank_velocity + rudder_velocity
+
         if velocity != 0:
             now = time()
             time_delta = now - self._last_updated_at
@@ -100,6 +114,7 @@ class PressureSensorSimulator(PressureSource):
         self._last_updated_at = time()
 
     def get_current_depth(self):
+        self._calculate_depth()
         if should_raise_oserror():
             raise OSError("Simulating OSError")
 
