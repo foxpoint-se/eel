@@ -10,6 +10,15 @@ STOP_GPIO_LEVEL = GPIO.LOW
 PWM_FREQUENCY = 19200
 
 
+# TODO:
+# se om jag kan få tankarna att funka på tvålen igen
+# se om jag fattar varför vi har simulerat saker på imu
+# att den lutar olika. det är väl för att tankarna inte är centrerade
+
+# TODO: kolla på varningen om lgpio
+# gpiozero==2.0 kanske? googla på felet
+
+
 class RealPump:
     def __init__(self, motor_pin: int, direction_pin: int) -> None:
         self.motor_pin = motor_pin

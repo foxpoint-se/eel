@@ -1,4 +1,4 @@
-from rclpy.node import Node
+from rclpy.node import Node, Subscription
 from time import time
 from std_msgs.msg import Float32
 from geometry_msgs.msg import Vector3
@@ -54,7 +54,7 @@ def calculate_angle_delta(angular_velocity, time_in_s):
 
 
 class ImuSimulator:
-    def __init__(self, parent_node: Node) -> None:
+    def __init__(self, parent_node: Node, rudder_sub: Subscription) -> None:
         self.current_rudder_status = Vector3()
         self.current_heading = float(0)
         self.speed = 0

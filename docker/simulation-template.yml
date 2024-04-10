@@ -62,9 +62,9 @@ services:
       - "9090:9090"
     network_mode: ${NETWORK_MODE:-bridge}
 
-  mqtt_bridge:
-    image: foxpoint/eel:foxy
-    command: ros2 run eel mqtt_bridge --ros-args -p path_for_config:=/eel/local_certs_and_config/iot_config.json
-    volumes:
-      - ./local_certs_and_config/:/eel/local_certs_and_config/:r
-    network_mode: ${NETWORK_MODE:-bridge}
+  # mqtt_bridge:
+  #   image: foxpoint/eel:foxy
+  #   command: ros2 run eel mqtt_bridge --ros-args -p path_for_config:=/eel/local_certs_and_config/iot_config.json
+  #   volumes:
+  #     - ./local_certs_and_config/:/eel/local_certs_and_config/:r
+  #   network_mode: ${NETWORK_MODE:-bridge}

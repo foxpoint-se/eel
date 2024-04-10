@@ -86,6 +86,7 @@ class ImuNode(Node):
 
 def main(args=None):
     rclpy.init(args=args)
+    print("HEJ", args)
     node = ImuNode()
     rclpy.spin(node)
     rclpy.shutdown()
