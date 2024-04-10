@@ -68,16 +68,18 @@ if simulate_value is None or current_config is None:
 
 current_config["simulate"] = simulate_value
 
-LaunchParameters = List[Dict[str, Union[str, bool]]]
+ValidTypes = (str, bool, float, int)
+LaunchParameters = List[Dict[str, Union[str, bool, float, int]]]
 
 launch_parameters: LaunchParameters = []
 
 for key, value in current_config.items():
-    if isinstance(value, str) or isinstance(value, bool):
-        param = {key: value}
-        launch_parameters.append(param)
-    else:
-        raise TypeError("Value has to be either bool or str.")
+    if not isinstance(value, ValidTypes):
+        raise TypeError(
+            f"{type(value)} is an invalid type. Valid types are {ValidTypes}. See {key=} {value=} "
+        )
+    param = {key: value}
+    launch_parameters.append(param)
 
 
 def generate_launch_description():
