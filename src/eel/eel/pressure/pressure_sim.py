@@ -4,7 +4,7 @@ from eel_interfaces.msg import TankStatus
 from std_msgs.msg import Float32
 from time import time
 from .pressure_source import PressureSource
-from ..utils.topics import FRONT_TANK_STATUS, REAR_TANK_STATUS, RUDDER_Y_CMD
+from ..utils.topics import FRONT_TANK_STATUS, REAR_TANK_STATUS, RUDDER_Y_CMD, MOTOR_CMD
 
 NEUTRAL_LEVEL = 0.5
 NEUTRAL_TOLERANCE = 0.02
@@ -71,7 +71,12 @@ class PressureSensorSimulator(PressureSource):
             Float32, RUDDER_Y_CMD, self._handle_rudder_msg, 10
         )
 
+        parent_node.create_subscription(
+            Float32, MOTOR_CMD, self.handle_motor_msg, 10
+        )
+
         self._last_updated_at = time()
+        self._current_motor_speed = 0.0
         self._current_depth = 0.0
         self._front_tank_level = 0.0
         self._rear_tank_level = 0.0
@@ -89,8 +94,11 @@ class PressureSensorSimulator(PressureSource):
 
     def _handle_rudder_msg(self, msg):
         self._current_rudder_y_value = msg.data
-        self.logger.info(f"New rudder Y value: {self._current_rudder_y_value}")
+        self.logger.debug(f"New rudder Y value: {self._current_rudder_y_value}")
         self._calculate_depth()
+
+    def handle_motor_msg(self, msg):
+        self._current_motor_speed = msg.data
 
     def _calculate_depth(self):
         average_bouyancy = get_average_bouyancy(
@@ -100,7 +108,7 @@ class PressureSensorSimulator(PressureSource):
             NEUTRAL_TOLERANCE,
         )
         tank_velocity = get_velocity(TERMINAL_VELOCITY_MPS, average_bouyancy)
-        rudder_velocity = get_velocity(TERMINAL_VELOCITY_MPS, self._current_rudder_y_value)
+        rudder_velocity = get_velocity(TERMINAL_VELOCITY_MPS, self._current_rudder_y_value) * self._current_motor_speed
         velocity = tank_velocity + rudder_velocity
 
         if velocity != 0:
