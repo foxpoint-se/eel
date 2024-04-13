@@ -33,7 +33,16 @@ class DepthControlNode(Node):
         self.max_dive_angle = 30.0
         self.max_rudder_output = 1.0
 
-        self.inner_pid_target_angle = PidController(0.0, kP=-25.0)
+        # -25
+        # -35 0 0
+        # -35 0 -5 gick uppåt men aldrig under 0.6. funkade bra
+        # kP=-60.0, kD=-5.0 .. oscillerade mycket
+        # kP=-40.0, kD=-5.0 .. gick 0.35 och 0.7
+        # kP=-35.0, kD=-10.0
+        # kör pressure självt
+        # kör inte gnss
+        # kör dom andra i launch
+        self.inner_pid_target_angle = PidController(0.0, kP=-35.0, kD=-10.0)
         self.out_pid_rudder_output = PidController(0.0, kP=1 / 30)
 
         self.current_pitch = 0.0

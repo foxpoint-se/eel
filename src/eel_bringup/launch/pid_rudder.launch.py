@@ -32,17 +32,17 @@ def generate_launch_description():
         name="rudder_node",
     )
 
-    pressure_node = Node(
-        package="eel",
-        executable="pressure",
-        name="pressure_node",
-    )
+    # pressure_node = Node(
+    #     package="eel",
+    #     executable="pressure",
+    #     name="pressure_node",
+    # )
 
-    gnss_node = Node(
-        package="eel",
-        executable="gnss",
-        name="gnss_node",
-    )
+    # gnss_node = Node(
+    #     package="eel",
+    #     executable="gnss",
+    #     name="gnss_node",
+    # )
 
     # battery_node = Node(
     #     package="eel",
@@ -91,12 +91,12 @@ def generate_launch_description():
         ],
     )
 
-    ld.add_action(pressure_node)
+    # ld.add_action(pressure_node)
     ld.add_action(rudder_node)
     ld.add_action(rudder_pid_control_node)
     ld.add_action(imu_node)
     ld.add_action(motor_node)
-    ld.add_action(gnss_node)
+    # ld.add_action(gnss_node)
     # ld.add_action(battery_node)
     ld.add_action(front_tank_node)
     ld.add_action(rear_tank_node)
