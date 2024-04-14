@@ -4,8 +4,9 @@ from rclpy.node import Node
 from rclpy.executors import ExternalShutdownException
 from geometry_msgs.msg import Vector3
 from std_msgs.msg import Float32
-import sys
 import math
+import sys
+import signal
 from eel_interfaces.msg import ImuStatus
 
 from ..utils.topics import (
@@ -107,16 +108,30 @@ class Rudder(Node):
         self.rudder_status_publisher.publish(status_vector_msg)
 
 
+def shutdown_handler(signum, frame, node: Rudder):
+    # Call the shutdown method of your node
+    node.shutdown()
+    rclpy.try_shutdown()
+    sys.exit(0)
+
+
+# Register the shutdown handler for SIGTERM signal
+
+
 def main(args=None):
     rclpy.init(args=args)
     node = Rudder()
+    signal.signal(
+        signal.SIGTERM, lambda signum, frame: shutdown_handler(signum, frame, node)
+    )
 
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
-        pass
-    except ExternalShutdownException:
+        # pass
         sys.exit(1)
+    # except ExternalShutdownException:
+    #     sys.exit(1)
     finally:
         node.shutdown()
         rclpy.try_shutdown()
