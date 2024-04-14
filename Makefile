@@ -62,6 +62,9 @@ start-pid:		## start pid launch file
 start-gunthix:		## start gunthix launch file
 	ros2 launch eel_bringup gunthix.launch.py
 
+start-sim-drive:	## start sim_drive launch file
+	ros2 launch eel_bringup sim_drive.launch.py
+
 build-sym:		## build with symlink
 	colcon build --symlink-install
 

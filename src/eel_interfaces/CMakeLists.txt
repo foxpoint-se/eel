@@ -29,6 +29,9 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/BatteryStatus.msg"
   "msg/PidDepthCmd.msg"
   "msg/PidPitchCmd.msg"
+  "msg/NavigationMission.msg"
+  "action/Dive.action"
+  "action/Navigate.action"
   "srv/ModemStatus.srv"
 )
 
