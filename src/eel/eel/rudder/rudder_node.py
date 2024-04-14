@@ -4,8 +4,9 @@ from rclpy.node import Node
 from rclpy.executors import ExternalShutdownException
 from geometry_msgs.msg import Vector3
 from std_msgs.msg import Float32
-import sys
 import math
+import sys
+import signal
 from eel_interfaces.msg import ImuStatus
 
 from ..utils.topics import (
@@ -105,10 +106,6 @@ class Rudder(Node):
         status_vector_msg.x = clamped["x"]
         status_vector_msg.y = clamped["y"]
         self.rudder_status_publisher.publish(status_vector_msg)
-
-
-import signal
-import sys
 
 
 def shutdown_handler(signum, frame, node: Rudder):
