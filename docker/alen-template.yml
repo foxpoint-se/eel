@@ -37,7 +37,7 @@ services:
     image: foxpoint/eel:foxy
     command: ros2 run eel gnss
     devices:
-      - "/dev/ttyUSB0:/dev/ttyUSB0"
+      - "/dev/ttyUSB1:/dev/ttyUSB1"
     network_mode: ${NETWORK_MODE:-bridge}
 
   front_tank:
