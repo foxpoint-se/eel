@@ -4,7 +4,6 @@ import rclpy
 from action_msgs.msg import GoalStatus
 from std_msgs.msg import Bool
 from rclpy.action import ActionClient
-from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
 
 from eel_interfaces.action import Navigate
@@ -99,6 +98,7 @@ class NavigationActionClient(Node):
         for handel in self.goal_handles:
             handel.cancel_goal_async()
 
+        self.goal_handles = []
         self.goals_in_progress = False
 
     def goal_response_callback(self, future):
@@ -167,8 +167,8 @@ class NavigationActionClient(Node):
 def main(args=None):
     rclpy.init(args=args)
     action_client = NavigationActionClient()
-    executor = MultiThreadedExecutor()
-    rclpy.spin(action_client, executor=executor)
+    rclpy.spin(action_client)
+    rclpy.shutdown()
 
 
 if __name__ == "__main__":
