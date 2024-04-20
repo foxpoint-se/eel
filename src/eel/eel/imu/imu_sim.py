@@ -11,7 +11,7 @@ from ..utils.topics import (
     REAR_TANK_STATUS,
 )
 
-TERMINAL_PITCH_ANGULAR_VELOCITY_DEGPS = 10.0
+TERMINAL_PITCH_ANGULAR_VELOCITY_DEGPS = 2.5
 MOMENTUM_TOLERANCE = 0.03
 
 
@@ -43,10 +43,10 @@ def get_velocity(terminal_velocity, fraction_of_velocity):
 
 
 def cap_pitch(pitch):
-    if pitch > 90.0:
-        return 90.0
-    elif pitch < -90.0:
-        return -90.0
+    if pitch > 45.0:
+        return 45.0
+    elif pitch < -45.0:
+        return -45.0
     return pitch
 
 
@@ -93,19 +93,26 @@ class ImuSimulator:
         self.last_updated_at = time()
 
     def _update_pitch(self):
+        now = time()
+        time_delta = now - self.last_updated_at
         momentum_difference = get_momentum_difference(
             self._front_tank_level, self._rear_tank_level
         )
+
+        tank_pitch_delta = 0.0
         if abs(momentum_difference) > MOMENTUM_TOLERANCE:
-            now = time()
-            time_delta = now - self.last_updated_at
             angular_velocity = get_velocity(
                 TERMINAL_PITCH_ANGULAR_VELOCITY_DEGPS, momentum_difference
             )
-            pitch_delta = calculate_angle_delta(angular_velocity, time_delta)
-            new_pitch = self._current_pitch + pitch_delta
-            capped_pitch = cap_pitch(new_pitch)
-            self._current_pitch = capped_pitch
+            tank_pitch_delta = calculate_angle_delta(angular_velocity, time_delta)
+        
+        rudder_velocity = get_velocity(
+            TERMINAL_PITCH_ANGULAR_VELOCITY_DEGPS, self.current_rudder_status.y) * self.speed
+        rudder_pitch_delta = calculate_angle_delta(rudder_velocity, time_delta)
+
+        new_pitch = self._current_pitch + tank_pitch_delta + rudder_pitch_delta
+        capped_pitch = cap_pitch(new_pitch)
+        self._current_pitch = capped_pitch
 
     def _update_heading(self):
         if self.speed > 0:

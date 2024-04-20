@@ -1,14 +1,16 @@
 import random
+from math import tan, radians
+
 from rclpy.node import Node
-from eel_interfaces.msg import TankStatus
+from eel_interfaces.msg import TankStatus, ImuStatus
 from std_msgs.msg import Float32
 from time import time
 from .pressure_source import PressureSource
-from ..utils.topics import FRONT_TANK_STATUS, REAR_TANK_STATUS, RUDDER_Y_CMD, MOTOR_CMD
+from ..utils.topics import FRONT_TANK_STATUS, REAR_TANK_STATUS, IMU_STATUS, MOTOR_CMD
 
 NEUTRAL_LEVEL = 0.5
 NEUTRAL_TOLERANCE = 0.02
-TERMINAL_VELOCITY_MPS = 0.5
+TERMINAL_VELOCITY_MPS = 0.3
 
 MAX_DEPTH = 10.0
 MIN_DEPTH = 0.0
@@ -46,6 +48,10 @@ def get_velocity(terminal_velocity, fraction_of_velocity):
     return terminal_velocity * fraction_of_velocity
 
 
+def get_pitch_speed_velocity(terminal_velocity, pitch):
+    return tan(radians(pitch)) * terminal_velocity
+
+
 def calculate_position_delta(velocity_in_mps, time_in_s):
     return velocity_in_mps * time_in_s
 
@@ -68,7 +74,7 @@ class PressureSensorSimulator(PressureSource):
         )
 
         parent_node.create_subscription(
-            Float32, RUDDER_Y_CMD, self._handle_rudder_msg, 10
+            ImuStatus, IMU_STATUS, self._handle_imu_msg, 10
         )
 
         parent_node.create_subscription(
@@ -80,7 +86,7 @@ class PressureSensorSimulator(PressureSource):
         self._current_depth = 0.0
         self._front_tank_level = 0.0
         self._rear_tank_level = 0.0
-        self._current_rudder_y_value = 0.0
+        self._current_pitch = 0.0
 
         self.logger = parent_node.get_logger()
 
@@ -92,13 +98,13 @@ class PressureSensorSimulator(PressureSource):
         self._rear_tank_level = msg.current_level
         self._calculate_depth()
 
-    def _handle_rudder_msg(self, msg):
-        self._current_rudder_y_value = msg.data
-        self.logger.debug(f"New rudder Y value: {self._current_rudder_y_value}")
+    def _handle_imu_msg(self, msg):
+        self._current_pitch = msg.pitch
         self._calculate_depth()
 
     def handle_motor_msg(self, msg):
         self._current_motor_speed = msg.data
+        self._calculate_depth()
 
     def _calculate_depth(self):
         average_bouyancy = get_average_bouyancy(
@@ -107,9 +113,9 @@ class PressureSensorSimulator(PressureSource):
             NEUTRAL_LEVEL,
             NEUTRAL_TOLERANCE,
         )
-        tank_velocity = get_velocity(TERMINAL_VELOCITY_MPS, average_bouyancy)
-        rudder_velocity = get_velocity(TERMINAL_VELOCITY_MPS, self._current_rudder_y_value) * self._current_motor_speed
-        velocity = tank_velocity + rudder_velocity
+        tank_velocity =  0.0 #get_velocity(TERMINAL_VELOCITY_MPS, average_bouyancy)
+        pitch_speed_velocity = get_pitch_speed_velocity(TERMINAL_VELOCITY_MPS, self._current_pitch) * self._current_motor_speed
+        velocity = tank_velocity + pitch_speed_velocity
 
         if velocity != 0:
             now = time()
@@ -123,6 +129,7 @@ class PressureSensorSimulator(PressureSource):
 
     def get_current_depth(self):
         self._calculate_depth()
+
         if should_raise_oserror():
             raise OSError("Simulating OSError")
 
