@@ -33,7 +33,7 @@ rear_tank_config: TankConfig = {
     "motor_pin": 24,
     "direction_pin": 25,
     "distance_sensor_channel": 1,
-    "tank_floor_value": 0.288,
+    "tank_floor_value": 0.34,
     "tank_ceiling_value": 0.005,
 }
 

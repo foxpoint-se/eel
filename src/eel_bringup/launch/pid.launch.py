@@ -18,7 +18,6 @@ TANK_FLOOR_VALUE_PARAM = "tank_floor_value"
 TANK_CEILING_VALUE_PARAM = "tank_ceiling_value"
 
 
-
 def generate_launch_description():
     ld = LaunchDescription()
 
@@ -49,7 +48,7 @@ def generate_launch_description():
             {MOTOR_PIN_PARAM: 24},
             {DIRECTION_PIN_PARAM: 25},
             {DISTANCE_SENSOR_CHANNEL_PARAM: 1},
-            {TANK_FLOOR_VALUE_PARAM: 0.288},
+            {TANK_FLOOR_VALUE_PARAM: 0.34},
             {TANK_CEILING_VALUE_PARAM: 0.005},
         ],
     )

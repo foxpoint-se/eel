@@ -47,7 +47,7 @@ def generate_launch_description():
             {MOTOR_PIN_PARAM: 24},
             {DIRECTION_PIN_PARAM: 25},
             {DISTANCE_SENSOR_CHANNEL_PARAM: 1},
-            {TANK_FLOOR_VALUE_PARAM: 0.288},
+            {TANK_FLOOR_VALUE_PARAM: 0.34},
             {TANK_CEILING_VALUE_PARAM: 0.005},
         ],
     )
@@ -78,7 +78,6 @@ def generate_launch_description():
         name="pressure_node",
         parameters=[{SIMULATE_PARAM: False}],
     )
-
 
     ld.add_action(front_tank_node)
     ld.add_action(rear_tank_node)
