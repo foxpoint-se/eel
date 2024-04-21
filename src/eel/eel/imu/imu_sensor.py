@@ -10,6 +10,11 @@ def get_corrected_roll(roll: float):
     return roll + ROLL_CORRECTION
 
 
+# the sensor seems to be mounted 180 deg
+def get_corrected_heading(heading: float) -> float:
+    return (heading - 180) % 360
+
+
 class ImuSensor:
     def __init__(self):
         import adafruit_bno055
@@ -28,6 +33,7 @@ class ImuSensor:
     def get_euler(self):
         heading, roll, pitch = self.sensor.euler
         heading = float(heading or 0)
+        heading = get_corrected_heading(heading)
         roll = get_corrected_roll(float(roll or 0))
         pitch = get_corrected_pitch(-float(pitch or 0))
         return heading, roll, pitch
