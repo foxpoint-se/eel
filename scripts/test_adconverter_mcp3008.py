@@ -18,7 +18,7 @@ mcp = MCP3208(channel=channel, differential=False, max_voltage=3.3)
 # front_floor = 0.66
 # front_ceiling = 0.16
 
-rear_floor = 0.34
+rear_floor = 0.325
 rear_ceiling = 0.005
 
 
