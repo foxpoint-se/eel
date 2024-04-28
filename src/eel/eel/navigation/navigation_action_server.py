@@ -165,7 +165,7 @@ class NavigationActionServer(Node):
                     goal_handle.canceled()
                     result.lon = self.current_position["lon"]
                     result.lat = self.current_position["lat"]
-                    self.get_logger().info('Goal canceled')
+                    self.logger.info('Goal canceled')
                     
                     return result
 

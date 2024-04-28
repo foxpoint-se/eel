@@ -35,16 +35,17 @@ def generate_launch_description():
         parameters=[{SIMULATE_PARAM: True}]
     )
 
-    navigation_node = Node(
+    pressure_node = Node(
         package="eel",
-        executable="navigate",
-        name="navigate_node"
+        executable="pressure",
+        name="pressure_node",
+        parameters=[{SIMULATE_PARAM: True}]
     )
 
     ld.add_action(imu_node)
     ld.add_action(rudder_node)
     ld.add_action(motor_node)
     ld.add_action(gnss_node)
-    ld.add_action(navigation_node)
+    ld.add_action(pressure_node)
 
     return ld
