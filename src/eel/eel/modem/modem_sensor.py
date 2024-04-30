@@ -7,11 +7,7 @@ import time
 from .modem_source import ModemSource
 
 
-AT_COMMAND_TIMEOUT_MS = 5000
-
-
-def get_time_with_ms():
-    return int(time.time() * 1000)
+AT_COMMAND_TIMEOUT_MS = 500
 
 
 class ModemSensor(ModemSource):
@@ -21,11 +17,10 @@ class ModemSensor(ModemSource):
         self.serial_connection.stopbits = serial.STOPBITS_ONE
         self.serial_connection.bytesize = serial.EIGHTBITS
 
-    def get_response(self, timeout_ms=AT_COMMAND_TIMEOUT_MS):
+    def get_response(self):
         """Reads a response from the modem, reading is done over serial and response can 
         take up 100 milliseconds to be read.
         
-        :param timeout_ms: Time out in milliseconds for the serial read function
         :return: Response read from the modem in string format UTF-8 decoded
         """
         time.sleep(0.1)
