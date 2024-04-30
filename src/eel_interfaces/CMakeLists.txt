@@ -33,6 +33,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "action/Dive.action"
   "action/Navigate.action"
   "srv/ModemStatus.srv"
+  "srv/ModemPing.srv"
 )
 
 ament_package()
