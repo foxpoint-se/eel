@@ -1,7 +1,7 @@
 import time
 
 import rclpy
-from rclpy.action import ActionServer, GoalResponse
+from rclpy.action import ActionServer, GoalResponse, CancelResponse
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
@@ -31,6 +31,7 @@ class DiveActionServer(Node):
             "dive",
             execute_callback=self.execute_callback,
             goal_callback=self.goal_callback,
+            cancel_callback=self.cancel_callback,
             callback_group=ReentrantCallbackGroup()
         )
 
@@ -53,6 +54,7 @@ class DiveActionServer(Node):
 
         self.current_depth = 0.0
         self.current_pitch = 0.0
+        self.depth_reached_after = 0.0
         self.valid_depth_offset = 0.15
 
         self.new_sensor_data = False
@@ -114,44 +116,21 @@ class DiveActionServer(Node):
         
         return GoalResponse.ACCEPT
 
-    def execute_callback(self, goal_handle):
-        self.depth_target = goal_handle.request.wanted_depth
-        self.dive_time = goal_handle.request.dive_time
+    def cancel_callback(self, goal_handle):
+        self.logger.info("Goal cancel request sent, setting wanted depth to 0m")
+        self.depth_target = 0.0
         self.angle_pid_controller.update_set_point(self.depth_target)
-        start_ts = time.time()
-        depth_reached_after = 0.0
 
-        self.logger.info(f"Executing goal, will dive to {self.depth_target}m for {self.dive_time}s")
+        return CancelResponse.ACCEPT
 
-        feedback_msg = Dive.Feedback()
-        result = Dive.Result()
-
-        # Action server will do two things, first dive to a depth for X sec
-        while time.time() - start_ts < self.dive_time:
-            if goal_handle.is_cancel_requested:
-                goal_handle.canceled()
-                self.logger.info(f"Goal cancelled will start to ascend")
-                break
-
-            if depth_reached_after == 0.0 and self.current_depth >= self.depth_target:
-                depth_reached_after = time.time() - start_ts
-
-            # What is triggering PID-recalculations is new IMU readings
-            if self.new_sensor_data:
-                self.compute_and_send_rudder_value()
-                self.new_sensor_data = False
-
-                feedback_msg.current_depth = self.current_depth
-                feedback_msg.time_left = self.dive_time - (time.time() - start_ts)
-                feedback_msg.depth_reached_after = depth_reached_after
-                feedback_msg.pid_angle_output = self.angle_pid_output
-                feedback_msg.pid_rudder_output = self.rudder_pid_output
-                goal_handle.publish_feedback(feedback_msg)
+    def descend(self, goal_handle, start_ts):
+        self.logger.info(f"Descending from depth {self.current_depth}")
 
         self.depth_target = 0.0
         self.angle_pid_controller.update_set_point(self.depth_target)
         min_offset = self.depth_target - self.valid_depth_offset
         max_offset = self.depth_target + self.valid_depth_offset
+        feedback_msg = Dive.Feedback()
 
         # Secondly once time has passed, go back to surface
         while not (min(min_offset, max_offset) < self.current_depth < max(min_offset, max_offset)):
@@ -162,11 +141,51 @@ class DiveActionServer(Node):
 
                 feedback_msg.current_depth = self.current_depth
                 feedback_msg.time_left = self.dive_time - (time.time() - start_ts)
-                feedback_msg.pid_angle_output = self.angle_pid_output
-                feedback_msg.pid_rudder_output = self.rudder_pid_output
+                feedback_msg.depth_reached_after = self.depth_reached_after
+                goal_handle.publish_feedback(feedback_msg)
+        
+        self.send_rudder_msg(0.0)
+
+    def execute_callback(self, goal_handle):
+        self.depth_target = goal_handle.request.wanted_depth
+        self.dive_time = goal_handle.request.dive_time
+        self.angle_pid_controller.update_set_point(self.depth_target)
+        start_ts = time.time()
+        self.depth_reached_after = 0.0
+
+        self.logger.info(f"Executing goal, will dive to {self.depth_target}m for {self.dive_time}s")
+
+        feedback_msg = Dive.Feedback()
+        result = Dive.Result()
+
+        # Action server will do two things, first dive to a depth for X sec
+        while time.time() - start_ts < self.dive_time:
+            if goal_handle.is_cancel_requested:
+                goal_handle.canceled()
+                self.logger.info(f"Goal cancelled will start to descened")
+                self.descend(goal_handle, start_ts)
+
+                result.final_depth = self.current_depth
+                result.action_time = time.time() - start_ts
+                
+                return result
+
+            if self.depth_reached_after == 0.0 and self.current_depth >= self.depth_target:
+                self.depth_reached_after = time.time() - start_ts
+
+            # What is triggering PID-recalculations is new IMU readings
+            if self.new_sensor_data:
+                self.compute_and_send_rudder_value()
+                self.new_sensor_data = False
+
+                feedback_msg.current_depth = self.current_depth
+                feedback_msg.time_left = self.dive_time - (time.time() - start_ts)
+                feedback_msg.depth_reached_after = self.depth_reached_after
                 goal_handle.publish_feedback(feedback_msg)
 
-        self.send_rudder_msg(0.0)
+        self.logger.info(f"{self.dive_time}s has passed, dive finished.")
+
+        self.descend(goal_handle, start_ts)
         goal_handle.succeed()
         
         result.final_depth = self.current_depth
