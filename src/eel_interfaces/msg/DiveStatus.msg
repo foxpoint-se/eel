@@ -1,0 +1,3 @@
+float32 current_depth
+float32 time_left
+float32 depth_reached_after

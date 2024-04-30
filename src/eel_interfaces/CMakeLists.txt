@@ -30,9 +30,12 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/PidDepthCmd.msg"
   "msg/PidPitchCmd.msg"
   "msg/NavigationMission.msg"
+  "msg/DiveStatus.msg"
   "action/Dive.action"
   "action/Navigate.action"
   "srv/ModemStatus.srv"
+  "srv/CancelDive.srv"
+  "srv/StartDive.srv"
 )
 
 ament_package()
