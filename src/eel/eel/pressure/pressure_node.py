@@ -37,16 +37,6 @@ def get_pressure_sensor(should_simulate: bool, parent_node: Node) -> PressureSou
         return PressureSensor(parent_node=parent_node)
 
 
-def validate_depth(current_depth, last_depth_reading):
-    if last_depth_reading is None:
-        return current_depth
-
-    if abs(current_depth - last_depth_reading) < DEPTH_MOVEMENT_TOLERANCE:
-        return current_depth
-
-    return last_depth_reading
-
-
 # example usage: ros2 run eel pressure
 class PressureNode(Node):
     def __init__(self):
@@ -76,33 +66,26 @@ class PressureNode(Node):
         self.current_pitch = msg.pitch
 
     def publish_status(self):
-        try:
-            depth_reading = self.sensor.get_current_depth()
+        depth_reading = self.sensor.get_current_depth()
    
-            if depth_reading:
-                current_depth = calculate_center_depth(
-                    depth_reading, self.current_pitch
-                )
-                #validated_depth = validate_depth(current_depth, self.last_depth_reading)
+        if depth_reading:
+            current_depth = calculate_center_depth(
+                depth_reading, self.current_pitch
+            )
 
-                now = time()
+            now = time()
 
-                depth_velocity = get_depth_velocity(
-                    current_depth, self.last_depth_reading, now, self.last_depth_at
-                ) 
+            depth_velocity = get_depth_velocity(
+                current_depth, self.last_depth_reading, now, self.last_depth_at
+            ) 
 
-                msg = PressureStatus()
-                msg.depth = current_depth
-                msg.depth_velocity = depth_velocity
-                # if self.should_simulate:
-                #     msg.depth = current_depth
-                # else:
-                #     msg.depth = calculate_center_depth_USE_THIS(current_depth, self.current_pitch)
-                self.last_depth_reading = current_depth
-                self.last_depth_at = now
-                self.publisher.publish(msg)
-        except (OSError, IOError) as err:
-            self.get_logger().error(str(err))
+            msg = PressureStatus()
+            msg.depth = current_depth
+            msg.depth_velocity = depth_velocity
+
+            self.last_depth_reading = current_depth
+            self.last_depth_at = now
+            self.publisher.publish(msg)
 
 
 def main(args=None):
