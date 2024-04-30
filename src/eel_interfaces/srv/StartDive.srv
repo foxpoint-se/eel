@@ -1,0 +1,4 @@
+float32 wanted_depth
+float32 dive_time
+---
+bool dive_accepted
