@@ -19,5 +19,6 @@ pyOpenSSL==23.1.1
 adafruit-circuitpython-mcp3xxx==1.4.15
 pytest==7.3.1
 PyYAML==6.0.1 # `make test` complains in some ROS folder for some reason, if this is not present
+requests==2.31.0
 spidev==3.6
 lgpio

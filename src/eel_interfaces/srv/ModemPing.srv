@@ -1,0 +1,3 @@
+---
+int16 status_code
+float32 response_time
