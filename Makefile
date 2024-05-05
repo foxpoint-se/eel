@@ -114,4 +114,8 @@ detect-i2c:		## detect i2c
 test-py:		## run tests specific to eel only
 	source source_me.sh && pytest src/eel/test/eel
 
+# NOTE: can't get colcon test to work with virtual environment??
+# That's why we're only running pytest locally. However, colcon test
+# works in Docker environment, since the packages are installed globally
+# in the container
 test: test-py		## run all tests
