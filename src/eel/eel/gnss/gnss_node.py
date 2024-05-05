@@ -43,8 +43,6 @@ class GNSS(Node):
                 msg.lon = lon
 
                 self.publisher.publish(msg)
-            else:
-                self.get_logger().info("GNSS ignoring zeroes")
 
 
 def main(args=None):
