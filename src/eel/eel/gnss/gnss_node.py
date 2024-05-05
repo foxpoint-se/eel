@@ -37,11 +37,12 @@ class GNSS(Node):
         lat, lon = self.get_current_position()
 
         if isinstance(lat, float) and isinstance(lon, float):
-            msg = GnssStatus()
-            msg.lat = lat
-            msg.lon = lon
+            if abs(lat) > 0.1 and abs(lon) > 0.1:
+                msg = GnssStatus()
+                msg.lat = lat
+                msg.lon = lon
 
-            self.publisher.publish(msg)
+                self.publisher.publish(msg)
 
 
 def main(args=None):

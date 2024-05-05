@@ -20,11 +20,11 @@ TANK_CEILING_VALUE_PARAM = "tank_ceiling_value"
 def generate_launch_description():
     ld = LaunchDescription()
 
-    rudder_pid_control_node = Node(
-        package="eel",
-        executable="depth_control_rudder",
-        name="depth_control_node_rudder",
-    )
+    # rudder_pid_control_node = Node(
+    #     package="eel",
+    #     executable="depth_control_rudder",
+    #     name="depth_control_node_rudder",
+    # )
 
     rudder_node = Node(
         package="eel",
@@ -38,17 +38,17 @@ def generate_launch_description():
     #     name="pressure_node",
     # )
 
-    # gnss_node = Node(
-    #     package="eel",
-    #     executable="gnss",
-    #     name="gnss_node",
-    # )
+    gnss_node = Node(
+        package="eel",
+        executable="gnss",
+        name="gnss_node",
+    )
 
-    # battery_node = Node(
-    #     package="eel",
-    #     executable="battery",
-    #     name="battery_node",
-    # )
+    battery_node = Node(
+        package="eel",
+        executable="battery",
+        name="battery_node",
+    )
 
     imu_node = Node(package="eel", executable="imu", name="imu_node")
 
@@ -86,19 +86,33 @@ def generate_launch_description():
             {MOTOR_PIN_PARAM: 24},
             {DIRECTION_PIN_PARAM: 25},
             {DISTANCE_SENSOR_CHANNEL_PARAM: 1},
-            {TANK_FLOOR_VALUE_PARAM: 0.34},
+            {TANK_FLOOR_VALUE_PARAM: 0.325},
             {TANK_CEILING_VALUE_PARAM: 0.005},
         ],
     )
 
+    navigation_node = Node(
+        package="eel",
+        executable="navigate",
+        name="navigate",
+    )
+
+    navigation_client_node = Node(
+        package="eel",
+        executable="navigate_client",
+        name="navigate_client",
+    )
+
     # ld.add_action(pressure_node)
     ld.add_action(rudder_node)
-    ld.add_action(rudder_pid_control_node)
+    # ld.add_action(rudder_pid_control_node)
     ld.add_action(imu_node)
     ld.add_action(motor_node)
-    # ld.add_action(gnss_node)
-    # ld.add_action(battery_node)
+    ld.add_action(gnss_node)
+    ld.add_action(battery_node)
     ld.add_action(front_tank_node)
     ld.add_action(rear_tank_node)
+    ld.add_action(navigation_node)
+    ld.add_action(navigation_client_node)
 
     return ld
