@@ -1,5 +1,8 @@
 import pynmea2
+from rclpy.logging import get_logger
 from ..utils.serial_helpers import SerialReaderWriter
+
+logger = get_logger(__name__)
 
 
 class GnssSensor:
@@ -14,10 +17,13 @@ class GnssSensor:
     def handle_message(self, message):
         # TODO: remove this comment if GGA seems to work instead of GPRMC
         if "GGA" in message:
-            parsed = pynmea2.parse(message)
-            lat = parsed.latitude
-            lon = parsed.longitude
-            self.update_current_position(lat, lon)
+            try:
+                parsed = pynmea2.parse(message)
+                lat = parsed.latitude
+                lon = parsed.longitude
+                self.update_current_position(lat, lon)
+            except:
+                logger.info(f"could not parse gnss {message=}")
 
     def update_current_position(self, lat, lon):
         self.current_lat = lat
