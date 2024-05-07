@@ -10,8 +10,10 @@ class GNSS(Node):
     def __init__(self):
         super().__init__("gnss_node")
 
-        # hertz (updates per second)
-        self.update_frequency = 5
+        # The gnss sensor delivers new positions every second.
+        # To not get sampling errors, one should sample at least twice the frequency
+        # of the "real world" values. Two hertz is therefore good enough in this case.
+        self.update_frequency_hz = 2
 
         self.publisher = self.create_publisher(GnssStatus, GNSS_STATUS, 10)
         self.declare_parameter(SIMULATE_PARAM, False)
@@ -28,7 +30,7 @@ class GNSS(Node):
             simulator = GnssSimulator(self)
             self.get_current_position = simulator.get_current_position
 
-        self.poller = self.create_timer(1.0 / self.update_frequency, self.publish)
+        self.poller = self.create_timer(1.0 / self.update_frequency_hz, self.publish)
         self.get_logger().info(
             "{}GNSS node started.".format("SIMULATE " if self.should_simulate else "")
         )
