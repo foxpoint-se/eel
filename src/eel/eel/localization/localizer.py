@@ -28,6 +28,9 @@ class Localizer:
     def update_known_position(self, new_position: LatLon) -> None:
         self._current_position = new_position
 
+    def get_total_meters_traveled(self) -> float:
+        return self._total_meters_traveled
+
     def get_calculated_position(
         self, current_time_sec: float = time.time()
     ) -> Optional[LatLon]:

@@ -45,7 +45,7 @@ def test__when_speed_zero__should_not_travel_any_distance() -> None:
     instance_to_test = Localizer()
     instance_to_test.update_speed_mps(0.0)
     instance_to_test.get_calculated_position(10.0)
-    assert instance_to_test._total_meters_traveled == 0.0
+    assert instance_to_test.get_total_meters_traveled() == 0.0
 
 
 def test__when_speed_1_mps__should_travel_1_m_after_1_second() -> None:
@@ -53,7 +53,7 @@ def test__when_speed_1_mps__should_travel_1_m_after_1_second() -> None:
     instance_to_test.update_known_position({"lat": 0, "lon": 0})
     instance_to_test.update_speed_mps(1.0)
     instance_to_test.get_calculated_position(1.0)
-    assert instance_to_test._total_meters_traveled == 1.0
+    assert instance_to_test.get_total_meters_traveled() == 1.0
 
 
 def test__when_speed_1_mps_and_heading_zero__should_keep_same_lon() -> None:
@@ -127,7 +127,24 @@ def test__when_one_known_and_sequence_of_moves__should_move_as_specified() -> No
     instance_to_test.update_heading(180)
     actual = instance_to_test.get_calculated_position(current_time_sec=current_time)
 
-    assert instance_to_test._total_meters_traveled == 60
+    assert instance_to_test.get_total_meters_traveled() == 60
 
     assert actual and math.isclose(a=actual["lat"], b=-0.000271311, rel_tol=0.00001)
     assert math.isclose(a=actual["lon"], b=8.98315284e-05, rel_tol=0.00001)
+
+
+def test__when_moving_from_two_very_distant_knowns__distance_traveled_should_not_be_huge() -> (
+    None
+):
+    instance_to_test = Localizer(start_time_sec=0)
+    instance_to_test.update_known_position({"lat": 0, "lon": 0})
+    instance_to_test.update_speed_mps(1.0)
+    instance_to_test.update_heading(0)
+    instance_to_test.get_calculated_position(10)
+
+    # known position is very far from previous
+    instance_to_test.update_known_position({"lat": 20, "lon": 20})
+    instance_to_test.get_calculated_position(20)
+
+    actual = instance_to_test.get_total_meters_traveled()
+    assert actual == 20
