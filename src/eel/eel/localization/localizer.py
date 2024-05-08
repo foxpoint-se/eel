@@ -32,7 +32,8 @@ class Localizer:
         return self._total_meters_traveled
 
     def get_calculated_position(
-        self, current_time_sec: float = time.time()
+        self,
+        current_time_sec: float,
     ) -> Optional[LatLon]:
         if self._current_position:
 

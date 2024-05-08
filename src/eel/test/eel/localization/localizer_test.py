@@ -5,7 +5,7 @@ from eel.localization.localizer import Localizer, LatLon
 def test__when_instantiated__should_not_have_a_position() -> None:
     instance_to_test = Localizer()
 
-    assert instance_to_test.get_calculated_position() is None
+    assert instance_to_test.get_calculated_position(0) is None
 
 
 def test__when_instantiated__should_have_speed_zero() -> None:
@@ -36,7 +36,7 @@ def test__when_speed_zero__should_not_change_position() -> None:
     instance_to_test = Localizer()
     instance_to_test.update_speed_mps(0.0)
     instance_to_test.update_known_position({"lat": 0, "lon": 0})
-    actual = instance_to_test.get_calculated_position()
+    actual = instance_to_test.get_calculated_position(0)
     assert actual and actual["lat"] == 0.0
     assert actual["lon"] == 0.0
 
