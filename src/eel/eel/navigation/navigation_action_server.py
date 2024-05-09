@@ -31,7 +31,7 @@ TARGET_DISTANCE_LIMIT = 2500
 class NavigationActionServer(Node):
 
     def __init__(self):
-        super().__init__("navigation_action_server")
+        super().__init__("navigation_action_server", parameter_overrides=[])
         self.logger = self.get_logger()
         self._goal_queue = collections.deque()
         self._goal_queue_lock = threading.Lock()
