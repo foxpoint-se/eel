@@ -6,10 +6,11 @@ from std_msgs.msg import Float32
 import time
 from eel_interfaces.msg import GnssStatus, ImuStatus
 from ..utils.topics import GNSS_STATUS, MOTOR_CMD, IMU_STATUS, LOCALIZATION_TOPIC
+from ..utils.sim import LINEAR_VELOCITY
 
 
-FORWARD_MAX_SPEED = 1.0
-REVERSE_MAX_SPEED = 0.2
+FORWARD_MAX_SPEED = LINEAR_VELOCITY
+REVERSE_MAX_SPEED = 0.2 * FORWARD_MAX_SPEED
 
 
 def calculate_speed_from_motor_mps(motor_speed: float) -> float:
