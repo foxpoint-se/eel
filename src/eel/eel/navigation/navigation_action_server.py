@@ -16,7 +16,7 @@ from ..utils.topics import (
     RUDDER_X_CMD,
     MOTOR_CMD,
     IMU_STATUS,
-    GNSS_STATUS
+    LOCALIZATION_STATUS,
 )
 
 from eel_interfaces.action import Navigate
@@ -48,8 +48,8 @@ class NavigationActionServer(Node):
             callback_group=ReentrantCallbackGroup()
         )
 
-        self.gnss_subscription = self.create_subscription(
-            GnssStatus, GNSS_STATUS, self.handle_gnss_update, 10
+        self.position_subscription = self.create_subscription(
+            GnssStatus, LOCALIZATION_STATUS, self.handle_gnss_update, 10
         )
         self.imu_subscription = self.create_subscription(
             ImuStatus, IMU_STATUS, self.handle_imu_update, 10
