@@ -8,7 +8,7 @@ from ..utils.topics import GNSS_STATUS
 
 class GNSS(Node):
     def __init__(self):
-        super().__init__("gnss_node")
+        super().__init__("gnss_node", parameter_overrides=[])
 
         # The gnss sensor delivers new positions every second.
         # To not get sampling errors, one should sample at least twice the frequency
