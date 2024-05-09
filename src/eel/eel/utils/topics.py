@@ -10,7 +10,7 @@ MOTOR_CMD = "motor/cmd"
 GNSS_STATUS = "gnss/status"
 
 # Localization
-LOCALIZATION_TOPIC = "localization/status"
+LOCALIZATION_STATUS = "localization/status"
 
 # IMU
 IMU_STATUS = "imu/status"

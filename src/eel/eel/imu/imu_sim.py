@@ -11,6 +11,7 @@ from ..utils.topics import (
     REAR_TANK_STATUS,
 )
 
+
 TERMINAL_PITCH_ANGULAR_VELOCITY_DEGPS = 2.5
 MOMENTUM_TOLERANCE = 0.03
 
@@ -105,9 +106,13 @@ class ImuSimulator:
                 TERMINAL_PITCH_ANGULAR_VELOCITY_DEGPS, momentum_difference
             )
             tank_pitch_delta = calculate_angle_delta(angular_velocity, time_delta)
-        
-        rudder_velocity = get_velocity(
-            TERMINAL_PITCH_ANGULAR_VELOCITY_DEGPS, self.current_rudder_status.y) * self.speed
+
+        rudder_velocity = (
+            get_velocity(
+                TERMINAL_PITCH_ANGULAR_VELOCITY_DEGPS, self.current_rudder_status.y
+            )
+            * self.speed
+        )
         rudder_pitch_delta = calculate_angle_delta(rudder_velocity, time_delta)
 
         new_pitch = self._current_pitch + tank_pitch_delta + rudder_pitch_delta

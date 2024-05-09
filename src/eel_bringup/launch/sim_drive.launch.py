@@ -28,24 +28,23 @@ def generate_launch_description():
         parameters=[{SIMULATE_PARAM: True}],
     )
 
-    gnss_node = Node(
+    localization = Node(
         package="eel",
-        executable="gnss",
-        name="gnss_node",
-        parameters=[{SIMULATE_PARAM: True}]
+        executable="localization",
+        name="localization",
     )
 
     pressure_node = Node(
         package="eel",
         executable="pressure",
         name="pressure_node",
-        parameters=[{SIMULATE_PARAM: True}]
+        parameters=[{SIMULATE_PARAM: True}],
     )
 
     ld.add_action(imu_node)
     ld.add_action(rudder_node)
     ld.add_action(motor_node)
-    ld.add_action(gnss_node)
+    ld.add_action(localization)
     ld.add_action(pressure_node)
 
     return ld
