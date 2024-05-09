@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
-from eel_interfaces.msg import GnssStatus
+from eel_interfaces.msg import Coordinate
 from .gnss_sensor import GnssSensor
 from ..utils.constants import SIMULATE_PARAM
 from ..utils.topics import GNSS_STATUS
@@ -16,7 +16,7 @@ class GNSS(Node):
         # of the "real world" values. Two hertz is therefore good enough in this case.
         self.update_frequency_hz = 2
 
-        self.publisher = self.create_publisher(GnssStatus, GNSS_STATUS, 10)
+        self.publisher = self.create_publisher(Coordinate, GNSS_STATUS, 10)
         self.declare_parameter(SIMULATE_PARAM, False)
         sensor = GnssSensor()
         self.get_current_position = sensor.get_current_position
@@ -29,7 +29,7 @@ class GNSS(Node):
 
         if isinstance(lat, float) and isinstance(lon, float):
             if abs(lat) > 0.1 and abs(lon) > 0.1:
-                msg = GnssStatus()
+                msg = Coordinate()
                 msg.lat = lat
                 msg.lon = lon
 

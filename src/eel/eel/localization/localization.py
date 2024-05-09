@@ -4,7 +4,7 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float32
 import time
-from eel_interfaces.msg import GnssStatus, ImuStatus
+from eel_interfaces.msg import Coordinate, ImuStatus
 from ..utils.topics import GNSS_STATUS, MOTOR_CMD, IMU_STATUS, LOCALIZATION_STATUS
 from ..utils.sim import LINEAR_VELOCITY
 
@@ -26,7 +26,7 @@ class Localization(Node):
         super().__init__("localization", parameter_overrides=[])
         self.update_frequency_hz = 5
         self.gnss_subscription = self.create_subscription(
-            GnssStatus, GNSS_STATUS, self.handle_gnss_msg, 10
+            Coordinate, GNSS_STATUS, self.handle_gnss_msg, 10
         )
         self.motor_subscription = self.create_subscription(
             Float32, MOTOR_CMD, self.handle_motor_msg, 10
@@ -35,13 +35,13 @@ class Localization(Node):
             ImuStatus, IMU_STATUS, self.handle_imu_msg, 10
         )
         self.status_publisher = self.create_publisher(
-            GnssStatus, LOCALIZATION_STATUS, 10
+            Coordinate, LOCALIZATION_STATUS, 10
         )
         self.localizer = Localizer()
         self.loop = self.create_timer(1.0 / self.update_frequency_hz, self.do_work)
         self.get_logger().info("Localization node started")
 
-    def handle_gnss_msg(self, msg: GnssStatus) -> None:
+    def handle_gnss_msg(self, msg: Coordinate) -> None:
         self.current_gnss_status = msg
         self.localizer.update_known_position({"lat": msg.lat, "lon": msg.lon})
 
@@ -58,7 +58,7 @@ class Localization(Node):
             current_time_sec=time.time()
         )
         if calculated_position:
-            msg = GnssStatus()
+            msg = Coordinate()
             msg.lat = calculated_position["lat"]
             msg.lon = calculated_position["lon"]
             self.status_publisher.publish(msg)

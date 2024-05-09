@@ -20,7 +20,7 @@ from ..utils.topics import (
 )
 
 from eel_interfaces.action import Navigate
-from eel_interfaces.msg import GnssStatus, ImuStatus
+from eel_interfaces.msg import Coordinate, ImuStatus
 from std_msgs.msg import Float32
 
 
@@ -49,7 +49,7 @@ class NavigationActionServer(Node):
         )
 
         self.position_subscription = self.create_subscription(
-            GnssStatus, LOCALIZATION_STATUS, self.handle_gnss_update, 10
+            Coordinate, LOCALIZATION_STATUS, self.handle_gnss_update, 10
         )
         self.imu_subscription = self.create_subscription(
             ImuStatus, IMU_STATUS, self.handle_imu_update, 10
