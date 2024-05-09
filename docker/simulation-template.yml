@@ -25,11 +25,6 @@ services:
     command: ros2 run eel pressure --ros-args -p simulate:=true
     network_mode: ${NETWORK_MODE:-bridge}
 
-  gnss:
-    image: foxpoint/eel:foxy
-    command: ros2 run eel gnss --ros-args -p simulate:=true
-    network_mode: ${NETWORK_MODE:-bridge}
-
   front_tank:
     image: foxpoint/eel:foxy
     command: ros2 launch eel_bringup tank.launch.py simulate:=true tank:=front

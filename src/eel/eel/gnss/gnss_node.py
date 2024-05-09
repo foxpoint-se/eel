@@ -2,6 +2,7 @@
 import rclpy
 from rclpy.node import Node
 from eel_interfaces.msg import GnssStatus
+from .gnss_sensor import GnssSensor
 from ..utils.constants import SIMULATE_PARAM
 from ..utils.topics import GNSS_STATUS
 
@@ -17,23 +18,11 @@ class GNSS(Node):
 
         self.publisher = self.create_publisher(GnssStatus, GNSS_STATUS, 10)
         self.declare_parameter(SIMULATE_PARAM, False)
-        self.should_simulate = self.get_parameter(SIMULATE_PARAM).value
-
-        if not self.should_simulate:
-            from .gnss_sensor import GnssSensor
-
-            sensor = GnssSensor()
-            self.get_current_position = sensor.get_current_position
-        else:
-            from .gnss_sim import GnssSimulator
-
-            simulator = GnssSimulator(self)
-            self.get_current_position = simulator.get_current_position
+        sensor = GnssSensor()
+        self.get_current_position = sensor.get_current_position
 
         self.poller = self.create_timer(1.0 / self.update_frequency_hz, self.publish)
-        self.get_logger().info(
-            "{}GNSS node started.".format("SIMULATE " if self.should_simulate else "")
-        )
+        self.get_logger().info("GNSS node started.")
 
     def publish(self):
         lat, lon = self.get_current_position()
