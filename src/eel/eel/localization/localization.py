@@ -5,7 +5,7 @@ from rclpy.node import Node
 from std_msgs.msg import Float32
 import time
 from eel_interfaces.msg import GnssStatus, ImuStatus
-from ..utils.topics import GNSS_STATUS, MOTOR_CMD, IMU_STATUS, LOCALIZATION_TOPIC
+from ..utils.topics import GNSS_STATUS, MOTOR_CMD, IMU_STATUS, LOCALIZATION_STATUS
 from ..utils.sim import LINEAR_VELOCITY
 
 
@@ -35,7 +35,7 @@ class Localization(Node):
             ImuStatus, IMU_STATUS, self.handle_imu_msg, 10
         )
         self.status_publisher = self.create_publisher(
-            GnssStatus, LOCALIZATION_TOPIC, 10
+            GnssStatus, LOCALIZATION_STATUS, 10
         )
         self.localizer = Localizer()
         self.loop = self.create_timer(1.0 / self.update_frequency_hz, self.do_work)
