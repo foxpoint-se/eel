@@ -47,7 +47,6 @@ class Localization(Node):
 
     def handle_motor_msg(self, msg: Float32) -> None:
         current_speed_mps = calculate_speed_from_motor_mps(motor_speed=msg.data)
-        self.get_logger().info(f"motor msg {msg.data=} - {current_speed_mps=}")
         self.localizer.update_speed_mps(current_speed_mps)
 
     def handle_imu_msg(self, msg: ImuStatus) -> None:
