@@ -33,7 +33,7 @@ systemctl enable modem
 systemctl start modem
 
 echo "#!/bin/bash" > $FILE_PATH
-echo "quectel-CM -s $APN" >> $FILE_PATH
+echo "/opt/qmi_files/quectel-CM/quectel-CM -s $APN" >> $FILE_PATH
 
 echo "DONE!"
 cat $FILE_PATH
