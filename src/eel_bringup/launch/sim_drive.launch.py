@@ -41,10 +41,18 @@ def generate_launch_description():
         parameters=[{SIMULATE_PARAM: True}],
     )
 
+    modem_node = Node(
+        package="eel",
+        executable="modem",
+        name="modem_node",
+        parameters=[{SIMULATE_PARAM: True}]
+    )
+
     ld.add_action(imu_node)
     ld.add_action(rudder_node)
     ld.add_action(motor_node)
     ld.add_action(localization)
     ld.add_action(pressure_node)
+    ld.add_action(modem_node)
 
     return ld
