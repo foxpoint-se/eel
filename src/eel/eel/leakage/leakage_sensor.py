@@ -6,13 +6,9 @@ LEAKAGE_LEVEL = GPIO.HIGH
 NO_LEAKAGE_LEVEL = GPIO.LOW
 
 
-# Note on the leakage sensor: Might be that we have several of these sensor, then 
-# we should enable to provide an array with input pins, and this sensor will read all and act as one
-
-
 class LeakageSensor(LeakageSource):
-    def __init__(self, sensor_pin=15) -> None:
-        self.sensor_pin=sensor_pin #TODO Check with Gunnar what is the correct PIN
+    def __init__(self, sensor_pin=17) -> None:
+        self.sensor_pin=sensor_pin
         GPIO.setup(self.sensor_pin, GPIO.IN)
     
     def read_sensor(self):

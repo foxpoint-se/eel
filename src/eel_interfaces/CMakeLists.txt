@@ -29,7 +29,6 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/PidDepthCmd.msg"
   "msg/PidPitchCmd.msg"
   "msg/ModemStatus.msg"
-  "msg/LeakageStatus.msg"
   "msg/NavigationMission.msg"
   "msg/HistoryEvent.msg"
   "msg/HistoryEventList.msg"

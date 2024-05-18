@@ -24,15 +24,13 @@ class Leakage(Node):
 
             self.sensor = LeakageSimulator()
         
-        self.poller = self.create_timer(1.0 / self.update_frequency, self.publish)
+        self.poller = self.create_timer(1.0 / self.update_frequency, self.read_and_publish_sensor_value)
         self.get_logger().info(
             f"{'Simulate' if self.should_simulate else ''} Leakage node started.")
     
-    def publish(self):
-        leakage_value = self.sensor.read_sensor()
-
+    def read_and_publish_sensor_value(self):
         msg = Bool()
-        msg.data = leakage_value
+        msg.data = self.sensor.read_sensor()
         self.publisher.publish(msg)
 
 
