@@ -3,11 +3,11 @@ from time import time
 
 import rclpy
 from rclpy.node import Node
-from eel_interfaces.msg import ImuStatus, GnssStatus, PressureStatus, HistoryEvent, Coordinate, HistoryEventList, ModemStatus
+from eel_interfaces.msg import ImuStatus, Coordinate, PressureStatus, HistoryEvent, Coordinate, HistoryEventList, ModemStatus
 from ..utils.topics import (
     MODEM_STATUS,
     IMU_STATUS,
-    GNSS_STATUS,
+    LOCALIZATION_STATUS,
     PRESSURE_STATUS,
     HISTORY_EVENTS
 )
@@ -32,7 +32,7 @@ class DataLogger(Node):
         self.latitude = 0.0
         self.longitude = 0.0
         self.create_subscription(
-            GnssStatus, GNSS_STATUS, self.handle_gnss_status_msg, 10
+            Coordinate, LOCALIZATION_STATUS, self.handle_gnss_status_msg, 10
         )
 
         self.modem_reg_status = 0.0
