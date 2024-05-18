@@ -42,3 +42,6 @@ HISTORY_EVENTS = "history/event"
 
 # Modem
 MODEM_STATUS = "modem/status"
+
+# Leakage
+LEAKAGE_STATUS = "leakage/status"
