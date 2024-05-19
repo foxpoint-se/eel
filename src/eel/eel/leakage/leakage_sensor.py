@@ -8,9 +8,10 @@ NO_LEAKAGE_LEVEL = GPIO.LOW
 
 class LeakageSensor(LeakageSource):
     def __init__(self, sensor_pin=17) -> None:
-        self.sensor_pin=sensor_pin
+        self.sensor_pin = sensor_pin
+        GPIO.setmode(GPIO.BCM)
         GPIO.setup(self.sensor_pin, GPIO.IN)
-    
+
     def read_sensor(self):
         value = GPIO.input(self.sensor_pin)
         return_value = True if value == LEAKAGE_LEVEL else False
