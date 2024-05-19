@@ -15,12 +15,16 @@ from gpiozero import MCP3208
 channel = 1
 mcp = MCP3208(channel=channel, differential=False, max_voltage=3.3)
 
-# front_floor = 0.66
-# front_ceiling = 0.16
+
+#front_floor = 0.66
+#front_ceiling = 0.16
+
 
 rear_floor = 0.325
 rear_ceiling = 0.005
 
+floor = rear_floor
+ceiling = rear_ceiling
 
 def translate_from_range_to_range(value, from_min, from_max, to_min, to_max):
     # Figure out how 'wide' each range is
@@ -39,6 +43,6 @@ print(f"TEST SCRIPT INIT {channel=} {mcp=}")
 
 while True:
     print(
-        f"Raw value{mcp.value} in percentage {translate_from_range_to_range(mcp.value, rear_floor, rear_ceiling, 0.0, 1.0)}"
+        f"Raw value{mcp.value} in percentage {translate_from_range_to_range(mcp.value, floor, ceiling, 0.0, 1.0)}"
     )
     time.sleep(1)
