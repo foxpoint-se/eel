@@ -7,13 +7,14 @@ import json
 from awscrt import mqtt, io
 from awsiot import mqtt_connection_builder
 from std_msgs.msg import Float32
-from eel_interfaces.msg import ImuStatus
+from eel_interfaces.msg import ImuStatus, BatteryStatus
 
 from ..utils.topics import (
     MOTOR_CMD,
     IMU_STATUS,
     RUDDER_X_CMD,
     RUDDER_Y_CMD,
+    BATTERY_STATUS,
 )
 
 
@@ -36,6 +37,10 @@ class ImuStatusMqtt(TypedDict):
     roll: float
     pitch: float
     pitch_velocity: float
+
+
+class BatteryStatusMqtt(TypedDict):
+    voltage_percent: float
 
 
 class FloatMsg(TypedDict):
@@ -181,6 +186,18 @@ class MqttBridge(Node):
         self.imu_subscription = self.create_subscription(
             ImuStatus, IMU_STATUS, self.imu_status_callback, 10
         )
+        self.battery_subscription = self.create_subscription(
+            BatteryStatus, BATTERY_STATUS, self.battery_status_callback, 10
+        )
+
+    def battery_status_callback(self, msg: BatteryStatus) -> None:
+        if self.mqtt_conn:
+            topic = f"{self.robot_name}/{BATTERY_STATUS}"
+            mqtt_message: BatteryStatusMqtt = {"voltage_percent": msg.voltage_percent}
+            json_payload = json.dumps(mqtt_message)
+            self.mqtt_conn.publish(
+                topic=topic, payload=json_payload, qos=mqtt.QoS.AT_LEAST_ONCE
+            )
 
     def imu_status_callback(self, msg: ImuStatus) -> None:
         if self.mqtt_conn:
