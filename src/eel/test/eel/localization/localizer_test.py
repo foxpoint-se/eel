@@ -148,3 +148,31 @@ def test__when_moving_from_two_very_distant_knowns__distance_traveled_should_not
 
     actual = instance_to_test.get_total_meters_traveled()
     assert actual == 20
+
+
+def positions_are_close(pos_1: LatLon, pos_2: LatLon) -> bool:
+    return math.isclose(
+        a=pos_1["lat"], b=pos_2["lat"], rel_tol=0.00001
+    ) and math.isclose(a=pos_1["lon"], b=pos_2["lon"], rel_tol=0.00001)
+
+
+def test__when_depth_is_three_decimeters__should_discard_gps_position() -> None:
+    instance_to_test = Localizer(start_time_sec=0)
+    instance_to_test.update_known_position({"lat": 0, "lon": 0})
+    instance_to_test.update_speed_mps(1.0)
+    instance_to_test.update_heading(0)
+
+    position_before_dive = instance_to_test.get_calculated_position(0)
+
+    instance_to_test.update_depth(0.3)
+    wonky_position_under_water: LatLon = {"lat": 1, "lon": 1}
+    instance_to_test.update_known_position(wonky_position_under_water)
+    position_after_dive = instance_to_test.get_calculated_position(0)
+
+    assert position_after_dive and not positions_are_close(
+        wonky_position_under_water, position_after_dive
+    ), "positions are too close, which indicates that gps position was used during dive"
+
+    assert position_before_dive and positions_are_close(
+        position_before_dive, position_after_dive
+    ), "position should not have changed, since gps should be discarded during dive"

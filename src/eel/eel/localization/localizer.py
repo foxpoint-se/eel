@@ -18,6 +18,7 @@ class Localizer:
         self._current_speed_mps: float = 0.0
         self._current_heading: float = 0.0
         self._total_meters_traveled: float = 0.0
+        self._current_depth: float = 0.0
 
     def update_speed_mps(self, new_speed_mps: float) -> None:
         self._current_speed_mps = new_speed_mps
@@ -26,10 +27,15 @@ class Localizer:
         self._current_heading = new_heading
 
     def update_known_position(self, new_position: LatLon) -> None:
+        if self._current_depth >= 0.3:
+            return
         self._current_position = new_position
 
     def get_total_meters_traveled(self) -> float:
         return self._total_meters_traveled
+
+    def update_depth(self, new_depth: float) -> None:
+        self._current_depth = new_depth
 
     def get_calculated_position(
         self,
