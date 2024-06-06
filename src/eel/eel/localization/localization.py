@@ -4,8 +4,14 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float32
 import time
-from eel_interfaces.msg import Coordinate, ImuStatus
-from ..utils.topics import GNSS_STATUS, MOTOR_CMD, IMU_STATUS, LOCALIZATION_STATUS
+from eel_interfaces.msg import Coordinate, ImuStatus, PressureStatus
+from ..utils.topics import (
+    GNSS_STATUS,
+    MOTOR_CMD,
+    IMU_STATUS,
+    LOCALIZATION_STATUS,
+    PRESSURE_STATUS,
+)
 from ..utils.sim import LINEAR_VELOCITY
 
 
@@ -34,6 +40,12 @@ class Localization(Node):
         self.imu_subscription = self.create_subscription(
             ImuStatus, IMU_STATUS, self.handle_imu_msg, 10
         )
+        self.pressure_subscription = self.create_subscription(
+            PressureStatus,
+            PRESSURE_STATUS,
+            self.handle_pressure_status_msg,
+            10,
+        )
         self.status_publisher = self.create_publisher(
             Coordinate, LOCALIZATION_STATUS, 10
         )
@@ -51,6 +63,9 @@ class Localization(Node):
 
     def handle_imu_msg(self, msg: ImuStatus) -> None:
         self.localizer.update_heading(msg.heading)
+
+    def handle_pressure_status_msg(self, msg: PressureStatus) -> None:
+        self.localizer.update_depth(msg.depth)
 
     def do_work(self) -> None:
         calculated_position = self.localizer.get_calculated_position(
