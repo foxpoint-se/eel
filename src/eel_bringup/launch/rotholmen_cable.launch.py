@@ -27,7 +27,7 @@ def generate_launch_description():
 
     rudder_node = create_rudder_node()
     gnss_node = create_gnss_node()
-    battery_node = create_battery_node()
+    # battery_node = create_battery_node()
     localization_node = create_localization_node()
     motor_node = create_motor_node()
     front_tank_node = create_tank_node("front_tank")
@@ -39,7 +39,7 @@ def generate_launch_description():
     ld.add_action(motor_node)
     ld.add_action(localization_node)
     ld.add_action(gnss_node)
-    ld.add_action(battery_node)
+    # ld.add_action(battery_node)
     ld.add_action(front_tank_node)
     ld.add_action(rear_tank_node)
     ld.add_action(navigation_node)
