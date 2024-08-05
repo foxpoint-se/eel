@@ -21,3 +21,4 @@ PyYAML==6.0.1 # `make test` complains in some ROS folder for some reason, if thi
 requests==2.31.0
 spidev==3.6
 lgpio
+awsiotsdk

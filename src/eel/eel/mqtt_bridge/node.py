@@ -7,7 +7,7 @@ import json
 from awscrt import mqtt, io
 from awsiot import mqtt_connection_builder
 from std_msgs.msg import Float32
-from eel_interfaces.msg import ImuStatus, BatteryStatus
+from eel_interfaces.msg import ImuStatus, BatteryStatus, Coordinate
 
 from ..utils.topics import (
     MOTOR_CMD,
@@ -15,6 +15,7 @@ from ..utils.topics import (
     RUDDER_X_CMD,
     RUDDER_Y_CMD,
     BATTERY_STATUS,
+    LOCALIZATION_STATUS,
 )
 
 
@@ -45,6 +46,11 @@ class BatteryStatusMqtt(TypedDict):
 
 class FloatMsg(TypedDict):
     data: float
+
+
+class CoordinateMqtt(TypedDict):
+    lat: float
+    lon: float
 
 
 SubscriberCallback = Callable[[str, bytes, bool, mqtt.QoS, bool], None]
@@ -189,6 +195,9 @@ class MqttBridge(Node):
         self.battery_subscription = self.create_subscription(
             BatteryStatus, BATTERY_STATUS, self.battery_status_callback, 10
         )
+        self.localization_subscription = self.create_subscription(
+            Coordinate, LOCALIZATION_STATUS, self.localization_status_callback, 10
+        )
 
     def battery_status_callback(self, msg: BatteryStatus) -> None:
         if self.mqtt_conn:
@@ -214,6 +223,20 @@ class MqttBridge(Node):
                 "sys": msg.sys,
             }
 
+            json_payload = json.dumps(mqtt_message)
+            self.mqtt_conn.publish(
+                topic=topic,
+                payload=json_payload,
+                qos=mqtt.QoS.AT_LEAST_ONCE,
+            )
+    
+    def localization_status_callback(self, msg: Coordinate) -> None:
+        if self.mqtt_conn:
+            topic = f"{self.robot_name}/{LOCALIZATION_STATUS}"
+            mqtt_message: CoordinateMqtt = {
+                "lat": msg.lat,
+                "lon": msg.lon,
+            }
             json_payload = json.dumps(mqtt_message)
             self.mqtt_conn.publish(
                 topic=topic,
