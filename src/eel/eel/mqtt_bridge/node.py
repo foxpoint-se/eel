@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
-from typing import Callable, Optional, TypedDict, cast, Sequence
+from typing import Callable, Mapping, Optional, Tuple, TypedDict, cast, Sequence
 import json
 
 from awscrt import mqtt, io
@@ -137,7 +137,7 @@ class MqttBridge(Node):
         self.get_logger().info("Connected!")
 
     def init_mqtt_subs(self) -> None:
-        topics_and_callbacks: Sequence[tuple[str, SubscriberCallback]] = [
+        topics_and_callbacks: Sequence[Tuple[str, SubscriberCallback]] = [
             (f"{self.robot_name}/{MOTOR_CMD}", self.handle_incoming_motor_cmd),
             (
                 f"{self.robot_name}/{RUDDER_X_CMD}",
@@ -224,7 +224,7 @@ class MqttBridge(Node):
             Coordinate, LOCALIZATION_STATUS, self.localization_status_callback, 10
         )
 
-    def publish_mqtt(self, topic: str, mqtt_message: dict) -> None:
+    def publish_mqtt(self, topic: str, mqtt_message: Mapping) -> None:
         if self.mqtt_conn:
             json_payload = json.dumps(mqtt_message)
             self.mqtt_conn.publish(
