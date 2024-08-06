@@ -6,7 +6,7 @@ import json
 
 from awscrt import mqtt, io
 from awsiot import mqtt_connection_builder
-from std_msgs.msg import Float32
+from std_msgs.msg import Float32, Bool
 from eel_interfaces.msg import ImuStatus, BatteryStatus, Coordinate, NavigationStatus
 
 from ..utils.topics import (
@@ -17,6 +17,7 @@ from ..utils.topics import (
     BATTERY_STATUS,
     LOCALIZATION_STATUS,
     NAVIGATION_STATUS,
+    NAVIGATION_CMD,
 )
 from ..utils.throttle import throttle
 
@@ -48,6 +49,10 @@ class BatteryStatusMqtt(TypedDict):
 
 class FloatMsg(TypedDict):
     data: float
+
+
+class BoolMsg(TypedDict):
+    data: bool
 
 
 class CoordinateMqtt(TypedDict):
@@ -165,6 +170,10 @@ class MqttBridge(Node):
                 f"{self.robot_name}/{RUDDER_Y_CMD}",
                 self.handle_incoming_rudder_vertical,
             ),
+            (
+                f"{self.robot_name}/{NAVIGATION_CMD}",
+                self.handle_incoming_navigation_cmd,
+            ),
         ]
         if self.mqtt_conn:
             for t in topics_and_callbacks:
@@ -191,6 +200,20 @@ class MqttBridge(Node):
         motor_msg = Float32()
         motor_msg.data = motor_value
         self.motor_publisher.publish(motor_msg)
+
+    def handle_incoming_navigation_cmd(
+        self,
+        topic: str,
+        payload: bytes,
+        dup: bool,
+        qos: mqtt.QoS,
+        retain: bool,
+        **kwargs,
+    ) -> None:
+        converted = cast(BoolMsg, json.loads(payload))
+        msg = Bool()
+        msg.data = bool(converted["data"])
+        self.nav_cmd_publisher.publish(msg)
 
     def handle_incoming_rudder_horizontal(
         self,
@@ -230,6 +253,7 @@ class MqttBridge(Node):
         self.rudder_vertical_publisher = self.create_publisher(
             Float32, RUDDER_Y_CMD, 10
         )
+        self.nav_cmd_publisher = self.create_publisher(Bool, NAVIGATION_CMD, 10)
 
     def init_subs(self) -> None:
         self.imu_subscription = self.create_subscription(
