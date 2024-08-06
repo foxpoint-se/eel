@@ -18,6 +18,8 @@ from ..utils.topics import (
     LOCALIZATION_STATUS,
     NAVIGATION_STATUS,
     NAVIGATION_CMD,
+    FRONT_TANK_CMD,
+    REAR_TANK_CMD,
 )
 from ..utils.throttle import throttle
 
@@ -174,6 +176,14 @@ class MqttBridge(Node):
                 f"{self.robot_name}/{NAVIGATION_CMD}",
                 self.handle_incoming_navigation_cmd,
             ),
+            (
+                f"{self.robot_name}/{FRONT_TANK_CMD}",
+                self.handle_incoming_front_tank_cmd,
+            ),
+            (
+                f"{self.robot_name}/{REAR_TANK_CMD}",
+                self.handle_incoming_rear_tank_cmd,
+            ),
         ]
         if self.mqtt_conn:
             for t in topics_and_callbacks:
@@ -185,6 +195,62 @@ class MqttBridge(Node):
                 self.get_logger().info(f"Subscribed to MQTT topic {topic}")
         else:
             self.get_logger().info("Could not subscribe. Connection is undefined.")
+
+    def init_ros_pubs(self) -> None:
+        self.motor_publisher = self.create_publisher(Float32, MOTOR_CMD, 10)
+        self.rudder_horizontal_publisher = self.create_publisher(
+            Float32, RUDDER_X_CMD, 10
+        )
+        self.rudder_vertical_publisher = self.create_publisher(
+            Float32, RUDDER_Y_CMD, 10
+        )
+        self.nav_cmd_publisher = self.create_publisher(Bool, NAVIGATION_CMD, 10)
+        self.front_tank_cmd_publisher = self.create_publisher(
+            Float32, FRONT_TANK_CMD, 10
+        )
+        self.rear_tank_cmd_publisher = self.create_publisher(Float32, REAR_TANK_CMD, 10)
+
+    def init_subs(self) -> None:
+        self.imu_subscription = self.create_subscription(
+            ImuStatus, IMU_STATUS, self.imu_status_callback, 10
+        )
+        self.battery_subscription = self.create_subscription(
+            BatteryStatus, BATTERY_STATUS, self.battery_status_callback, 10
+        )
+        self.localization_subscription = self.create_subscription(
+            Coordinate, LOCALIZATION_STATUS, self.localization_status_callback, 10
+        )
+        self.nav_status_subscription = self.create_subscription(
+            NavigationStatus, NAVIGATION_STATUS, self.nav_status_callback, 10
+        )
+
+    def handle_incoming_front_tank_cmd(
+        self,
+        topic: str,
+        payload: bytes,
+        dup: bool,
+        qos: mqtt.QoS,
+        retain: bool,
+        **kwargs,
+    ) -> None:
+        converted = cast(FloatMsg, json.loads(payload))
+        msg = Float32()
+        msg.data = converted["data"]
+        self.front_tank_cmd_publisher.publish(msg)
+
+    def handle_incoming_rear_tank_cmd(
+        self,
+        topic: str,
+        payload: bytes,
+        dup: bool,
+        qos: mqtt.QoS,
+        retain: bool,
+        **kwargs,
+    ) -> None:
+        converted = cast(FloatMsg, json.loads(payload))
+        msg = Float32()
+        msg.data = converted["data"]
+        self.rear_tank_cmd_publisher.publish(msg)
 
     def handle_incoming_motor_cmd(
         self,
@@ -244,30 +310,6 @@ class MqttBridge(Node):
         msg = Float32()
         msg.data = value
         self.rudder_vertical_publisher.publish(msg)
-
-    def init_ros_pubs(self) -> None:
-        self.motor_publisher = self.create_publisher(Float32, MOTOR_CMD, 10)
-        self.rudder_horizontal_publisher = self.create_publisher(
-            Float32, RUDDER_X_CMD, 10
-        )
-        self.rudder_vertical_publisher = self.create_publisher(
-            Float32, RUDDER_Y_CMD, 10
-        )
-        self.nav_cmd_publisher = self.create_publisher(Bool, NAVIGATION_CMD, 10)
-
-    def init_subs(self) -> None:
-        self.imu_subscription = self.create_subscription(
-            ImuStatus, IMU_STATUS, self.imu_status_callback, 10
-        )
-        self.battery_subscription = self.create_subscription(
-            BatteryStatus, BATTERY_STATUS, self.battery_status_callback, 10
-        )
-        self.localization_subscription = self.create_subscription(
-            Coordinate, LOCALIZATION_STATUS, self.localization_status_callback, 10
-        )
-        self.nav_status_subscription = self.create_subscription(
-            NavigationStatus, NAVIGATION_STATUS, self.nav_status_callback, 10
-        )
 
     def publish_mqtt(self, topic: str, mqtt_message: Mapping) -> None:
         if self.mqtt_conn:
