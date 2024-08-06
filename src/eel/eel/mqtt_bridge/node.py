@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
-from typing import Callable, Mapping, Optional, Tuple, TypedDict, cast, Sequence
+from typing import Callable, List, Mapping, Optional, Tuple, TypedDict, cast, Sequence
 import json
 
 from awscrt import mqtt, io
 from awsiot import mqtt_connection_builder
 from std_msgs.msg import Float32
-from eel_interfaces.msg import ImuStatus, BatteryStatus, Coordinate
+from eel_interfaces.msg import ImuStatus, BatteryStatus, Coordinate, NavigationStatus
 
 from ..utils.topics import (
     MOTOR_CMD,
@@ -16,6 +16,7 @@ from ..utils.topics import (
     RUDDER_Y_CMD,
     BATTERY_STATUS,
     LOCALIZATION_STATUS,
+    NAVIGATION_STATUS,
 )
 from ..utils.throttle import throttle
 
@@ -54,6 +55,13 @@ class CoordinateMqtt(TypedDict):
     lon: float
 
 
+class NavigationStatusMqtt(TypedDict):
+    meters_to_target: float
+    tolerance_in_meters: float
+    next_target: List[CoordinateMqtt]
+    auto_mode_enabled: bool
+
+
 SubscriberCallback = Callable[[str, bytes, bool, mqtt.QoS, bool], None]
 
 
@@ -89,6 +97,15 @@ def transform_coordinate_msg(msg: Coordinate) -> CoordinateMqtt:
     return {
         "lat": msg.lat,
         "lon": msg.lon,
+    }
+
+
+def transform_nav_status(msg: NavigationStatus) -> NavigationStatusMqtt:
+    return {
+        "auto_mode_enabled": msg.auto_mode_enabled,
+        "meters_to_target": msg.meters_to_target,
+        "tolerance_in_meters": msg.tolerance_in_meters,
+        "next_target": [transform_coordinate_msg(t) for t in msg.next_target],
     }
 
 
@@ -224,6 +241,9 @@ class MqttBridge(Node):
         self.localization_subscription = self.create_subscription(
             Coordinate, LOCALIZATION_STATUS, self.localization_status_callback, 10
         )
+        self.nav_status_subscription = self.create_subscription(
+            NavigationStatus, NAVIGATION_STATUS, self.nav_status_callback, 10
+        )
 
     def publish_mqtt(self, topic: str, mqtt_message: Mapping) -> None:
         if self.mqtt_conn:
@@ -248,6 +268,12 @@ class MqttBridge(Node):
     def localization_status_callback(self, msg: Coordinate) -> None:
         topic = f"{self.robot_name}/{LOCALIZATION_STATUS}"
         mqtt_message = transform_coordinate_msg(msg)
+        self.publish_mqtt(topic, mqtt_message)
+
+    @throttle(seconds=1)
+    def nav_status_callback(self, msg: NavigationStatus) -> None:
+        topic = f"{self.robot_name}/{NAVIGATION_STATUS}"
+        mqtt_message = transform_nav_status(msg)
         self.publish_mqtt(topic, mqtt_message)
 
 
