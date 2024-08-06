@@ -17,6 +17,7 @@ from ..utils.topics import (
     BATTERY_STATUS,
     LOCALIZATION_STATUS,
 )
+from ..utils.throttle import throttle
 
 
 class CertData(TypedDict):
@@ -231,16 +232,19 @@ class MqttBridge(Node):
                 topic=topic, payload=json_payload, qos=mqtt.QoS.AT_LEAST_ONCE
             )
 
+    @throttle(seconds=1)
     def battery_status_callback(self, msg: BatteryStatus) -> None:
         topic = f"{self.robot_name}/{BATTERY_STATUS}"
         mqtt_message = transform_battery_msg(msg)
         self.publish_mqtt(topic, mqtt_message)
 
+    @throttle(seconds=1)
     def imu_status_callback(self, msg: ImuStatus) -> None:
         topic = f"{self.robot_name}/{IMU_STATUS}"
         mqtt_message = transform_imu_msg(msg)
         self.publish_mqtt(topic, mqtt_message)
 
+    @throttle(seconds=1)
     def localization_status_callback(self, msg: Coordinate) -> None:
         topic = f"{self.robot_name}/{LOCALIZATION_STATUS}"
         mqtt_message = transform_coordinate_msg(msg)
