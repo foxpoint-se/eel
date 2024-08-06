@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
-from typing import Callable, Optional, TypedDict, cast, Sequence
+from typing import Callable, List, Mapping, Optional, Tuple, TypedDict, cast, Sequence
 import json
 
 from awscrt import mqtt, io
 from awsiot import mqtt_connection_builder
-from std_msgs.msg import Float32
-from eel_interfaces.msg import ImuStatus, BatteryStatus, Coordinate
+from std_msgs.msg import Float32, Bool
+from eel_interfaces.msg import ImuStatus, BatteryStatus, Coordinate, NavigationStatus
 
 from ..utils.topics import (
     MOTOR_CMD,
@@ -16,7 +16,12 @@ from ..utils.topics import (
     RUDDER_Y_CMD,
     BATTERY_STATUS,
     LOCALIZATION_STATUS,
+    NAVIGATION_STATUS,
+    NAVIGATION_CMD,
+    FRONT_TANK_CMD,
+    REAR_TANK_CMD,
 )
+from ..utils.throttle import throttle
 
 
 class CertData(TypedDict):
@@ -48,9 +53,20 @@ class FloatMsg(TypedDict):
     data: float
 
 
+class BoolMsg(TypedDict):
+    data: bool
+
+
 class CoordinateMqtt(TypedDict):
     lat: float
     lon: float
+
+
+class NavigationStatusMqtt(TypedDict):
+    meters_to_target: float
+    tolerance_in_meters: float
+    next_target: List[CoordinateMqtt]
+    auto_mode_enabled: bool
 
 
 SubscriberCallback = Callable[[str, bytes, bool, mqtt.QoS, bool], None]
@@ -64,6 +80,40 @@ def init_one_mqtt_sub(
         qos=mqtt.QoS.AT_LEAST_ONCE,
         callback=callback,
     )
+
+
+def transform_battery_msg(msg: BatteryStatus) -> BatteryStatusMqtt:
+    return {"voltage_percent": msg.voltage_percent}
+
+
+def transform_imu_msg(msg: ImuStatus) -> ImuStatusMqtt:
+    return {
+        "accel": msg.accel,
+        "gyro": msg.gyro,
+        "heading": msg.heading,
+        "is_calibrated": msg.is_calibrated,
+        "mag": msg.mag,
+        "pitch": msg.pitch,
+        "pitch_velocity": msg.pitch_velocity,
+        "roll": msg.roll,
+        "sys": msg.sys,
+    }
+
+
+def transform_coordinate_msg(msg: Coordinate) -> CoordinateMqtt:
+    return {
+        "lat": msg.lat,
+        "lon": msg.lon,
+    }
+
+
+def transform_nav_status(msg: NavigationStatus) -> NavigationStatusMqtt:
+    return {
+        "auto_mode_enabled": msg.auto_mode_enabled,
+        "meters_to_target": msg.meters_to_target,
+        "tolerance_in_meters": msg.tolerance_in_meters,
+        "next_target": [transform_coordinate_msg(t) for t in msg.next_target],
+    }
 
 
 # usage:
@@ -112,7 +162,7 @@ class MqttBridge(Node):
         self.get_logger().info("Connected!")
 
     def init_mqtt_subs(self) -> None:
-        topics_and_callbacks: Sequence[tuple[str, SubscriberCallback]] = [
+        topics_and_callbacks: Sequence[Tuple[str, SubscriberCallback]] = [
             (f"{self.robot_name}/{MOTOR_CMD}", self.handle_incoming_motor_cmd),
             (
                 f"{self.robot_name}/{RUDDER_X_CMD}",
@@ -121,6 +171,18 @@ class MqttBridge(Node):
             (
                 f"{self.robot_name}/{RUDDER_Y_CMD}",
                 self.handle_incoming_rudder_vertical,
+            ),
+            (
+                f"{self.robot_name}/{NAVIGATION_CMD}",
+                self.handle_incoming_navigation_cmd,
+            ),
+            (
+                f"{self.robot_name}/{FRONT_TANK_CMD}",
+                self.handle_incoming_front_tank_cmd,
+            ),
+            (
+                f"{self.robot_name}/{REAR_TANK_CMD}",
+                self.handle_incoming_rear_tank_cmd,
             ),
         ]
         if self.mqtt_conn:
@@ -133,6 +195,62 @@ class MqttBridge(Node):
                 self.get_logger().info(f"Subscribed to MQTT topic {topic}")
         else:
             self.get_logger().info("Could not subscribe. Connection is undefined.")
+
+    def init_ros_pubs(self) -> None:
+        self.motor_publisher = self.create_publisher(Float32, MOTOR_CMD, 10)
+        self.rudder_horizontal_publisher = self.create_publisher(
+            Float32, RUDDER_X_CMD, 10
+        )
+        self.rudder_vertical_publisher = self.create_publisher(
+            Float32, RUDDER_Y_CMD, 10
+        )
+        self.nav_cmd_publisher = self.create_publisher(Bool, NAVIGATION_CMD, 10)
+        self.front_tank_cmd_publisher = self.create_publisher(
+            Float32, FRONT_TANK_CMD, 10
+        )
+        self.rear_tank_cmd_publisher = self.create_publisher(Float32, REAR_TANK_CMD, 10)
+
+    def init_subs(self) -> None:
+        self.imu_subscription = self.create_subscription(
+            ImuStatus, IMU_STATUS, self.imu_status_callback, 10
+        )
+        self.battery_subscription = self.create_subscription(
+            BatteryStatus, BATTERY_STATUS, self.battery_status_callback, 10
+        )
+        self.localization_subscription = self.create_subscription(
+            Coordinate, LOCALIZATION_STATUS, self.localization_status_callback, 10
+        )
+        self.nav_status_subscription = self.create_subscription(
+            NavigationStatus, NAVIGATION_STATUS, self.nav_status_callback, 10
+        )
+
+    def handle_incoming_front_tank_cmd(
+        self,
+        topic: str,
+        payload: bytes,
+        dup: bool,
+        qos: mqtt.QoS,
+        retain: bool,
+        **kwargs,
+    ) -> None:
+        converted = cast(FloatMsg, json.loads(payload))
+        msg = Float32()
+        msg.data = converted["data"]
+        self.front_tank_cmd_publisher.publish(msg)
+
+    def handle_incoming_rear_tank_cmd(
+        self,
+        topic: str,
+        payload: bytes,
+        dup: bool,
+        qos: mqtt.QoS,
+        retain: bool,
+        **kwargs,
+    ) -> None:
+        converted = cast(FloatMsg, json.loads(payload))
+        msg = Float32()
+        msg.data = converted["data"]
+        self.rear_tank_cmd_publisher.publish(msg)
 
     def handle_incoming_motor_cmd(
         self,
@@ -148,6 +266,20 @@ class MqttBridge(Node):
         motor_msg = Float32()
         motor_msg.data = motor_value
         self.motor_publisher.publish(motor_msg)
+
+    def handle_incoming_navigation_cmd(
+        self,
+        topic: str,
+        payload: bytes,
+        dup: bool,
+        qos: mqtt.QoS,
+        retain: bool,
+        **kwargs,
+    ) -> None:
+        converted = cast(BoolMsg, json.loads(payload))
+        msg = Bool()
+        msg.data = bool(converted["data"])
+        self.nav_cmd_publisher.publish(msg)
 
     def handle_incoming_rudder_horizontal(
         self,
@@ -179,70 +311,36 @@ class MqttBridge(Node):
         msg.data = value
         self.rudder_vertical_publisher.publish(msg)
 
-    def init_ros_pubs(self) -> None:
-        self.motor_publisher = self.create_publisher(Float32, MOTOR_CMD, 10)
-        self.rudder_horizontal_publisher = self.create_publisher(
-            Float32, RUDDER_X_CMD, 10
-        )
-        self.rudder_vertical_publisher = self.create_publisher(
-            Float32, RUDDER_Y_CMD, 10
-        )
-
-    def init_subs(self) -> None:
-        self.imu_subscription = self.create_subscription(
-            ImuStatus, IMU_STATUS, self.imu_status_callback, 10
-        )
-        self.battery_subscription = self.create_subscription(
-            BatteryStatus, BATTERY_STATUS, self.battery_status_callback, 10
-        )
-        self.localization_subscription = self.create_subscription(
-            Coordinate, LOCALIZATION_STATUS, self.localization_status_callback, 10
-        )
-
-    def battery_status_callback(self, msg: BatteryStatus) -> None:
+    def publish_mqtt(self, topic: str, mqtt_message: Mapping) -> None:
         if self.mqtt_conn:
-            topic = f"{self.robot_name}/{BATTERY_STATUS}"
-            mqtt_message: BatteryStatusMqtt = {"voltage_percent": msg.voltage_percent}
             json_payload = json.dumps(mqtt_message)
             self.mqtt_conn.publish(
                 topic=topic, payload=json_payload, qos=mqtt.QoS.AT_LEAST_ONCE
             )
 
-    def imu_status_callback(self, msg: ImuStatus) -> None:
-        if self.mqtt_conn:
-            topic = f"{self.robot_name}/{IMU_STATUS}"
-            mqtt_message: ImuStatusMqtt = {
-                "accel": msg.accel,
-                "gyro": msg.gyro,
-                "heading": msg.heading,
-                "is_calibrated": msg.is_calibrated,
-                "mag": msg.mag,
-                "pitch": msg.pitch,
-                "pitch_velocity": msg.pitch_velocity,
-                "roll": msg.roll,
-                "sys": msg.sys,
-            }
+    @throttle(seconds=1)
+    def battery_status_callback(self, msg: BatteryStatus) -> None:
+        topic = f"{self.robot_name}/{BATTERY_STATUS}"
+        mqtt_message = transform_battery_msg(msg)
+        self.publish_mqtt(topic, mqtt_message)
 
-            json_payload = json.dumps(mqtt_message)
-            self.mqtt_conn.publish(
-                topic=topic,
-                payload=json_payload,
-                qos=mqtt.QoS.AT_LEAST_ONCE,
-            )
-    
+    @throttle(seconds=1)
+    def imu_status_callback(self, msg: ImuStatus) -> None:
+        topic = f"{self.robot_name}/{IMU_STATUS}"
+        mqtt_message = transform_imu_msg(msg)
+        self.publish_mqtt(topic, mqtt_message)
+
+    @throttle(seconds=1)
     def localization_status_callback(self, msg: Coordinate) -> None:
-        if self.mqtt_conn:
-            topic = f"{self.robot_name}/{LOCALIZATION_STATUS}"
-            mqtt_message: CoordinateMqtt = {
-                "lat": msg.lat,
-                "lon": msg.lon,
-            }
-            json_payload = json.dumps(mqtt_message)
-            self.mqtt_conn.publish(
-                topic=topic,
-                payload=json_payload,
-                qos=mqtt.QoS.AT_LEAST_ONCE,
-            )
+        topic = f"{self.robot_name}/{LOCALIZATION_STATUS}"
+        mqtt_message = transform_coordinate_msg(msg)
+        self.publish_mqtt(topic, mqtt_message)
+
+    @throttle(seconds=1)
+    def nav_status_callback(self, msg: NavigationStatus) -> None:
+        topic = f"{self.robot_name}/{NAVIGATION_STATUS}"
+        mqtt_message = transform_nav_status(msg)
+        self.publish_mqtt(topic, mqtt_message)
 
 
 def main(args=None):
