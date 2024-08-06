@@ -66,6 +66,31 @@ def init_one_mqtt_sub(
     )
 
 
+def transform_battery_msg(msg: BatteryStatus) -> BatteryStatusMqtt:
+    return {"voltage_percent": msg.voltage_percent}
+
+
+def transform_imu_msg(msg: ImuStatus) -> ImuStatusMqtt:
+    return {
+        "accel": msg.accel,
+        "gyro": msg.gyro,
+        "heading": msg.heading,
+        "is_calibrated": msg.is_calibrated,
+        "mag": msg.mag,
+        "pitch": msg.pitch,
+        "pitch_velocity": msg.pitch_velocity,
+        "roll": msg.roll,
+        "sys": msg.sys,
+    }
+
+
+def transform_coordinate_msg(msg: Coordinate) -> CoordinateMqtt:
+    return {
+        "lat": msg.lat,
+        "lon": msg.lon,
+    }
+
+
 # usage:
 # ros2 run eel mqtt_bridge --ros-args -p path_for_config:=/path/to/config.json
 class MqttBridge(Node):
@@ -199,50 +224,27 @@ class MqttBridge(Node):
             Coordinate, LOCALIZATION_STATUS, self.localization_status_callback, 10
         )
 
-    def battery_status_callback(self, msg: BatteryStatus) -> None:
+    def publish_mqtt(self, topic: str, mqtt_message: dict) -> None:
         if self.mqtt_conn:
-            topic = f"{self.robot_name}/{BATTERY_STATUS}"
-            mqtt_message: BatteryStatusMqtt = {"voltage_percent": msg.voltage_percent}
             json_payload = json.dumps(mqtt_message)
             self.mqtt_conn.publish(
                 topic=topic, payload=json_payload, qos=mqtt.QoS.AT_LEAST_ONCE
             )
 
-    def imu_status_callback(self, msg: ImuStatus) -> None:
-        if self.mqtt_conn:
-            topic = f"{self.robot_name}/{IMU_STATUS}"
-            mqtt_message: ImuStatusMqtt = {
-                "accel": msg.accel,
-                "gyro": msg.gyro,
-                "heading": msg.heading,
-                "is_calibrated": msg.is_calibrated,
-                "mag": msg.mag,
-                "pitch": msg.pitch,
-                "pitch_velocity": msg.pitch_velocity,
-                "roll": msg.roll,
-                "sys": msg.sys,
-            }
+    def battery_status_callback(self, msg: BatteryStatus) -> None:
+        topic = f"{self.robot_name}/{BATTERY_STATUS}"
+        mqtt_message = transform_battery_msg(msg)
+        self.publish_mqtt(topic, mqtt_message)
 
-            json_payload = json.dumps(mqtt_message)
-            self.mqtt_conn.publish(
-                topic=topic,
-                payload=json_payload,
-                qos=mqtt.QoS.AT_LEAST_ONCE,
-            )
-    
+    def imu_status_callback(self, msg: ImuStatus) -> None:
+        topic = f"{self.robot_name}/{IMU_STATUS}"
+        mqtt_message = transform_imu_msg(msg)
+        self.publish_mqtt(topic, mqtt_message)
+
     def localization_status_callback(self, msg: Coordinate) -> None:
-        if self.mqtt_conn:
-            topic = f"{self.robot_name}/{LOCALIZATION_STATUS}"
-            mqtt_message: CoordinateMqtt = {
-                "lat": msg.lat,
-                "lon": msg.lon,
-            }
-            json_payload = json.dumps(mqtt_message)
-            self.mqtt_conn.publish(
-                topic=topic,
-                payload=json_payload,
-                qos=mqtt.QoS.AT_LEAST_ONCE,
-            )
+        topic = f"{self.robot_name}/{LOCALIZATION_STATUS}"
+        mqtt_message = transform_coordinate_msg(msg)
+        self.publish_mqtt(topic, mqtt_message)
 
 
 def main(args=None):
