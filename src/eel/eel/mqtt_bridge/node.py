@@ -14,6 +14,7 @@ from eel_interfaces.msg import (
     NavigationStatus,
     TankStatus,
     PressureStatus,
+    DepthControlCmd,
 )
 
 from ..utils.topics import (
@@ -31,6 +32,7 @@ from ..utils.topics import (
     REAR_TANK_STATUS,
     FRONT_TANK_STATUS,
     PRESSURE_STATUS,
+    DEPTH_CONTROL_CMD,
 )
 from ..utils.throttle import throttle
 
@@ -42,6 +44,13 @@ class CertData(TypedDict):
     privateKeyPath: str
     rootCAPath: str
     clientID: str
+
+
+class DepthControlCmdMqtt(TypedDict):
+    depth_target: float
+    pitch_target: float
+    depth_pid_type: str
+    pitch_pid_type: str
 
 
 class ImuStatusMqtt(TypedDict):
@@ -224,6 +233,10 @@ class MqttBridge(Node):
                 f"{self.robot_name}/{REAR_TANK_CMD}",
                 self.handle_incoming_rear_tank_cmd,
             ),
+            (
+                f"{self.robot_name}/{DEPTH_CONTROL_CMD}",
+                self.handle_incoming_depth_control_cmd,
+            ),
         ]
         if self.mqtt_conn:
             for t in topics_and_callbacks:
@@ -249,6 +262,9 @@ class MqttBridge(Node):
             Float32, FRONT_TANK_CMD, 10
         )
         self.rear_tank_cmd_publisher = self.create_publisher(Float32, REAR_TANK_CMD, 10)
+        self.depth_pitch_publisher = self.create_publisher(
+            DepthControlCmd, DEPTH_CONTROL_CMD, 10
+        )
 
     def init_subs(self) -> None:
         self.imu_subscription = self.create_subscription(
@@ -332,6 +348,23 @@ class MqttBridge(Node):
         msg = Bool()
         msg.data = bool(converted["data"])
         self.nav_cmd_publisher.publish(msg)
+
+    def handle_incoming_depth_control_cmd(
+        self,
+        topic: str,
+        payload: bytes,
+        dup: bool,
+        qos: mqtt.QoS,
+        retain: bool,
+        **kwargs,
+    ) -> None:
+        converted = cast(DepthControlCmdMqtt, json.loads(payload))
+        msg = DepthControlCmd()
+        msg.depth_pid_type = converted["depth_pid_type"]
+        msg.depth_target = converted["depth_target"]
+        msg.pitch_pid_type = converted["pitch_pid_type"]
+        msg.pitch_target = converted["pitch_target"]
+        self.depth_pitch_publisher.publish(msg)
 
     def handle_incoming_rudder_horizontal(
         self,
