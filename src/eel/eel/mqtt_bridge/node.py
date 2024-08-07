@@ -20,6 +20,7 @@ from ..utils.topics import (
     NAVIGATION_CMD,
     FRONT_TANK_CMD,
     REAR_TANK_CMD,
+    LEAKAGE_STATUS,
 )
 from ..utils.throttle import throttle
 
@@ -49,11 +50,11 @@ class BatteryStatusMqtt(TypedDict):
     voltage_percent: float
 
 
-class FloatMsg(TypedDict):
+class FloatMsgMqtt(TypedDict):
     data: float
 
 
-class BoolMsg(TypedDict):
+class BoolMsgMqtt(TypedDict):
     data: bool
 
 
@@ -105,6 +106,10 @@ def transform_coordinate_msg(msg: Coordinate) -> CoordinateMqtt:
         "lat": msg.lat,
         "lon": msg.lon,
     }
+
+
+def transform_bool_msg(msg: Bool) -> BoolMsgMqtt:
+    return {"data": msg.data}
 
 
 def transform_nav_status(msg: NavigationStatus) -> NavigationStatusMqtt:
@@ -223,6 +228,9 @@ class MqttBridge(Node):
         self.nav_status_subscription = self.create_subscription(
             NavigationStatus, NAVIGATION_STATUS, self.nav_status_callback, 10
         )
+        self.leakage_status_subscription = self.create_subscription(
+            Bool, LEAKAGE_STATUS, self.leakage_status_callback, 10
+        )
 
     def handle_incoming_front_tank_cmd(
         self,
@@ -233,7 +241,7 @@ class MqttBridge(Node):
         retain: bool,
         **kwargs,
     ) -> None:
-        converted = cast(FloatMsg, json.loads(payload))
+        converted = cast(FloatMsgMqtt, json.loads(payload))
         msg = Float32()
         msg.data = converted["data"]
         self.front_tank_cmd_publisher.publish(msg)
@@ -247,7 +255,7 @@ class MqttBridge(Node):
         retain: bool,
         **kwargs,
     ) -> None:
-        converted = cast(FloatMsg, json.loads(payload))
+        converted = cast(FloatMsgMqtt, json.loads(payload))
         msg = Float32()
         msg.data = converted["data"]
         self.rear_tank_cmd_publisher.publish(msg)
@@ -261,7 +269,7 @@ class MqttBridge(Node):
         retain: bool,
         **kwargs,
     ) -> None:
-        converted = cast(FloatMsg, json.loads(payload))
+        converted = cast(FloatMsgMqtt, json.loads(payload))
         motor_value = float(converted["data"])
         motor_msg = Float32()
         motor_msg.data = motor_value
@@ -276,7 +284,7 @@ class MqttBridge(Node):
         retain: bool,
         **kwargs,
     ) -> None:
-        converted = cast(BoolMsg, json.loads(payload))
+        converted = cast(BoolMsgMqtt, json.loads(payload))
         msg = Bool()
         msg.data = bool(converted["data"])
         self.nav_cmd_publisher.publish(msg)
@@ -290,7 +298,7 @@ class MqttBridge(Node):
         retain: bool,
         **kwargs,
     ) -> None:
-        converted = cast(FloatMsg, json.loads(payload))
+        converted = cast(FloatMsgMqtt, json.loads(payload))
         value = float(converted["data"])
         msg = Float32()
         msg.data = value
@@ -305,7 +313,7 @@ class MqttBridge(Node):
         retain: bool,
         **kwargs,
     ) -> None:
-        converted = cast(FloatMsg, json.loads(payload))
+        converted = cast(FloatMsgMqtt, json.loads(payload))
         value = float(converted["data"])
         msg = Float32()
         msg.data = value
@@ -340,6 +348,12 @@ class MqttBridge(Node):
     def nav_status_callback(self, msg: NavigationStatus) -> None:
         topic = f"{self.robot_name}/{NAVIGATION_STATUS}"
         mqtt_message = transform_nav_status(msg)
+        self.publish_mqtt(topic, mqtt_message)
+
+    @throttle(seconds=1)
+    def leakage_status_callback(self, msg: Bool) -> None:
+        topic = f"{self.robot_name}/{LEAKAGE_STATUS}"
+        mqtt_message = transform_bool_msg(msg)
         self.publish_mqtt(topic, mqtt_message)
 
 
