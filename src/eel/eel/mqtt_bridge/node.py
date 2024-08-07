@@ -7,7 +7,15 @@ import json
 from awscrt import mqtt, io
 from awsiot import mqtt_connection_builder
 from std_msgs.msg import Float32, Bool
-from eel_interfaces.msg import ImuStatus, BatteryStatus, Coordinate, NavigationStatus
+from eel_interfaces.msg import (
+    ImuStatus,
+    BatteryStatus,
+    Coordinate,
+    NavigationStatus,
+    TankStatus,
+    PressureStatus,
+    DepthControlCmd,
+)
 
 from ..utils.topics import (
     MOTOR_CMD,
@@ -20,6 +28,11 @@ from ..utils.topics import (
     NAVIGATION_CMD,
     FRONT_TANK_CMD,
     REAR_TANK_CMD,
+    LEAKAGE_STATUS,
+    REAR_TANK_STATUS,
+    FRONT_TANK_STATUS,
+    PRESSURE_STATUS,
+    DEPTH_CONTROL_CMD,
 )
 from ..utils.throttle import throttle
 
@@ -31,6 +44,13 @@ class CertData(TypedDict):
     privateKeyPath: str
     rootCAPath: str
     clientID: str
+
+
+class DepthControlCmdMqtt(TypedDict):
+    depth_target: float
+    pitch_target: float
+    depth_pid_type: str
+    pitch_pid_type: str
 
 
 class ImuStatusMqtt(TypedDict):
@@ -49,11 +69,11 @@ class BatteryStatusMqtt(TypedDict):
     voltage_percent: float
 
 
-class FloatMsg(TypedDict):
+class FloatMsgMqtt(TypedDict):
     data: float
 
 
-class BoolMsg(TypedDict):
+class BoolMsgMqtt(TypedDict):
     data: bool
 
 
@@ -67,6 +87,18 @@ class NavigationStatusMqtt(TypedDict):
     tolerance_in_meters: float
     next_target: List[CoordinateMqtt]
     auto_mode_enabled: bool
+
+
+class TankStatusMqtt(TypedDict):
+    current_level: float
+    target_level: List[float]
+    target_status: str
+    is_autocorrecting: bool
+
+
+class PressureStatusMqtt(TypedDict):
+    depth: float
+    depth_velocity: float
 
 
 SubscriberCallback = Callable[[str, bytes, bool, mqtt.QoS, bool], None]
@@ -107,6 +139,10 @@ def transform_coordinate_msg(msg: Coordinate) -> CoordinateMqtt:
     }
 
 
+def transform_bool_msg(msg: Bool) -> BoolMsgMqtt:
+    return {"data": msg.data}
+
+
 def transform_nav_status(msg: NavigationStatus) -> NavigationStatusMqtt:
     return {
         "auto_mode_enabled": msg.auto_mode_enabled,
@@ -114,6 +150,19 @@ def transform_nav_status(msg: NavigationStatus) -> NavigationStatusMqtt:
         "tolerance_in_meters": msg.tolerance_in_meters,
         "next_target": [transform_coordinate_msg(t) for t in msg.next_target],
     }
+
+
+def transform_tank_status_msg(msg: TankStatus) -> TankStatusMqtt:
+    return {
+        "current_level": msg.current_level,
+        "is_autocorrecting": msg.is_autocorrecting,
+        "target_level": [float(t) for t in msg.target_level],
+        "target_status": msg.target_status,
+    }
+
+
+def transform_pressure_status_msg(msg: PressureStatus) -> PressureStatusMqtt:
+    return {"depth": msg.depth, "depth_velocity": msg.depth_velocity}
 
 
 # usage:
@@ -184,6 +233,10 @@ class MqttBridge(Node):
                 f"{self.robot_name}/{REAR_TANK_CMD}",
                 self.handle_incoming_rear_tank_cmd,
             ),
+            (
+                f"{self.robot_name}/{DEPTH_CONTROL_CMD}",
+                self.handle_incoming_depth_control_cmd,
+            ),
         ]
         if self.mqtt_conn:
             for t in topics_and_callbacks:
@@ -209,6 +262,9 @@ class MqttBridge(Node):
             Float32, FRONT_TANK_CMD, 10
         )
         self.rear_tank_cmd_publisher = self.create_publisher(Float32, REAR_TANK_CMD, 10)
+        self.depth_pitch_publisher = self.create_publisher(
+            DepthControlCmd, DEPTH_CONTROL_CMD, 10
+        )
 
     def init_subs(self) -> None:
         self.imu_subscription = self.create_subscription(
@@ -223,6 +279,18 @@ class MqttBridge(Node):
         self.nav_status_subscription = self.create_subscription(
             NavigationStatus, NAVIGATION_STATUS, self.nav_status_callback, 10
         )
+        self.leakage_status_subscription = self.create_subscription(
+            Bool, LEAKAGE_STATUS, self.leakage_status_callback, 10
+        )
+        self.front_tank_subscription = self.create_subscription(
+            TankStatus, FRONT_TANK_STATUS, self.front_tank_status_callback, 10
+        )
+        self.rear_tank_subscription = self.create_subscription(
+            TankStatus, REAR_TANK_STATUS, self.rear_tank_status_callback, 10
+        )
+        self.pressure_status_subscription = self.create_subscription(
+            PressureStatus, PRESSURE_STATUS, self.pressure_status_callback, 10
+        )
 
     def handle_incoming_front_tank_cmd(
         self,
@@ -233,7 +301,7 @@ class MqttBridge(Node):
         retain: bool,
         **kwargs,
     ) -> None:
-        converted = cast(FloatMsg, json.loads(payload))
+        converted = cast(FloatMsgMqtt, json.loads(payload))
         msg = Float32()
         msg.data = converted["data"]
         self.front_tank_cmd_publisher.publish(msg)
@@ -247,7 +315,7 @@ class MqttBridge(Node):
         retain: bool,
         **kwargs,
     ) -> None:
-        converted = cast(FloatMsg, json.loads(payload))
+        converted = cast(FloatMsgMqtt, json.loads(payload))
         msg = Float32()
         msg.data = converted["data"]
         self.rear_tank_cmd_publisher.publish(msg)
@@ -261,7 +329,7 @@ class MqttBridge(Node):
         retain: bool,
         **kwargs,
     ) -> None:
-        converted = cast(FloatMsg, json.loads(payload))
+        converted = cast(FloatMsgMqtt, json.loads(payload))
         motor_value = float(converted["data"])
         motor_msg = Float32()
         motor_msg.data = motor_value
@@ -276,10 +344,27 @@ class MqttBridge(Node):
         retain: bool,
         **kwargs,
     ) -> None:
-        converted = cast(BoolMsg, json.loads(payload))
+        converted = cast(BoolMsgMqtt, json.loads(payload))
         msg = Bool()
         msg.data = bool(converted["data"])
         self.nav_cmd_publisher.publish(msg)
+
+    def handle_incoming_depth_control_cmd(
+        self,
+        topic: str,
+        payload: bytes,
+        dup: bool,
+        qos: mqtt.QoS,
+        retain: bool,
+        **kwargs,
+    ) -> None:
+        converted = cast(DepthControlCmdMqtt, json.loads(payload))
+        msg = DepthControlCmd()
+        msg.depth_pid_type = converted["depth_pid_type"]
+        msg.depth_target = converted["depth_target"]
+        msg.pitch_pid_type = converted["pitch_pid_type"]
+        msg.pitch_target = converted["pitch_target"]
+        self.depth_pitch_publisher.publish(msg)
 
     def handle_incoming_rudder_horizontal(
         self,
@@ -290,7 +375,7 @@ class MqttBridge(Node):
         retain: bool,
         **kwargs,
     ) -> None:
-        converted = cast(FloatMsg, json.loads(payload))
+        converted = cast(FloatMsgMqtt, json.loads(payload))
         value = float(converted["data"])
         msg = Float32()
         msg.data = value
@@ -305,7 +390,7 @@ class MqttBridge(Node):
         retain: bool,
         **kwargs,
     ) -> None:
-        converted = cast(FloatMsg, json.loads(payload))
+        converted = cast(FloatMsgMqtt, json.loads(payload))
         value = float(converted["data"])
         msg = Float32()
         msg.data = value
@@ -340,6 +425,30 @@ class MqttBridge(Node):
     def nav_status_callback(self, msg: NavigationStatus) -> None:
         topic = f"{self.robot_name}/{NAVIGATION_STATUS}"
         mqtt_message = transform_nav_status(msg)
+        self.publish_mqtt(topic, mqtt_message)
+
+    @throttle(seconds=1)
+    def leakage_status_callback(self, msg: Bool) -> None:
+        topic = f"{self.robot_name}/{LEAKAGE_STATUS}"
+        mqtt_message = transform_bool_msg(msg)
+        self.publish_mqtt(topic, mqtt_message)
+
+    @throttle(seconds=1)
+    def front_tank_status_callback(self, msg: TankStatus) -> None:
+        topic = f"{self.robot_name}/{FRONT_TANK_STATUS}"
+        mqtt_message = transform_tank_status_msg(msg)
+        self.publish_mqtt(topic, mqtt_message)
+
+    @throttle(seconds=1)
+    def rear_tank_status_callback(self, msg: TankStatus) -> None:
+        topic = f"{self.robot_name}/{REAR_TANK_STATUS}"
+        mqtt_message = transform_tank_status_msg(msg)
+        self.publish_mqtt(topic, mqtt_message)
+
+    @throttle(seconds=1)
+    def pressure_status_callback(self, msg: PressureStatus) -> None:
+        topic = f"{self.robot_name}/{PRESSURE_STATUS}"
+        mqtt_message = transform_pressure_status_msg(msg)
         self.publish_mqtt(topic, mqtt_message)
 
 
