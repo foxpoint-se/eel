@@ -13,6 +13,7 @@ from eel_interfaces.msg import (
     Coordinate,
     NavigationStatus,
     TankStatus,
+    PressureStatus,
 )
 
 from ..utils.topics import (
@@ -86,6 +87,11 @@ class TankStatusMqtt(TypedDict):
     is_autocorrecting: bool
 
 
+class PressureStatusMqtt(TypedDict):
+    depth: float
+    depth_velocity: float
+
+
 SubscriberCallback = Callable[[str, bytes, bool, mqtt.QoS, bool], None]
 
 
@@ -144,6 +150,10 @@ def transform_tank_status_msg(msg: TankStatus) -> TankStatusMqtt:
         "target_level": [float(t) for t in msg.target_level],
         "target_status": msg.target_status,
     }
+
+
+def transform_pressure_status_msg(msg: PressureStatus) -> PressureStatusMqtt:
+    return {"depth": msg.depth, "depth_velocity": msg.depth_velocity}
 
 
 # usage:
@@ -261,6 +271,9 @@ class MqttBridge(Node):
         )
         self.rear_tank_subscription = self.create_subscription(
             TankStatus, REAR_TANK_STATUS, self.rear_tank_status_callback, 10
+        )
+        self.pressure_status_subscription = self.create_subscription(
+            PressureStatus, PRESSURE_STATUS, self.pressure_status_callback, 10
         )
 
     def handle_incoming_front_tank_cmd(
@@ -397,6 +410,12 @@ class MqttBridge(Node):
     def rear_tank_status_callback(self, msg: TankStatus) -> None:
         topic = f"{self.robot_name}/{REAR_TANK_STATUS}"
         mqtt_message = transform_tank_status_msg(msg)
+        self.publish_mqtt(topic, mqtt_message)
+
+    @throttle(seconds=1)
+    def pressure_status_callback(self, msg: PressureStatus) -> None:
+        topic = f"{self.robot_name}/{PRESSURE_STATUS}"
+        mqtt_message = transform_pressure_status_msg(msg)
         self.publish_mqtt(topic, mqtt_message)
 
 
