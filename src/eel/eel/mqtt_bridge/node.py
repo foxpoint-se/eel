@@ -7,7 +7,13 @@ import json
 from awscrt import mqtt, io
 from awsiot import mqtt_connection_builder
 from std_msgs.msg import Float32, Bool
-from eel_interfaces.msg import ImuStatus, BatteryStatus, Coordinate, NavigationStatus
+from eel_interfaces.msg import (
+    ImuStatus,
+    BatteryStatus,
+    Coordinate,
+    NavigationStatus,
+    TankStatus,
+)
 
 from ..utils.topics import (
     MOTOR_CMD,
@@ -21,6 +27,9 @@ from ..utils.topics import (
     FRONT_TANK_CMD,
     REAR_TANK_CMD,
     LEAKAGE_STATUS,
+    REAR_TANK_STATUS,
+    FRONT_TANK_STATUS,
+    PRESSURE_STATUS,
 )
 from ..utils.throttle import throttle
 
@@ -68,6 +77,13 @@ class NavigationStatusMqtt(TypedDict):
     tolerance_in_meters: float
     next_target: List[CoordinateMqtt]
     auto_mode_enabled: bool
+
+
+class TankStatusMqtt(TypedDict):
+    current_level: float
+    target_level: List[float]
+    target_status: str
+    is_autocorrecting: bool
 
 
 SubscriberCallback = Callable[[str, bytes, bool, mqtt.QoS, bool], None]
@@ -118,6 +134,15 @@ def transform_nav_status(msg: NavigationStatus) -> NavigationStatusMqtt:
         "meters_to_target": msg.meters_to_target,
         "tolerance_in_meters": msg.tolerance_in_meters,
         "next_target": [transform_coordinate_msg(t) for t in msg.next_target],
+    }
+
+
+def transform_tank_status_msg(msg: TankStatus) -> TankStatusMqtt:
+    return {
+        "current_level": msg.current_level,
+        "is_autocorrecting": msg.is_autocorrecting,
+        "target_level": [float(t) for t in msg.target_level],
+        "target_status": msg.target_status,
     }
 
 
@@ -230,6 +255,12 @@ class MqttBridge(Node):
         )
         self.leakage_status_subscription = self.create_subscription(
             Bool, LEAKAGE_STATUS, self.leakage_status_callback, 10
+        )
+        self.front_tank_subscription = self.create_subscription(
+            TankStatus, FRONT_TANK_STATUS, self.front_tank_status_callback, 10
+        )
+        self.rear_tank_subscription = self.create_subscription(
+            TankStatus, REAR_TANK_STATUS, self.rear_tank_status_callback, 10
         )
 
     def handle_incoming_front_tank_cmd(
@@ -354,6 +385,18 @@ class MqttBridge(Node):
     def leakage_status_callback(self, msg: Bool) -> None:
         topic = f"{self.robot_name}/{LEAKAGE_STATUS}"
         mqtt_message = transform_bool_msg(msg)
+        self.publish_mqtt(topic, mqtt_message)
+
+    @throttle(seconds=1)
+    def front_tank_status_callback(self, msg: TankStatus) -> None:
+        topic = f"{self.robot_name}/{FRONT_TANK_STATUS}"
+        mqtt_message = transform_tank_status_msg(msg)
+        self.publish_mqtt(topic, mqtt_message)
+
+    @throttle(seconds=1)
+    def rear_tank_status_callback(self, msg: TankStatus) -> None:
+        topic = f"{self.robot_name}/{REAR_TANK_STATUS}"
+        mqtt_message = transform_tank_status_msg(msg)
         self.publish_mqtt(topic, mqtt_message)
 
 
