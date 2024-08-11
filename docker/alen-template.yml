@@ -35,7 +35,7 @@ services:
 
   gnss:
     image: foxpoint/eel:foxy
-    command: ros2 run eel gnss
+    command: ros2 run eel gnss --ros-args -p serial_port:=/dev/ttyUSB1
     devices:
       - "/dev/ttyUSB1:/dev/ttyUSB1"
     network_mode: ${NETWORK_MODE:-bridge}
