@@ -160,6 +160,13 @@ This will probably not work, since another service is using the same port. Follo
    ```
 1. Reboot
 
+### GNSS serial ports
+
+- On Ålen we use `/dev/ttyUSB1`.
+- On Tvålen we use `/dev/ttyUSB0`.
+
+Can't remember why this is the case.
+
 ## Notes on running `motor` node
 
 `GPIO.setup()` will probably raise a runtime error saying `Not running on an RPi`. Do this to resolve:
