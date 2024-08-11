@@ -18,7 +18,15 @@ class GNSS(Node):
 
         self.publisher = self.create_publisher(Coordinate, GNSS_STATUS, 10)
         self.declare_parameter(SIMULATE_PARAM, False)
-        sensor = GnssSensor()
+
+        # At the time of writing, Ålen uses /dev/ttyUSB1 (which is why it's the default)
+        # and Tvålen uses /dev/ttyUSB0 for some reason.
+        self.declare_parameter("serial_port", "/dev/ttyUSB1")
+        serial_port = (
+            self.get_parameter("serial_port").get_parameter_value().string_value
+        )
+
+        sensor = GnssSensor(serial_port=serial_port)
         self.get_current_position = sensor.get_current_position
 
         self.poller = self.create_timer(1.0 / self.update_frequency_hz, self.publish)

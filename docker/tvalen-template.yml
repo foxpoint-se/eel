@@ -1,0 +1,94 @@
+version: "3.9"
+services:
+  # imu:
+  #   image: foxpoint/eel:foxy
+  #   command: ros2 run eel imu
+  #   devices:
+  #     - "/dev/i2c-1:/dev/i2c-1"
+  #   network_mode: ${NETWORK_MODE:-bridge}
+
+  # motor:
+  #   image: foxpoint/eel:foxy
+  #   command: ros2 run eel motor
+  #   privileged: true
+  #   network_mode: ${NETWORK_MODE:-bridge}
+
+  # rudder:
+  #   image: foxpoint/eel:foxy
+  #   command: ros2 run eel rudder --ros-args -p pigpiod_host:=${PIGPIOD_HOST:-pigpiod}
+  #   privileged: true
+  #   network_mode: ${NETWORK_MODE:-bridge}
+
+  # battery:
+  #   image: foxpoint/eel:foxy
+  #   command: ros2 run eel battery
+  #   devices:
+  #     - "/dev/i2c-1:/dev/i2c-1"
+  #   network_mode: ${NETWORK_MODE:-bridge}
+
+  # pressure:
+  #   image: foxpoint/eel:foxy
+  #   command: ros2 run eel pressure
+  #   devices:
+  #     - "/dev/ttyUSB0:/dev/ttyUSB0"
+  #   network_mode: ${NETWORK_MODE:-bridge}
+
+  gnss:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel gnss --ros-args -p serial_port:=/dev/ttyUSB0
+    devices:
+      - "/dev/ttyUSB0:/dev/ttyUSB0"
+    network_mode: ${NETWORK_MODE:-bridge}
+
+  # front_tank:
+  #   image: foxpoint/eel:foxy
+  #   command: ros2 launch eel_bringup tank.launch.py simulate:=false tank:=front
+  #   devices:
+  #     - "/dev/ttyUSB0:/dev/ttyUSB0"
+  #   privileged: true
+  #   network_mode: ${NETWORK_MODE:-bridge}
+
+  # rear_tank:
+  #   image: foxpoint/eel:foxy
+  #   command: ros2 launch eel_bringup tank.launch.py simulate:=false tank:=rear
+  #   devices:
+  #     - "/dev/ttyUSB0:/dev/ttyUSB0"
+  #   privileged: true
+  #   network_mode: ${NETWORK_MODE:-bridge}
+
+  # depth_control:
+  #   image: foxpoint/eel:foxy
+  #   command: ros2 run eel depth_control_rudder
+  #   network_mode: ${NETWORK_MODE:-bridge}
+
+  # modem:
+  #   image: foxpoint/eel:foxy
+  #   command: ros2 run eel modem
+  #   devices:
+  #     - "/dev/ttyUSB4:/dev/ttyUSB4"
+  #   privileged: true
+  #   network_mode: ${NETWORK_MODE:-bridge}
+
+  # ros_bridge:
+  #   image: foxpoint/eel:foxy
+  #   command: ros2 launch rosbridge_server rosbridge_websocket_launch.xml
+  #   ports:
+  #     - "9090:9090"
+  #   network_mode: ${NETWORK_MODE:-bridge}
+
+  # mqtt_bridge:
+  #   image: foxpoint/eel:foxy
+  #   command: ros2 run eel mqtt_bridge --ros-args -p path_for_config:=/home/ubuntu/fleet/local_certs_and_config/iot_config.json
+  #   volumes:
+  #     - ../../fleet/local_certs_and_config/:/home/ubuntu/fleet/local_certs_and_config/:r
+  #   network_mode: ${NETWORK_MODE:-bridge}
+
+  # navigation_action_server:
+  #   image: foxpoint/eel:foxy
+  #   command: ros2 run eel navigate
+  #   network_mode: ${NETWORK_MODE: -bridge}
+
+  # navigation_action_client:
+  #   image: foxpoint/eel:foxy
+  #   command: ros2 run eel navigate_client
+  #   network_mode: ${NETWORK_MODE: -bridge}

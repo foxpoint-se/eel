@@ -6,12 +6,12 @@ logger = get_logger(__name__)
 
 
 class GnssSensor:
-    def __init__(self):
+    def __init__(self, serial_port: str = "/dev/ttyUSB1"):
         self.current_lat = None
         self.current_lon = None
         # TODO: remove this comment if we don't seem to have problem with timeout=0
         self.serial = SerialReaderWriter(
-            "/dev/ttyUSB1", baudrate=9600, on_message=self.handle_message
+            serial_port, baudrate=9600, on_message=self.handle_message
         )
 
     def handle_message(self, message):
