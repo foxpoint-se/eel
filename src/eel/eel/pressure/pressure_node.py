@@ -26,7 +26,9 @@ def get_depth_velocity(depth, previous_depth, now, previous_depth_at):
     return velocity
 
 
-def get_pressure_sensor(should_simulate: bool, parent_node: Node) -> PressureSource:
+def get_pressure_sensor(
+    should_simulate: bool, parent_node: Node, serial_port: str
+) -> PressureSource:
     if should_simulate:
         from .pressure_sim import PressureSensorSimulator
 
@@ -34,7 +36,7 @@ def get_pressure_sensor(should_simulate: bool, parent_node: Node) -> PressureSou
     else:
         from .pressure_sensor import PressureSensor
 
-        return PressureSensor(parent_node=parent_node)
+        return PressureSensor(parent_node=parent_node, serial_port=serial_port)
 
 
 # example usage: ros2 run eel pressure
@@ -44,7 +46,14 @@ class PressureNode(Node):
         self.declare_parameter(SIMULATE_PARAM, False)
         self.should_simulate = bool(self.get_parameter(SIMULATE_PARAM).value)
 
-        self.sensor = get_pressure_sensor(self.should_simulate, self)
+        # At the time of writing, Ålen uses /dev/ttyUSB0 (which is why it's the default)
+        # and we don't really know which one Tvålen should use.
+        self.declare_parameter("serial_port", "/dev/ttyUSB0")
+        serial_port = (
+            self.get_parameter("serial_port").get_parameter_value().string_value
+        )
+
+        self.sensor = get_pressure_sensor(self.should_simulate, self, serial_port)
 
         self.current_pitch = 0.0
 
@@ -67,17 +76,15 @@ class PressureNode(Node):
 
     def publish_status(self):
         depth_reading = self.sensor.get_current_depth()
-   
+
         if depth_reading:
-            current_depth = calculate_center_depth(
-                depth_reading, self.current_pitch
-            )
+            current_depth = calculate_center_depth(depth_reading, self.current_pitch)
 
             now = time()
 
             depth_velocity = get_depth_velocity(
                 current_depth, self.last_depth_reading, now, self.last_depth_at
-            ) 
+            )
 
             msg = PressureStatus()
             msg.depth = current_depth

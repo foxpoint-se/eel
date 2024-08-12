@@ -1,11 +1,11 @@
 version: "3.9"
 services:
-  # imu:
-  #   image: foxpoint/eel:foxy
-  #   command: ros2 run eel imu
-  #   devices:
-  #     - "/dev/i2c-1:/dev/i2c-1"
-  #   network_mode: ${NETWORK_MODE:-bridge}
+  imu:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel imu
+    devices:
+      - "/dev/i2c-1:/dev/i2c-1"
+    network_mode: ${NETWORK_MODE:-bridge}
 
   # motor:
   #   image: foxpoint/eel:foxy
@@ -26,12 +26,12 @@ services:
   #     - "/dev/i2c-1:/dev/i2c-1"
   #   network_mode: ${NETWORK_MODE:-bridge}
 
-  # pressure:
-  #   image: foxpoint/eel:foxy
-  #   command: ros2 run eel pressure
-  #   devices:
-  #     - "/dev/ttyUSB0:/dev/ttyUSB0"
-  #   network_mode: ${NETWORK_MODE:-bridge}
+  pressure:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel pressure --ros-args -p serial_port:=/dev/ttyUSB1
+    devices:
+      - "/dev/ttyUSB0:/dev/ttyUSB1"
+    network_mode: ${NETWORK_MODE:-bridge}
 
   gnss:
     image: foxpoint/eel:foxy
@@ -40,26 +40,22 @@ services:
       - "/dev/ttyUSB0:/dev/ttyUSB0"
     network_mode: ${NETWORK_MODE:-bridge}
 
-  # front_tank:
-  #   image: foxpoint/eel:foxy
-  #   command: ros2 launch eel_bringup tank.launch.py simulate:=false tank:=front
-  #   devices:
-  #     - "/dev/ttyUSB0:/dev/ttyUSB0"
-  #   privileged: true
-  #   network_mode: ${NETWORK_MODE:-bridge}
+  front_tank:
+    image: foxpoint/eel:foxy
+    command: ros2 launch eel_bringup tank.launch.py simulate:=false tank:=front
+    privileged: true
+    network_mode: ${NETWORK_MODE:-bridge}
 
-  # rear_tank:
-  #   image: foxpoint/eel:foxy
-  #   command: ros2 launch eel_bringup tank.launch.py simulate:=false tank:=rear
-  #   devices:
-  #     - "/dev/ttyUSB0:/dev/ttyUSB0"
-  #   privileged: true
-  #   network_mode: ${NETWORK_MODE:-bridge}
+  rear_tank:
+    image: foxpoint/eel:foxy
+    command: ros2 launch eel_bringup tank.launch.py simulate:=false tank:=rear
+    privileged: true
+    network_mode: ${NETWORK_MODE:-bridge}
 
-  # depth_control:
-  #   image: foxpoint/eel:foxy
-  #   command: ros2 run eel depth_control_rudder
-  #   network_mode: ${NETWORK_MODE:-bridge}
+  depth_control:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel depth_control_rudder
+    network_mode: ${NETWORK_MODE:-bridge}
 
   # modem:
   #   image: foxpoint/eel:foxy
@@ -83,12 +79,17 @@ services:
   #     - ../../fleet/local_certs_and_config/:/home/ubuntu/fleet/local_certs_and_config/:r
   #   network_mode: ${NETWORK_MODE:-bridge}
 
-  # navigation_action_server:
-  #   image: foxpoint/eel:foxy
-  #   command: ros2 run eel navigate
-  #   network_mode: ${NETWORK_MODE: -bridge}
+  navigation_action_server:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel navigate
+    network_mode: ${NETWORK_MODE:-bridge}
 
-  # navigation_action_client:
-  #   image: foxpoint/eel:foxy
-  #   command: ros2 run eel navigate_client
-  #   network_mode: ${NETWORK_MODE: -bridge}
+  navigation_action_client:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel navigate_client
+    network_mode: ${NETWORK_MODE:-bridge}
+
+  localization:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel localization
+    network_mode: ${NETWORK_MODE:-bridge}

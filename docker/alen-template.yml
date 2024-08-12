@@ -28,7 +28,7 @@ services:
 
   pressure:
     image: foxpoint/eel:foxy
-    command: ros2 run eel pressure
+    command: ros2 run eel pressure --ros-args -p serial_port:=/dev/ttyUSB0
     devices:
       - "/dev/ttyUSB0:/dev/ttyUSB0"
     network_mode: ${NETWORK_MODE:-bridge}
@@ -43,16 +43,12 @@ services:
   front_tank:
     image: foxpoint/eel:foxy
     command: ros2 launch eel_bringup tank.launch.py simulate:=false tank:=front
-    devices:
-      - "/dev/ttyUSB0:/dev/ttyUSB0"
     privileged: true
     network_mode: ${NETWORK_MODE:-bridge}
 
   rear_tank:
     image: foxpoint/eel:foxy
     command: ros2 launch eel_bringup tank.launch.py simulate:=false tank:=rear
-    devices:
-      - "/dev/ttyUSB0:/dev/ttyUSB0"
     privileged: true
     network_mode: ${NETWORK_MODE:-bridge}
 
@@ -86,15 +82,20 @@ services:
   navigation_action_server:
     image: foxpoint/eel:foxy
     command: ros2 run eel navigate
-    network_mode: ${NETWORK_MODE: -bridge}
+    network_mode: ${NETWORK_MODE:-bridge}
 
   navigation_action_client:
     image: foxpoint/eel:foxy
     command: ros2 run eel navigate_client
-    network_mode: ${NETWORK_MODE: -bridge}
+    network_mode: ${NETWORK_MODE:-bridge}
 
   leakage:
     image: foxpoint/eel:foxy
     command: ros2 run eel leakage
     network_mode: ${NETWORK_MODE:-bridge}
     privileged: true
+
+  localization:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel localization
+    network_mode: ${NETWORK_MODE:-bridge}

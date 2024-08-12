@@ -21,7 +21,7 @@ from common import (
 # NOTE: Things to start manually:
 # ros2 run eel depth_control_rudder
 # ros2 run eel imu
-# ros2 run eel pressure
+# ros2 run eel pressure --ros-args -p serial_port:=/dev/ttyUSB0
 def generate_launch_description():
     ld = LaunchDescription()
 
