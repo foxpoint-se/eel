@@ -56,10 +56,10 @@ services:
   #   privileged: true
   #   network_mode: ${NETWORK_MODE:-bridge}
 
-  # depth_control:
-  #   image: foxpoint/eel:foxy
-  #   command: ros2 run eel depth_control_rudder
-  #   network_mode: ${NETWORK_MODE:-bridge}
+  depth_control:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel depth_control_rudder
+    network_mode: ${NETWORK_MODE:-bridge}
 
   # modem:
   #   image: foxpoint/eel:foxy
