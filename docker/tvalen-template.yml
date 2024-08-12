@@ -40,21 +40,17 @@ services:
       - "/dev/ttyUSB0:/dev/ttyUSB0"
     network_mode: ${NETWORK_MODE:-bridge}
 
-  # front_tank:
-  #   image: foxpoint/eel:foxy
-  #   command: ros2 launch eel_bringup tank.launch.py simulate:=false tank:=front
-  #   devices:
-  #     - "/dev/ttyUSB0:/dev/ttyUSB0"
-  #   privileged: true
-  #   network_mode: ${NETWORK_MODE:-bridge}
+  front_tank:
+    image: foxpoint/eel:foxy
+    command: ros2 launch eel_bringup tank.launch.py simulate:=false tank:=front
+    privileged: true
+    network_mode: ${NETWORK_MODE:-bridge}
 
-  # rear_tank:
-  #   image: foxpoint/eel:foxy
-  #   command: ros2 launch eel_bringup tank.launch.py simulate:=false tank:=rear
-  #   devices:
-  #     - "/dev/ttyUSB0:/dev/ttyUSB0"
-  #   privileged: true
-  #   network_mode: ${NETWORK_MODE:-bridge}
+  rear_tank:
+    image: foxpoint/eel:foxy
+    command: ros2 launch eel_bringup tank.launch.py simulate:=false tank:=rear
+    privileged: true
+    network_mode: ${NETWORK_MODE:-bridge}
 
   depth_control:
     image: foxpoint/eel:foxy
