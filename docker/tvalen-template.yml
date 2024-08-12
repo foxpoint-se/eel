@@ -92,3 +92,8 @@ services:
   #   image: foxpoint/eel:foxy
   #   command: ros2 run eel navigate_client
   #   network_mode: ${NETWORK_MODE: -bridge}
+
+  localization:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel localization
+    network_mode: ${NETWORK_MODE:-bridge}
