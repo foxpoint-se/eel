@@ -86,12 +86,12 @@ services:
   navigation_action_server:
     image: foxpoint/eel:foxy
     command: ros2 run eel navigate
-    network_mode: ${NETWORK_MODE: -bridge}
+    network_mode: ${NETWORK_MODE:-bridge}
 
   navigation_action_client:
     image: foxpoint/eel:foxy
     command: ros2 run eel navigate_client
-    network_mode: ${NETWORK_MODE: -bridge}
+    network_mode: ${NETWORK_MODE:-bridge}
 
   leakage:
     image: foxpoint/eel:foxy
