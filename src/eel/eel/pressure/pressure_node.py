@@ -76,17 +76,15 @@ class PressureNode(Node):
 
     def publish_status(self):
         depth_reading = self.sensor.get_current_depth()
-   
+
         if depth_reading:
-            current_depth = calculate_center_depth(
-                depth_reading, self.current_pitch
-            )
+            current_depth = calculate_center_depth(depth_reading, self.current_pitch)
 
             now = time()
 
             depth_velocity = get_depth_velocity(
                 current_depth, self.last_depth_reading, now, self.last_depth_at
-            ) 
+            )
 
             msg = PressureStatus()
             msg.depth = current_depth
