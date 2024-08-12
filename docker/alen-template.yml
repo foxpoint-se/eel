@@ -92,3 +92,9 @@ services:
     image: foxpoint/eel:foxy
     command: ros2 run eel navigate_client
     network_mode: ${NETWORK_MODE: -bridge}
+
+  leakage:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel leakage
+    network_mode: ${NETWORK_MODE:-bridge}
+    privileged: true
