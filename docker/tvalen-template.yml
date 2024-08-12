@@ -1,11 +1,11 @@
 version: "3.9"
 services:
-  # imu:
-  #   image: foxpoint/eel:foxy
-  #   command: ros2 run eel imu
-  #   devices:
-  #     - "/dev/i2c-1:/dev/i2c-1"
-  #   network_mode: ${NETWORK_MODE:-bridge}
+  imu:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel imu
+    devices:
+      - "/dev/i2c-1:/dev/i2c-1"
+    network_mode: ${NETWORK_MODE:-bridge}
 
   # motor:
   #   image: foxpoint/eel:foxy
