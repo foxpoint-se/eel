@@ -28,7 +28,7 @@ services:
 
   pressure:
     image: foxpoint/eel:foxy
-    command: ros2 run eel pressure
+    command: ros2 run eel pressure --ros-args -p serial_port:=/dev/ttyUSB0
     devices:
       - "/dev/ttyUSB0:/dev/ttyUSB0"
     network_mode: ${NETWORK_MODE:-bridge}

@@ -9,16 +9,19 @@ FLOAT_SIZE_IN_BYTES = 4
 
 
 class PressureSensor(PressureSource):
-    def __init__(self, parent_node: Node) -> None:
+    def __init__(self, parent_node: Node, serial_port: str) -> None:
         self.logger = parent_node.get_logger()
-        self.serial_connection = serial.Serial("/dev/ttyUSB0", timeout=0)
+
+        self.serial_connection = serial.Serial(serial_port, timeout=0)
 
         self.logger.info(f"{self.serial_connection.in_waiting} bytes in buffer, flushing now.")
 
         self.serial_connection.reset_input_buffer()
         self.serial_connection.reset_output_buffer()
 
-        self.atmosphere_offset = self._get_initial_depth(retries=10)
+        number_of_retries = 20
+
+        self.atmosphere_offset = self._get_initial_depth(retries=number_of_retries)
 
         if not self.atmosphere_offset:
             raise Exception("Could not determine atmosphere offset after 10 retries.")

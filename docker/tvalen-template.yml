@@ -26,12 +26,12 @@ services:
   #     - "/dev/i2c-1:/dev/i2c-1"
   #   network_mode: ${NETWORK_MODE:-bridge}
 
-  # pressure:
-  #   image: foxpoint/eel:foxy
-  #   command: ros2 run eel pressure
-  #   devices:
-  #     - "/dev/ttyUSB0:/dev/ttyUSB0"
-  #   network_mode: ${NETWORK_MODE:-bridge}
+  pressure:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel pressure --ros-args -p serial_port:=/dev/ttyUSB1
+    devices:
+      - "/dev/ttyUSB0:/dev/ttyUSB1"
+    network_mode: ${NETWORK_MODE:-bridge}
 
   gnss:
     image: foxpoint/eel:foxy
