@@ -51,7 +51,7 @@ class Localization(Node):
         )
         self.localizer = Localizer()
         self.loop = self.create_timer(1.0 / self.update_frequency_hz, self.do_work)
-        self.get_logger().info("Localization node started")
+        self.get_logger().info(f"Localization node started. {LINEAR_VELOCITY} m/s")
 
     def handle_gnss_msg(self, msg: Coordinate) -> None:
         self.current_gnss_status = msg
