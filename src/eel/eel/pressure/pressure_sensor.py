@@ -50,9 +50,13 @@ class PressureSensor(PressureSource):
 
     def _get_depth_from_bytes(self, value: bytes) -> Union[float, None]:
         if value:
-            stuff = struct.unpack("f", value)
-            depth = cast(float, stuff[0])
-            return depth
+            try:
+                stuff = struct.unpack("f", value)
+                depth = cast(float, stuff[0])
+                return depth
+            except struct.error as e:
+                self.logger.info(f"Ignoring depth reading because: {str(e)}")
+                return None
         return None
 
     def _get_depth_reading(self) -> Union[float, None]:

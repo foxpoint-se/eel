@@ -1,5 +1,6 @@
 PITCH_CORRECTION = 1.69
 ROLL_CORRECTION = 0.0
+HEADING_CORRECTION = 0
 
 
 def get_corrected_pitch(pitch: float):
@@ -12,7 +13,7 @@ def get_corrected_roll(roll: float):
 
 # the sensor seems to be mounted 180 deg
 def get_corrected_heading(heading: float) -> float:
-    return (heading - 180) % 360
+    return (heading - 180 + HEADING_CORRECTION) % 360
 
 
 class ImuSensor:
