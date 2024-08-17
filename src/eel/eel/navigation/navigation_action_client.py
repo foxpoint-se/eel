@@ -1,4 +1,5 @@
 from collections import deque
+from typing import List, cast
 
 import rclpy
 from action_msgs.msg import GoalStatus
@@ -46,11 +47,16 @@ class NavigationActionClient(Node):
 
         self.logger.info("Navigation client started")
 
-    def set_mission(self, msg):
+    def set_mission(self, msg: NavigationMission) -> None:
         """Takes a list of coordinates and converts them to a list of navigation goals."""
-        for coordinate in msg.coordinate_list:
-            goal_msg = Navigate.Goal()
-            goal_msg.lat = coordinate.lat
+        coordinates = cast(List[Coordinate], msg.coordinate_list)
+
+        if len(coordinates) == 0:
+            self.goals.clear()
+        else:
+            for coordinate in coordinates:
+                goal_msg = Navigate.Goal()
+                goal_msg.lat = coordinate.lat
             goal_msg.lon = coordinate.lon
 
             self.goals.append(goal_msg)
