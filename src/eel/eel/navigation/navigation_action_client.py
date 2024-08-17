@@ -1,4 +1,5 @@
 from collections import deque
+from typing import List, cast
 
 import rclpy
 from action_msgs.msg import GoalStatus
@@ -12,7 +13,7 @@ from ..utils.topics import (
     NAVIGATION_CMD,
     NAVIGATION_STATUS,
     NAVIGATION_LOAD_MISSION,
-    NAVIGATION_SET_TARGET
+    NAVIGATION_SET_TARGET,
 )
 
 TOLERANCE_IN_METERS = 5.0
@@ -37,7 +38,9 @@ class NavigationActionClient(Node):
             Bool, NAVIGATION_CMD, self.handle_nav_cmd, 10
         )
 
-        self.nav_publisher = self.create_publisher(NavigationStatus, NAVIGATION_STATUS, 10)
+        self.nav_publisher = self.create_publisher(
+            NavigationStatus, NAVIGATION_STATUS, 10
+        )
 
         self.goals = deque()
         self.goal_handles = []
@@ -46,25 +49,30 @@ class NavigationActionClient(Node):
 
         self.logger.info("Navigation client started")
 
-    def set_mission(self, msg):
+    def set_mission(self, msg: NavigationMission) -> None:
         """Takes a list of coordinates and converts them to a list of navigation goals."""
-        for coordinate in msg.coordinate_list:
-            goal_msg = Navigate.Goal()
-            goal_msg.lat = coordinate.lat
-            goal_msg.lon = coordinate.lon
+        coordinates = cast(List[Coordinate], msg.coordinate_list)
 
-            self.goals.append(goal_msg)
+        if len(coordinates) == 0:
+            self.goals.clear()
+        else:
+            for coordinate in coordinates:
+                goal_msg = Navigate.Goal()
+                goal_msg.lat = coordinate.lat
+                goal_msg.lon = coordinate.lon
+
+                self.goals.append(goal_msg)
 
         self.logger.info(f"Set mission with {len(self.goals)} coordinates.")
-    
+
     def set_goal(self, msg):
         """Method for inserting a new goal at the front of the goal queue."""
         self.cancel_goals_in_progress()
-        
+
         goal_msg = Navigate.Goal()
         goal_msg.lat = msg.lat
         goal_msg.lon = msg.lon
-        
+
         self.logger.info(f"New target recieved with lat: {msg.lat} and lon {msg.lon}")
         self.goals.appendleft(goal_msg)
         self.start_mission()
@@ -76,10 +84,18 @@ class NavigationActionClient(Node):
         self.logger.info(f"Navigation mode command recieved:  {self.auto_mode}")
 
         if new_auto_mode == True and self.goals_in_progress:
-            self.logger.info("Goals already set and in progress, cancel auto mode and set new goals.")
+            self.logger.info(
+                "Goals already set and in progress, cancel auto mode and set new goals."
+            )
 
-        if (new_auto_mode == True) and (len(self.goals) > 0) and not self.goals_in_progress:
-            self.logger.info(f"Mission started. Mission contains {len(self.goals)} goals.")
+        if (
+            (new_auto_mode == True)
+            and (len(self.goals) > 0)
+            and not self.goals_in_progress
+        ):
+            self.logger.info(
+                f"Mission started. Mission contains {len(self.goals)} goals."
+            )
             self.start_mission()
 
         if (new_auto_mode == False) and self.goals_in_progress:
@@ -104,7 +120,7 @@ class NavigationActionClient(Node):
     def goal_response_callback(self, future):
         """Call back for when client has sent a goal to the server, will be accepted / rejected"""
         goal_handle = future.result()
-        
+
         if not goal_handle.accepted:
             self.logger.warning("Goal server is unable to process goal")
             return
@@ -121,7 +137,9 @@ class NavigationActionClient(Node):
 
         if status == GoalStatus.STATUS_SUCCEEDED:
             result = future.result().result
-            self.logger.info(f"Goal finished successfully, reached coordinate at lat: {result.lat} lon: {result.lon}")
+            self.logger.info(
+                f"Goal finished successfully, reached coordinate at lat: {result.lat} lon: {result.lon}"
+            )
 
             self.goals.popleft()
 
@@ -130,7 +148,7 @@ class NavigationActionClient(Node):
                 self.goals_in_progress = False
             else:
                 self.send_goal(self.goals[0])
-            
+
         elif status == GoalStatus.STATUS_CANCELED:
             self.logger.info(f"Goal was cancelled")
 
@@ -152,13 +170,14 @@ class NavigationActionClient(Node):
         self.logger.debug(f"Waiting for action server...")
         self._action_client.wait_for_server()
 
-        self.logger.info(f"Sending goal request with lat: {goal_msg.lat} and lon: {goal_msg.lon}")
+        self.logger.info(
+            f"Sending goal request with lat: {goal_msg.lat} and lon: {goal_msg.lon}"
+        )
 
         self._send_goal_future = self._action_client.send_goal_async(
-            goal_msg,
-            feedback_callback=self.feedback_callback
+            goal_msg, feedback_callback=self.feedback_callback
         )
-    
+
         self._send_goal_future.add_done_callback(self.goal_response_callback)
 
         return self._send_goal_future
