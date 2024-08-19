@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-import collections
-import threading
+from time import sleep
 from typing import Literal, Union
 
 import rclpy
@@ -19,23 +18,25 @@ from ..utils.topics import (
     MOTOR_CMD,
     IMU_STATUS,
     LOCALIZATION_STATUS,
+    DEPTH_CONTROL_CMD,
 )
 
 from eel_interfaces.action import Navigate
-from eel_interfaces.msg import Coordinate, ImuStatus
+from eel_interfaces.msg import Coordinate, ImuStatus, DepthControlCmd
 from std_msgs.msg import Float32
 
 TOLERANCE_IN_METERS = 5.0
 TARGET_DISTANCE_LIMIT = 2500
+
+UPDATE_FREQUENCY_HZ = 5
+SLEEP_TIME = 1 / UPDATE_FREQUENCY_HZ
 
 
 class NavigationActionServer(Node):
     def __init__(self):
         super().__init__("navigation_action_server", parameter_overrides=[])
         self.logger = self.get_logger()
-        self._goal_queue = collections.deque()
-        self._goal_queue_lock = threading.Lock()
-        self._current_goal = None
+        self.current_goal: Union[ServerGoalHandle, None] = None
 
         self._action_server = ActionServer(
             self,
@@ -49,25 +50,26 @@ class NavigationActionServer(Node):
         )
 
         self.position_subscription = self.create_subscription(
-            Coordinate, LOCALIZATION_STATUS, self.handle_gnss_update, 10
+            Coordinate, LOCALIZATION_STATUS, self.handle_location_update, 10
         )
         self.imu_subscription = self.create_subscription(
             ImuStatus, IMU_STATUS, self.handle_imu_update, 10
         )
         self.motor_publisher = self.create_publisher(Float32, MOTOR_CMD, 10)
         self.rudder_publisher = self.create_publisher(Float32, RUDDER_X_CMD, 10)
+        # self.depth_control_publisher = self.create_publisher(
+        #     DepthControlCmd, DEPTH_CONTROL_CMD, 10
+        # )
 
         self.current_position: Union[Coordinate, None] = None
         self.target_position: Union[Navigate.Goal, None] = None
-        self.new_position = False
         self.distance_to_target = 0.0
         self.bearing_to_target = 0.0
         self.current_heading = 0.0
 
         self.logger.info("Navigation action server started.")
 
-    def handle_gnss_update(self, msg: Coordinate) -> None:
-        self.new_position = True
+    def handle_location_update(self, msg: Coordinate) -> None:
         self.current_position = msg
 
     def handle_imu_update(self, msg: ImuStatus) -> None:
@@ -75,8 +77,16 @@ class NavigationActionServer(Node):
 
     def publish_rudder_cmd(self, rudder_turn: float) -> None:
         rudder_msg = Float32()
-        rudder_msg.data = rudder_turn
+        rudder_msg.data = float(rudder_turn)
         self.rudder_publisher.publish(rudder_msg)
+
+    # def publish_depth_cmd(self, target_depth: float) -> None:
+    #     msg = DepthControlCmd()
+    #     msg.depth_target = target_depth
+    #     msg.depth_pid_type = "not important"
+    #     msg.pitch_pid_type = "not important"
+    #     msg.pitch_target = 0.0
+    #     self.depth_control_publisher.publish(msg)
 
     def publish_motor_cmd(self, motor_value: float) -> None:
         motor_msg = Float32()
@@ -95,18 +105,16 @@ class NavigationActionServer(Node):
 
         return distance_to_target
 
-    def handle_accepted_callback(self, goal_handle: ServerGoalHandle) -> None:
-        with self._goal_queue_lock:
-            if self._current_goal is not None:
-                # Put incoming goal in the queue
-                self._goal_queue.append(goal_handle)
-                self.logger.info(
-                    f"New goal put in queue, queue length: {len(self._goal_queue)}"
-                )
-            else:
-                # Start execution right away
-                self._current_goal = goal_handle
-                self._current_goal.execute()
+    def handle_accepted_callback(
+        self, goal_handle: ServerGoalHandle
+    ) -> Literal[GoalResponse.ACCEPT, GoalResponse.REJECT]:
+        if self.current_goal is None:
+            self.current_goal = goal_handle
+            self.current_goal.execute()
+            return GoalResponse.ACCEPT
+        else:
+            self.logger.info("Goal in progress. Cancel before asking for another goal.")
+            return GoalResponse.REJECT
 
     def goal_callback(
         self, goal_request: Navigate.Goal
@@ -140,12 +148,10 @@ class NavigationActionServer(Node):
     def cancel_callback(
         self, goal_handle: ServerGoalHandle
     ) -> Literal[CancelResponse.ACCEPT, CancelResponse.REJECT]:
-        self.logger.info(f"Goal cancel request sent, turning of motors.")
+        self.logger.info(f"Goal cancel request received, turning off motors.")
+        self.current_goal = None
         self.publish_motor_cmd(0.0)
-
-        with self._goal_queue_lock:
-            self.logger.info("Clearing goal queue")
-            self._goal_queue.clear()
+        self.publish_rudder_cmd(0.0)
 
         return CancelResponse.ACCEPT
 
@@ -156,76 +162,61 @@ class NavigationActionServer(Node):
         if self.current_position is None:
             raise TypeError("No current position. Cannot do calculations.")
 
-        try:
+        self.logger.info(
+            f"Executing new goal, target set to {self.target_position}, distance to target {self.distance_to_target}"
+        )
+
+        feedback_msg = Navigate.Feedback()
+        result = Navigate.Result()
+        result.lat = self.current_position.lat
+        result.lon = self.current_position.lon
+
+        # self.publish_depth_cmd(1.0)
+
+        while goal_handle.is_active:
+            if goal_handle.is_cancel_requested:
+                self.logger.info("Goal canceled")
+                goal_handle.abort()
+                break
+
             self.distance_to_target = self.get_own_distance_to_target(
                 self.current_position, goal_request
             )
 
-            self.logger.info(
-                f"Executing new goal, target set to {self.target_position}, distance to target {self.distance_to_target}"
+            feedback_msg.distance_to_target = self.distance_to_target
+            goal_handle.publish_feedback(feedback_msg)
+
+            if self.distance_to_target <= TOLERANCE_IN_METERS:
+                goal_handle.succeed()
+                self.current_goal = None
+                self.logger.info("Reached goal. Shutting off stuff.")
+                self.publish_motor_cmd(0.0)
+                self.publish_rudder_cmd(0.0)
+
+            self.bearing_to_target = get_relative_bearing_in_degrees(
+                self.current_position.lat,
+                self.current_position.lon,
+                self.target_position.lat,
+                self.target_position.lon,
             )
 
-            feedback_msg = Navigate.Feedback()
-            result = Navigate.Result()
+            next_rudder_turn = get_next_rudder_turn(
+                self.current_heading, self.bearing_to_target
+            )
 
-            # Once target is accepted it is time to start motor
+            # TODO: this can be moved outside of the while loop, as it was.
+            # and the depth can be set outside as well, depending on the nature of the goal.
             self.publish_motor_cmd(1.0)
+            self.publish_rudder_cmd(next_rudder_turn)
 
-            while self.distance_to_target > TOLERANCE_IN_METERS:
+            sleep(SLEEP_TIME)
 
-                # Handle cancel calls
-                if goal_handle.is_cancel_requested:
-                    goal_handle.canceled()
-                    result.lat = self.current_position.lat
-                    result.lon = self.current_position.lon
-                    self.logger.info("Goal canceled")
+        # TODO: remove
+        print("GOAL NO LONGER ACTIVE")
+        self.publish_motor_cmd(0.0)
+        self.publish_rudder_cmd(0.0)
 
-                    return result
-
-                # If we have a new GPS position there are values to compute else wait
-                if self.new_position:
-                    self.distance_to_target = self.get_own_distance_to_target(
-                        self.current_position, goal_request
-                    )
-
-                    feedback_msg.distance_to_target = self.distance_to_target
-                    goal_handle.publish_feedback(feedback_msg)
-
-                    self.bearing_to_target = get_relative_bearing_in_degrees(
-                        self.current_position.lat,
-                        self.current_position.lon,
-                        self.target_position.lat,
-                        self.target_position.lon,
-                    )
-
-                    next_rudder_turn = get_next_rudder_turn(
-                        self.current_heading, self.bearing_to_target
-                    )
-                    self.publish_rudder_cmd(next_rudder_turn)
-
-                    self.new_position = False
-
-            goal_handle.succeed()
-
-            # Once target reached update result and turn off motor
-            result.lat = self.current_position.lat
-            result.lon = self.current_position.lon
-
-            self.publish_motor_cmd(0.0)
-
-            return result
-        finally:
-            with self._goal_queue_lock:
-                try:
-                    self._current_goal = self._goal_queue.popleft()
-                    self.logger.info(
-                        f"Next goal pulled from the queue, queue length: {len(self._goal_queue)}"
-                    )
-                    self._current_goal.execute()
-                except IndexError:
-                    # No goal in queue
-                    self._current_goal = None
-                    self.logger.info(f"Goal queue is empty no new goal set")
+        return result
 
 
 def main(args=None):
