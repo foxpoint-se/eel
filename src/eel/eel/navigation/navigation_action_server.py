@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 import collections
 import threading
+from typing import Literal, Union
 
 import rclpy
 from rclpy.action import ActionServer, CancelResponse, GoalResponse
+from rclpy.action.server import ServerGoalHandle
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
@@ -23,13 +25,11 @@ from eel_interfaces.action import Navigate
 from eel_interfaces.msg import Coordinate, ImuStatus
 from std_msgs.msg import Float32
 
-
 TOLERANCE_IN_METERS = 5.0
 TARGET_DISTANCE_LIMIT = 2500
 
 
 class NavigationActionServer(Node):
-
     def __init__(self):
         super().__init__("navigation_action_server", parameter_overrides=[])
         self.logger = self.get_logger()
@@ -57,8 +57,8 @@ class NavigationActionServer(Node):
         self.motor_publisher = self.create_publisher(Float32, MOTOR_CMD, 10)
         self.rudder_publisher = self.create_publisher(Float32, RUDDER_X_CMD, 10)
 
-        self.current_position = {"lat": None, "lon": None}
-        self.target_position = {"lat": None, "lon": None}
+        self.current_position: Union[Coordinate, None] = None
+        self.target_position: Union[Navigate.Goal, None] = None
         self.new_position = False
         self.distance_to_target = 0.0
         self.bearing_to_target = 0.0
@@ -66,34 +66,36 @@ class NavigationActionServer(Node):
 
         self.logger.info("Navigation action server started.")
 
-    def handle_gnss_update(self, msg):
+    def handle_gnss_update(self, msg: Coordinate) -> None:
         self.new_position = True
-        self.current_position = {"lat": msg.lat, "lon": msg.lon}
+        self.current_position = msg
 
-    def handle_imu_update(self, msg):
+    def handle_imu_update(self, msg: ImuStatus) -> None:
         self.current_heading = msg.heading
 
-    def publish_rudder_cmd(self, rudder_turn):
+    def publish_rudder_cmd(self, rudder_turn: float) -> None:
         rudder_msg = Float32()
-        rudder_msg.data = float(rudder_turn)
+        rudder_msg.data = rudder_turn
         self.rudder_publisher.publish(rudder_msg)
 
-    def publish_motor_cmd(self, motor_value):
+    def publish_motor_cmd(self, motor_value: float) -> None:
         motor_msg = Float32()
         motor_msg.data = motor_value
         self.motor_publisher.publish(motor_msg)
 
-    def get_own_distance_to_target(self):
+    def get_own_distance_to_target(
+        self, current_position: Coordinate, target: Navigate.Goal
+    ) -> float:
         distance_to_target = get_distance_in_meters(
-            self.current_position["lat"],
-            self.current_position["lon"],
-            self.target_position["lat"],
-            self.target_position["lon"],
+            current_position.lat,
+            current_position.lon,
+            target.lat,
+            target.lon,
         )
 
         return distance_to_target
 
-    def handle_accepted_callback(self, goal_handle):
+    def handle_accepted_callback(self, goal_handle: ServerGoalHandle) -> None:
         with self._goal_queue_lock:
             if self._current_goal is not None:
                 # Put incoming goal in the queue
@@ -106,18 +108,16 @@ class NavigationActionServer(Node):
                 self._current_goal = goal_handle
                 self._current_goal.execute()
 
-    def goal_callback(self, goal_request):
-        position_aquired = all(
-            [self.current_position.get("lat"), self.current_position.get("lat")]
-        )
-
-        if not position_aquired:
+    def goal_callback(
+        self, goal_request: Navigate.Goal
+    ) -> Literal[GoalResponse.ACCEPT, GoalResponse.REJECT]:
+        if self.current_position is None:
             self.logger.info("No gps position has been aquired yet, rejecting goal.")
             return GoalResponse.REJECT
 
         distance_to_target = get_distance_in_meters(
-            self.current_position["lat"],
-            self.current_position["lon"],
+            self.current_position.lat,
+            self.current_position.lon,
             goal_request.lat,
             goal_request.lon,
         )
@@ -137,7 +137,9 @@ class NavigationActionServer(Node):
 
             return GoalResponse.REJECT
 
-    def cancel_callback(self, goal_handle):
+    def cancel_callback(
+        self, goal_handle: ServerGoalHandle
+    ) -> Literal[CancelResponse.ACCEPT, CancelResponse.REJECT]:
         self.logger.info(f"Goal cancel request sent, turning of motors.")
         self.publish_motor_cmd(0.0)
 
@@ -147,11 +149,17 @@ class NavigationActionServer(Node):
 
         return CancelResponse.ACCEPT
 
-    def execute_callback(self, goal_handle):
+    def execute_callback(self, goal_handle: ServerGoalHandle) -> Navigate.Result:
+        goal_request: Navigate.Goal = goal_handle.request
+        self.target_position = goal_request
+
+        if self.current_position is None:
+            raise TypeError("No current position. Cannot do calculations.")
+
         try:
-            self.target_position["lat"] = goal_handle.request.lat
-            self.target_position["lon"] = goal_handle.request.lon
-            self.distance_to_target = self.get_own_distance_to_target()
+            self.distance_to_target = self.get_own_distance_to_target(
+                self.current_position, goal_request
+            )
 
             self.logger.info(
                 f"Executing new goal, target set to {self.target_position}, distance to target {self.distance_to_target}"
@@ -168,24 +176,26 @@ class NavigationActionServer(Node):
                 # Handle cancel calls
                 if goal_handle.is_cancel_requested:
                     goal_handle.canceled()
-                    result.lon = self.current_position["lon"]
-                    result.lat = self.current_position["lat"]
+                    result.lat = self.current_position.lat
+                    result.lon = self.current_position.lon
                     self.logger.info("Goal canceled")
 
                     return result
 
                 # If we have a new GPS position there are values to compute else wait
                 if self.new_position:
-                    self.distance_to_target = self.get_own_distance_to_target()
+                    self.distance_to_target = self.get_own_distance_to_target(
+                        self.current_position, goal_request
+                    )
 
                     feedback_msg.distance_to_target = self.distance_to_target
                     goal_handle.publish_feedback(feedback_msg)
 
                     self.bearing_to_target = get_relative_bearing_in_degrees(
-                        self.current_position["lat"],
-                        self.current_position["lon"],
-                        self.target_position["lat"],
-                        self.target_position["lon"],
+                        self.current_position.lat,
+                        self.current_position.lon,
+                        self.target_position.lat,
+                        self.target_position.lon,
                     )
 
                     next_rudder_turn = get_next_rudder_turn(
@@ -198,8 +208,8 @@ class NavigationActionServer(Node):
             goal_handle.succeed()
 
             # Once target reached update result and turn off motor
-            result.lon = self.current_position["lon"]
-            result.lat = self.current_position["lat"]
+            result.lat = self.current_position.lat
+            result.lon = self.current_position.lon
 
             self.publish_motor_cmd(0.0)
 
