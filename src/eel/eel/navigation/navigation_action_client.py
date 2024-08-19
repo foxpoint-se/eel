@@ -22,7 +22,7 @@ TOLERANCE_IN_METERS = 5.0
 class NavigationActionClient(Node):
 
     def __init__(self):
-        super().__init__("navigation_action_client")
+        super().__init__("navigation_action_client", parameter_overrides=[])
         self.logger = self.get_logger()
         self._action_client = ActionClient(self, Navigate, "navigate")
 
