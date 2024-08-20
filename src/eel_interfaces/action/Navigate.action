@@ -1,7 +1,10 @@
-float32 lon
-float32 lat
+uint8 TYPE_WAYPOINT=0
+uint8 TYPE_SURFACE_SYNC=1
+uint8 type
+Coordinate next_coordinate
+float32[] next_coordinate_depth
+float32[] optional_sync_time
 ---
-float32 lon
-float32 lat
+bool success
 ---
 float32 distance_to_target
