@@ -59,7 +59,7 @@ def create_goals(coordinates: Sequence[Coordinate]) -> Deque[Navigate.Goal]:
                 result.append(create_surface_goal(next))
 
     # NOTE: first and last waypoints always get the target depth of 0.0
-    # Should be dynamic, but will do for Rotholmen.
+    # Should be dynamic, but this will do for Rotholmen.
     result[-1].next_coordinate_depth = [0.0]
     result[0].next_coordinate_depth = [0.0]
 
