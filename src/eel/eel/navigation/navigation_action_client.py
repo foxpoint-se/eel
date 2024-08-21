@@ -13,7 +13,6 @@ from ..utils.topics import (
     NAVIGATION_CMD,
     NAVIGATION_STATUS,
     NAVIGATION_LOAD_MISSION,
-    NAVIGATION_SET_TARGET,
 )
 from ..utils.nav import (
     get_distance_in_meters,
@@ -83,10 +82,6 @@ class NavigationActionClient(Node):
             NavigationMission, NAVIGATION_LOAD_MISSION, self.set_mission, 10
         )
 
-        # self.set_target_subscriber = self.create_subscription(
-        #     Coordinate, NAVIGATION_SET_TARGET, self.set_goal, 10
-        # )
-
         self.navigation_cmd_subscriber = self.create_subscription(
             Bool, NAVIGATION_CMD, self.handle_nav_cmd, 10
         )
@@ -121,19 +116,6 @@ class NavigationActionClient(Node):
         print("GOALS", self.goals)
 
         self.logger.info(f"Set mission with {len(self.goals)} coordinates.")
-
-    # def set_goal(self, msg):
-    #     """Method for inserting a new goal at the front of the goal queue."""
-    #     self.cancel_goals_in_progress()
-
-    #     goal_msg = Navigate.Goal()
-    #     goal_msg.lat = msg.lat
-    #     goal_msg.lon = msg.lon
-
-    #     self.logger.info(f"New target recieved with lat: {msg.lat} and lon {msg.lon}")
-    #     self.goals.appendleft(goal_msg)
-    #     self.goals = [goal_msg] = self.goals
-    #     self.start_mission()
 
     def handle_nav_cmd(self, msg):
         """Handler for nav cmd messages, either automode or manual as bool."""
