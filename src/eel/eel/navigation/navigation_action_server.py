@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from time import sleep, time
-from typing import Callable, Literal, TypedDict, Union
+from typing import Literal, Union
 
 import rclpy
 from rclpy.action import ActionServer, CancelResponse, GoalResponse
@@ -8,11 +8,8 @@ from rclpy.action.server import ServerGoalHandle
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
-from ..utils.nav import (
-    get_distance_in_meters,
-    get_relative_bearing_in_degrees,
-    get_next_rudder_turn,
-)
+from .common import LatLon, get_2d_distance
+from .assignments import Assignment, SurfaceAssignment, WaypointAndDepth
 from ..utils.topics import (
     RUDDER_X_CMD,
     MOTOR_CMD,
@@ -26,160 +23,11 @@ from eel_interfaces.action import Navigate
 from eel_interfaces.msg import Coordinate, ImuStatus, DepthControlCmd, PressureStatus
 from std_msgs.msg import Float32
 
-from abc import ABC, abstractmethod
 
-
-class AssignmentProgress(TypedDict):
-    distance_to_target: float
-
-
-class LatLon(TypedDict):
-    lat: float
-    lon: float
-
-
-class Assignment(ABC):
-    @abstractmethod
-    def start(self) -> None:
-        """Set the assignment going"""
-        pass
-
-    @abstractmethod
-    def step(
-        self,
-        current_position: LatLon,
-        current_heading: float,
-        current_depth: float,
-        current_time_seconds: float,
-    ) -> AssignmentProgress:
-        """Perform a step of the assignment and return feedback."""
-        pass
-
-    @abstractmethod
-    def get_is_done(self) -> bool:
-        """Check if the assignment is complete."""
-        pass
-
-
-TOLERANCE_IN_METERS = 5.0
 TARGET_DISTANCE_LIMIT = 2500
 
 UPDATE_FREQUENCY_HZ = 5
 SLEEP_TIME = 1 / UPDATE_FREQUENCY_HZ
-
-
-def get_2d_distance(pos1: LatLon, pos2: LatLon) -> float:
-    return get_distance_in_meters(
-        pos1["lat"],
-        pos1["lon"],
-        pos2["lat"],
-        pos2["lon"],
-    )
-
-
-def get_relative_bearing(pos1: LatLon, pos2: LatLon) -> float:
-    return get_relative_bearing_in_degrees(
-        pos1["lat"],
-        pos1["lon"],
-        pos2["lat"],
-        pos2["lon"],
-    )
-
-
-class WaypointAndDepth(Assignment):
-    def __init__(
-        self,
-        target_pos: LatLon,
-        depth: float,
-        on_set_motor: Callable[[float], None],
-        on_set_rudder: Callable[[float], None],
-        on_set_depth: Callable[[float], None],
-    ) -> None:
-        self.target_depth = depth
-        self.target_pos = target_pos
-        self.is_done = False
-        self.on_set_motor = on_set_motor
-        self.on_set_rudder = on_set_rudder
-        self.on_set_depth = on_set_depth
-
-    def step(
-        self,
-        current_position: LatLon,
-        current_heading: float,
-        current_depth: float,
-        current_time_seconds: float,
-    ) -> AssignmentProgress:
-        distance_to_target = get_2d_distance(current_position, self.target_pos)
-
-        if distance_to_target <= TOLERANCE_IN_METERS:
-            self.is_done = True
-            return {"distance_to_target": distance_to_target}
-
-        bearing_to_target = get_relative_bearing(current_position, self.target_pos)
-
-        next_rudder_turn = get_next_rudder_turn(current_heading, bearing_to_target)
-        self.on_set_rudder(next_rudder_turn)
-        return {"distance_to_target": distance_to_target}
-
-    def start(self) -> None:
-        self.on_set_depth(self.target_depth)
-        self.on_set_motor(1.0)
-
-    def get_is_done(self) -> bool:
-        return self.is_done
-
-
-class SurfaceAssignment(Assignment):
-    def __init__(
-        self,
-        target_pos: LatLon,
-        depth: float,
-        on_set_motor: Callable[[float], None],
-        on_set_rudder: Callable[[float], None],
-        on_set_depth: Callable[[float], None],
-    ) -> None:
-        self.target_depth = depth
-        self.target_pos = target_pos
-        self.is_done = False
-        self.on_set_motor = on_set_motor
-        self.on_set_rudder = on_set_rudder
-        self.on_set_depth = on_set_depth
-        self.last_update_at = time()
-        self.seconds_at_surface = 0.0
-
-    def start(self) -> None:
-        self.on_set_depth(0.0)
-        self.on_set_motor(1.0)
-        self.last_update_at = time()
-
-    def step(
-        self,
-        current_position: LatLon,
-        current_heading: float,
-        current_depth: float,
-        current_time_seconds: float,
-    ) -> AssignmentProgress:
-        distance_to_target = get_2d_distance(current_position, self.target_pos)
-        time_diff = current_time_seconds - self.last_update_at
-
-        if -1.0 < current_depth < 0.2:
-            self.seconds_at_surface += time_diff
-        else:
-            self.seconds_at_surface = 0.0
-
-        if self.seconds_at_surface >= 6.0:
-            self.is_done = True
-            return {"distance_to_target": distance_to_target}
-
-        bearing_to_target = get_relative_bearing(current_position, self.target_pos)
-
-        next_rudder_turn = get_next_rudder_turn(current_heading, bearing_to_target)
-        self.on_set_rudder(next_rudder_turn)
-        self.last_update_at = time()
-        return {"distance_to_target": distance_to_target}
-
-    def get_is_done(self) -> bool:
-        return self.is_done
 
 
 class NavigationActionServer(Node):
@@ -249,18 +97,6 @@ class NavigationActionServer(Node):
         motor_msg.data = motor_value
         self.motor_publisher.publish(motor_msg)
 
-    def get_own_distance_to_target(
-        self, current_position: Coordinate, target: Navigate.Goal
-    ) -> float:
-        distance_to_target = get_distance_in_meters(
-            current_position.lat,
-            current_position.lon,
-            target.next_coordinate.lat,
-            target.next_coordinate.lon,
-        )
-
-        return distance_to_target
-
     def handle_accepted_callback(
         self, goal_handle: ServerGoalHandle
     ) -> Literal[GoalResponse.ACCEPT, GoalResponse.REJECT]:
@@ -283,11 +119,12 @@ class NavigationActionServer(Node):
             self.logger.info("No gps position has been aquired yet, rejecting goal.")
             return GoalResponse.REJECT
 
-        distance_to_target = get_distance_in_meters(
-            self.current_position.lat,
-            self.current_position.lon,
-            goal_request.next_coordinate.lat,
-            goal_request.next_coordinate.lon,
+        distance_to_target = get_2d_distance(
+            pos1=LatLon(lat=self.current_position.lat, lon=self.current_position.lon),
+            pos2=LatLon(
+                lat=goal_request.next_coordinate.lat,
+                lon=goal_request.next_coordinate.lon,
+            ),
         )
 
         # Simple sanity check that the target is not to far away, could be removed
