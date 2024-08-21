@@ -27,7 +27,7 @@ def create_waypoint_goal(coordinate: Coordinate) -> Navigate.Goal:
     result.type = Navigate.Goal.TYPE_WAYPOINT
     result.optional_sync_time = []
     # TODO: depth should be dynamic
-    result.next_coordinate_depth = [2.0]
+    result.next_coordinate_depth = [1.5]
     return result
 
 
