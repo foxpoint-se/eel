@@ -67,7 +67,7 @@ def convert_deg_min_to_deg(position):
     return deg + (decimal / 60)
 
 
-def get_closest_turn_direction(current_heading, target_heading):
+def get_closest_turn_direction(current_heading: float, target_heading: float) -> int:
     """
     Given current heading and target heading, get closest direction to turn, right or left.
 
@@ -83,7 +83,7 @@ def get_closest_turn_direction(current_heading, target_heading):
     return -1 if diff > 180 else 1
 
 
-def get_next_rudder_turn(current_heading, target_heading):
+def get_next_rudder_turn(current_heading: float, target_heading: float) -> float:
     """
     Given current heading and target heading, get instructions for how to turn rudder.
 
@@ -103,7 +103,7 @@ def get_next_rudder_turn(current_heading, target_heading):
         1 if abs(proportional_offset) > 0.1 else (proportional_offset * 3)
     )
     direction = get_closest_turn_direction(current_heading, target_heading)
-    return rudder_adjustment * direction
+    return float(rudder_adjustment * direction)
 
 
 if __name__ == "__main__":

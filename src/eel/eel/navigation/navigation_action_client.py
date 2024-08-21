@@ -1,5 +1,5 @@
 from collections import deque
-from typing import List, cast
+from typing import Deque, List, Sequence, cast
 
 import rclpy
 from action_msgs.msg import GoalStatus
@@ -13,25 +13,71 @@ from ..utils.topics import (
     NAVIGATION_CMD,
     NAVIGATION_STATUS,
     NAVIGATION_LOAD_MISSION,
-    NAVIGATION_SET_TARGET,
+)
+from ..utils.nav import (
+    get_distance_in_meters,
 )
 
 TOLERANCE_IN_METERS = 5.0
 
 
+def create_waypoint_goal(coordinate: Coordinate) -> Navigate.Goal:
+    result = Navigate.Goal()
+    result.next_coordinate = coordinate
+    result.type = Navigate.Goal.TYPE_WAYPOINT
+    result.optional_sync_time = []
+    # TODO: depth should be dynamic
+    result.next_coordinate_depth = [1.5]
+    return result
+
+
+def create_surface_goal(next_coordinate: Coordinate) -> Navigate.Goal:
+    result = Navigate.Goal()
+    result.next_coordinate = next_coordinate
+    result.type = Navigate.Goal.TYPE_SURFACE_SYNC
+    # TODO: I don't think this is used in server?
+    result.optional_sync_time = [6.0]
+    # TODO: bad name. since it is not used when surface
+    result.next_coordinate_depth = []
+    return result
+
+
+MINIMUM_SYNC_DISTANCE_METERS = 15.0
+
+
+def create_goals(coordinates: Sequence[Coordinate]) -> Deque[Navigate.Goal]:
+    result: Deque[Navigate.Goal] = deque()
+    for index, elem in enumerate(coordinates):
+        result.append(create_waypoint_goal(elem))
+        has_next = index < (len(coordinates) - 1)
+        if has_next:
+            next = coordinates[index + 1]
+            distance_to_next = get_distance_in_meters(
+                elem.lat, elem.lon, next.lat, next.lon
+            )
+            if distance_to_next >= MINIMUM_SYNC_DISTANCE_METERS:
+                result.append(create_surface_goal(next))
+
+    # NOTE: first and last waypoints always get the target depth of 0.0
+    # Should be dynamic, but this will do for Rotholmen.
+    result[-1].next_coordinate_depth = [0.0]
+    result[0].next_coordinate_depth = [0.0]
+
+    # TODO: if there are only two coordinates, we could probably remove the sync
+    # in between, since first and last are at surface anyway.
+
+    return result
+
+
 class NavigationActionClient(Node):
 
     def __init__(self):
-        super().__init__("navigation_action_client")
+        super().__init__("navigation_action_client", parameter_overrides=[])
         self.logger = self.get_logger()
         self._action_client = ActionClient(self, Navigate, "navigate")
 
         self.update_goals_subscriber = self.create_subscription(
             NavigationMission, NAVIGATION_LOAD_MISSION, self.set_mission, 10
-        )
-
-        self.set_target_subscriber = self.create_subscription(
-            Coordinate, NAVIGATION_SET_TARGET, self.set_goal, 10
         )
 
         self.navigation_cmd_subscriber = self.create_subscription(
@@ -42,7 +88,7 @@ class NavigationActionClient(Node):
             NavigationStatus, NAVIGATION_STATUS, 10
         )
 
-        self.goals = deque()
+        self.goals: Deque[Navigate.Goal] = deque()
         self.goal_handles = []
         self.goals_in_progress = False
         self.auto_mode = False
@@ -56,26 +102,9 @@ class NavigationActionClient(Node):
         if len(coordinates) == 0:
             self.goals.clear()
         else:
-            for coordinate in coordinates:
-                goal_msg = Navigate.Goal()
-                goal_msg.lat = coordinate.lat
-                goal_msg.lon = coordinate.lon
-
-                self.goals.append(goal_msg)
+            self.goals = create_goals(coordinates)
 
         self.logger.info(f"Set mission with {len(self.goals)} coordinates.")
-
-    def set_goal(self, msg):
-        """Method for inserting a new goal at the front of the goal queue."""
-        self.cancel_goals_in_progress()
-
-        goal_msg = Navigate.Goal()
-        goal_msg.lat = msg.lat
-        goal_msg.lon = msg.lon
-
-        self.logger.info(f"New target recieved with lat: {msg.lat} and lon {msg.lon}")
-        self.goals.appendleft(goal_msg)
-        self.start_mission()
 
     def handle_nav_cmd(self, msg):
         """Handler for nav cmd messages, either automode or manual as bool."""
@@ -137,9 +166,7 @@ class NavigationActionClient(Node):
 
         if status == GoalStatus.STATUS_SUCCEEDED:
             result = future.result().result
-            self.logger.info(
-                f"Goal finished successfully, reached coordinate at lat: {result.lat} lon: {result.lon}"
-            )
+            self.logger.info(f"Goal finished successfully")
 
             self.goals.popleft()
 
@@ -159,8 +186,8 @@ class NavigationActionClient(Node):
         nav_msg.meters_to_target = feedback.feedback.distance_to_target
         nav_msg.tolerance_in_meters = TOLERANCE_IN_METERS
         coordinate = Coordinate()
-        coordinate.lat = self.goals[0].lat
-        coordinate.lon = self.goals[0].lon
+        coordinate.lat = self.goals[0].next_coordinate.lat
+        coordinate.lon = self.goals[0].next_coordinate.lon
         nav_msg.next_target = [coordinate]
 
         self.nav_publisher.publish(nav_msg)
@@ -170,9 +197,7 @@ class NavigationActionClient(Node):
         self.logger.debug(f"Waiting for action server...")
         self._action_client.wait_for_server()
 
-        self.logger.info(
-            f"Sending goal request with lat: {goal_msg.lat} and lon: {goal_msg.lon}"
-        )
+        self.logger.info(f"Sending goal request")
 
         self._send_goal_future = self._action_client.send_goal_async(
             goal_msg, feedback_callback=self.feedback_callback
