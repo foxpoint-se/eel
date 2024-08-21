@@ -87,17 +87,6 @@ def get_relative_bearing(pos1: LatLon, pos2: LatLon) -> float:
     )
 
 
-class TimedSurfaceSync(Assignment):
-    def __init__(self) -> None:
-        super().__init__()
-
-    def step(self):
-        pass
-
-    def get_is_done(self):
-        return super().get_is_done()
-
-
 class WaypointAndDepth(Assignment):
     def __init__(
         self,
@@ -179,10 +168,6 @@ class SurfaceAssignment(Assignment):
         else:
             self.seconds_at_surface = 0.0
 
-        # if distance_to_target <= TOLERANCE_IN_METERS:
-        #     self.is_done = True
-        #     return {"done": True, "distance_to_target": distance_to_target}
-
         if self.seconds_at_surface >= 6.0:
             self.is_done = True
             return {"done": True, "distance_to_target": distance_to_target}
@@ -231,7 +216,6 @@ class NavigationActionServer(Node):
         )
 
         self.current_position: Union[Coordinate, None] = None
-        # self.target_position: Union[Navigate.Goal, None] = None
         self.distance_to_target = 0.0
         self.bearing_to_target = 0.0
         self.current_heading = 0.0
@@ -240,7 +224,6 @@ class NavigationActionServer(Node):
         self.logger.info("Navigation action server started.")
 
     def handle_location_update(self, msg: Coordinate) -> None:
-        # print("new pos", msg.lat)
         self.current_position = msg
 
     def handle_imu_update(self, msg: ImuStatus) -> None:
@@ -367,12 +350,7 @@ class NavigationActionServer(Node):
         feedback_msg.distance_to_target = distance_to_target
         self.goal_handle.publish_feedback(feedback_msg)
 
-    # def run_waypoint_assignment(self, goal_request: Navigate.Goal)
-
     def execute_callback(self, goal_handle: ServerGoalHandle) -> Navigate.Result:
-        # https://answers.ros.org/question/9427/enum-in-msg/
-        # if feedback.type == sensor_msgs.msg.JoyFeedback.TYPE_LED and feedback.id < 4:
-
         if self.current_position is None:
             raise TypeError("No current position. Cannot do calculations.")
 
@@ -387,35 +365,9 @@ class NavigationActionServer(Node):
             f"Executing new goal, target set to {next_coordinate.lat=} {next_coordinate.lon=}, {self.distance_to_target=}"
         )
 
-        # feedback_msg = Navigate.Feedback()
-
-        # result.lat = self.current_position.lat
-        # result.lon = self.current_position.lon
-
-        # mission_type = "WAYPOINT"
-
-        # if mission_type == "WAYPOINT":
-        # mission = WaypointAndDepth(
-        #     target_pos=LatLon(
-        #         lat=goal_request.next_coordinate.lat,
-        #         lon=goal_request.next_coordinate.lon,
-        #     ),
-        #     depth=2.0,
-        #     on_set_motor=self.publish_motor_cmd,
-        #     on_set_rudder=self.publish_rudder_cmd,
-        #     on_set_depth=self.publish_depth_cmd,
-        # )
-        # mission.start()
-
         self.assignment.start()
 
-        # is_done = False
-
         while not goal_handle.is_cancel_requested and not self.assignment.get_is_done():
-            # if goal_handle.is_cancel_requested:
-            #     self.logger.info("Goal canceled")
-            #     goal_handle.abort()
-            #     break
             progress = self.assignment.step(
                 current_position=LatLon(
                     lat=self.current_position.lat, lon=self.current_position.lon
@@ -430,56 +382,12 @@ class NavigationActionServer(Node):
 
             sleep(SLEEP_TIME)
 
-        # self.publish_depth_cmd(1.0)
-
-        # while goal_handle.is_active:
-        #     if goal_handle.is_cancel_requested:
-        #         self.logger.info("Goal canceled")
-        #         goal_handle.abort()
-        #         break
-
-        #     # if mission_type == "WAYPOINT":
-        #     #     mission.update_current_depth
-
-        #     self.distance_to_target = self.get_own_distance_to_target(
-        #         self.current_position, goal_request
-        #     )
-
-        #     feedback_msg.distance_to_target = self.distance_to_target
-        #     goal_handle.publish_feedback(feedback_msg)
-
-        #     if self.distance_to_target <= TOLERANCE_IN_METERS:
-        #         goal_handle.succeed()
-        #         self.current_goal = None
-        #         self.logger.info("Reached goal. Shutting off stuff.")
-        #         self.publish_motor_cmd(0.0)
-        #         self.publish_rudder_cmd(0.0)
-
-        #     self.bearing_to_target = get_relative_bearing_in_degrees(
-        #         self.current_position.lat,
-        #         self.current_position.lon,
-        #         self.target_position.lat,
-        #         self.target_position.lon,
-        #     )
-
-        #     next_rudder_turn = get_next_rudder_turn(
-        #         self.current_heading, self.bearing_to_target
-        #     )
-
-        #     # TODO: this can be moved outside of the while loop, as it was.
-        #     # and the depth can be set outside as well, depending on the nature of the goal.
-        #     self.publish_motor_cmd(1.0)
-        #     self.publish_rudder_cmd(next_rudder_turn)
-
-        #     sleep(SLEEP_TIME)
-
         if not goal_handle.is_cancel_requested:
             goal_handle.succeed()
         else:
             goal_handle.canceled()
         self.current_goal = None
-        # TODO: remove
-        print("GOAL NO LONGER ACTIVE")
+        self.logger.info("Finished goal.")
         self.publish_motor_cmd(0.0)
         self.publish_rudder_cmd(0.0)
 
