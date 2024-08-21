@@ -100,10 +100,6 @@ class NavigationActionServer(Node):
     def handle_accepted_callback(
         self, goal_handle: ServerGoalHandle
     ) -> Literal[GoalResponse.ACCEPT, GoalResponse.REJECT]:
-        if goal_handle.is_active:
-            print("is active")
-        else:
-            print("is NOT active")
         if self.current_goal is None:
             self.current_goal = goal_handle
             self.current_goal.execute()
