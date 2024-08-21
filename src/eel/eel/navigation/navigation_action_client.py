@@ -58,15 +58,13 @@ def create_goals(coordinates: Sequence[Coordinate]) -> Deque[Navigate.Goal]:
             if distance_to_next >= MINIMUM_SYNC_DISTANCE_METERS:
                 result.append(create_surface_goal(next))
 
-        # if index < (len(coordinates) - 1):
-        #     new_list.append(elem + list1[index + 1])
-        # else:
-        #     new_list.append(elem)
+    # NOTE: first and last waypoints always get the target depth of 0.0
+    # Should be dynamic, but will do for Rotholmen.
+    result[-1].next_coordinate_depth = [0.0]
+    result[0].next_coordinate_depth = [0.0]
 
-    # TODO: ska man ta bort sista sync:en också? när den ändå kör ytläge
-    # TODO: även stöd för att köra i ytläge i början?
-    if len(coordinates) > 2:
-        result[-1].next_coordinate_depth = [0.0]
+    # TODO: if there are only two coordinates, we could probably remove the sync
+    # in between, since first and last are at surface anyway.
 
     return result
 
@@ -106,14 +104,6 @@ class NavigationActionClient(Node):
             self.goals.clear()
         else:
             self.goals = create_goals(coordinates)
-            # for coordinate in coordinates:
-            #     goal_msg = Navigate.Goal()
-            #     goal_msg.lat = coordinate.lat
-            #     goal_msg.lon = coordinate.lon
-
-            #     self.goals.append(goal_msg)
-
-        print("GOALS", self.goals)
 
         self.logger.info(f"Set mission with {len(self.goals)} coordinates.")
 
