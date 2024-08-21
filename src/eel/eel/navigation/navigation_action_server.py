@@ -30,7 +30,6 @@ from abc import ABC, abstractmethod
 
 
 class AssignmentProgress(TypedDict):
-    done: bool
     distance_to_target: float
 
 
@@ -114,13 +113,13 @@ class WaypointAndDepth(Assignment):
 
         if distance_to_target <= TOLERANCE_IN_METERS:
             self.is_done = True
-            return {"done": True, "distance_to_target": distance_to_target}
+            return {"distance_to_target": distance_to_target}
 
         bearing_to_target = get_relative_bearing(current_position, self.target_pos)
 
         next_rudder_turn = get_next_rudder_turn(current_heading, bearing_to_target)
         self.on_set_rudder(next_rudder_turn)
-        return {"done": False, "distance_to_target": distance_to_target}
+        return {"distance_to_target": distance_to_target}
 
     def start(self) -> None:
         self.on_set_depth(self.target_depth)
@@ -170,14 +169,14 @@ class SurfaceAssignment(Assignment):
 
         if self.seconds_at_surface >= 6.0:
             self.is_done = True
-            return {"done": True, "distance_to_target": distance_to_target}
+            return {"distance_to_target": distance_to_target}
 
         bearing_to_target = get_relative_bearing(current_position, self.target_pos)
 
         next_rudder_turn = get_next_rudder_turn(current_heading, bearing_to_target)
         self.on_set_rudder(next_rudder_turn)
         self.last_update_at = time()
-        return {"done": False, "distance_to_target": distance_to_target}
+        return {"distance_to_target": distance_to_target}
 
     def get_is_done(self) -> bool:
         return self.is_done
