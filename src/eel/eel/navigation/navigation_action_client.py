@@ -89,7 +89,6 @@ class NavigationActionClient(Node):
         )
 
         self.goals: Deque[Navigate.Goal] = deque()
-        # self.goals: List[Navigate.Goal] = []
         self.goal_handles = []
         self.goals_in_progress = False
         self.auto_mode = False
@@ -167,9 +166,6 @@ class NavigationActionClient(Node):
 
         if status == GoalStatus.STATUS_SUCCEEDED:
             result = future.result().result
-            # self.logger.info(
-            #     f"Goal finished successfully, reached coordinate at lat: {result.lat} lon: {result.lon}"
-            # )
             self.logger.info(f"Goal finished successfully")
 
             self.goals.popleft()
@@ -201,9 +197,6 @@ class NavigationActionClient(Node):
         self.logger.debug(f"Waiting for action server...")
         self._action_client.wait_for_server()
 
-        # self.logger.info(
-        #     f"Sending goal request with lat: {goal_msg.lat} and lon: {goal_msg.lon}"
-        # )
         self.logger.info(f"Sending goal request")
 
         self._send_goal_future = self._action_client.send_goal_async(
