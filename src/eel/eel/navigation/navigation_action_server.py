@@ -143,6 +143,7 @@ class NavigationActionServer(Node):
     ) -> Literal[CancelResponse.ACCEPT, CancelResponse.REJECT]:
         self.logger.info(f"Goal cancel request received, turning off motors.")
         self.current_goal = None
+        self.publish_depth_cmd(0.0)
         self.publish_motor_cmd(0.0)
         self.publish_rudder_cmd(0.0)
 
