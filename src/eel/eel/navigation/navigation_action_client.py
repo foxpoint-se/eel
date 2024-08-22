@@ -1,4 +1,5 @@
 from collections import deque
+from time import time
 from typing import Deque, List, Sequence, cast
 
 import rclpy
@@ -8,8 +9,10 @@ from rclpy.action import ActionClient
 from rclpy.node import Node
 
 from eel_interfaces.action import Navigate
-from eel_interfaces.msg import NavigationStatus, NavigationMission, Coordinate
+from eel_interfaces.msg import NavigationStatus, NavigationMission, Coordinate, BatteryStatus
 from ..utils.topics import (
+    BATTERY_STATUS,
+    LEAKAGE_STATUS,
     NAVIGATION_CMD,
     NAVIGATION_STATUS,
     NAVIGATION_LOAD_MISSION,
@@ -84,12 +87,23 @@ class NavigationActionClient(Node):
             Bool, NAVIGATION_CMD, self.handle_nav_cmd, 10
         )
 
+        self.battery_status_subscriber = self.create_subscription(
+            BatteryStatus, BATTERY_STATUS, self.handle_battery_status, 10
+        )
+
+        self.leakage_status_subscriber = self.create_subscription(
+            Bool, LEAKAGE_STATUS, self.check_mission_abort_status, 10
+        )
+
         self.nav_publisher = self.create_publisher(
             NavigationStatus, NAVIGATION_STATUS, 10
         )
 
+        self.last_seen_battery_level = 100.0
+
         self.goals: Deque[Navigate.Goal] = deque()
         self.goal_handles = []
+        self.mission_start_time = None
         self.goals_in_progress = False
         self.auto_mode = False
 
@@ -133,10 +147,33 @@ class NavigationActionClient(Node):
 
         self.auto_mode = new_auto_mode
 
+    def handle_battery_status(self, msg):
+        """Updates the last seen battery level variable."""
+        self.last_seen_battery_level = msg.voltage_percent
+
+    def check_mission_abort_status(self, msg):
+        """Smelly function that does two things, first check incoming leakage status message, 
+        then checks battery level and mission time. These are all sources for mission aborts, 
+        if any of them is in a trigger state then cancel current mission."""
+        battery_level_threshold = 10.0
+        battery_level_low = self.last_seen_battery_level < battery_level_threshold
+        
+        maximum_mission_time_s = 2700
+        mission_time_exceeded = int(time() - self.mission_start_time) > maximum_mission_time_s
+
+        leakage_detected = msg.data
+
+        if any([battery_level_low, leakage_detected, mission_time_exceeded]) and self.goals_in_progress:
+            self.logger.info(f"Battery low: {battery_level_low}\tMission time exceeded: {mission_time_exceeded}\t Leakage detected: {leakage_detected}")
+            self.logger.info("Aborting mission")
+            self.auto_mode = False
+            self.cancel_goals_in_progress()
+
     def start_mission(self):
         """Method for starting the goal processing, used for starting the iteration."""
         self.send_goal(self.goals[0])
         self.goals_in_progress = True
+        self.mission_start_time = time()
 
     def cancel_goals_in_progress(self):
         """Method to cancel all the ongoing actions"""
@@ -145,6 +182,7 @@ class NavigationActionClient(Node):
 
         self.goal_handles = []
         self.goals_in_progress = False
+        self.mission_start_time = None
 
     def goal_response_callback(self, future):
         """Call back for when client has sent a goal to the server, will be accepted / rejected"""
@@ -173,6 +211,7 @@ class NavigationActionClient(Node):
             if len(self.goals) == 0:
                 self.logger.info(f"Finished mission, no more goals left.")
                 self.goals_in_progress = False
+                self.mission_start_time = None
             else:
                 self.send_goal(self.goals[0])
 
