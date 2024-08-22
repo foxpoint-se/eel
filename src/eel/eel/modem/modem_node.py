@@ -5,8 +5,6 @@ from eel_interfaces.msg import ModemStatus
 from ..utils.constants import SIMULATE_PARAM
 from ..utils.topics import MODEM_STATUS
 
-import requests
-from requests.exceptions import ConnectionError, ConnectTimeout
 
 class ModemNode(Node):
     def __init__(self):
@@ -20,8 +18,7 @@ class ModemNode(Node):
             from .modem_sensor import ModemSensor
 
             self.sensor = ModemSensor()
-
-        elif self.should_simulate:
+        else:
             from .modem_simulator import ModemSimulator
 
             self.sensor = ModemSimulator(self)
@@ -40,30 +37,21 @@ class ModemNode(Node):
         )
 
     def read_and_publish_modem_status(self):
+        reg_status = self.sensor.get_registration_status()
+        signal_strength = self.sensor.get_received_signal_strength_indicator()
+        
+        check_connectivity = reg_status == 1 and signal_strength > 10
+        if check_connectivity:
+            connectivity = self.sensor.ping()
+        else:
+            connectivity = False
+
         msg = ModemStatus()
-        msg.reg_status = self.sensor.get_registration_status()
-        msg.signal_strength = self.sensor.get_received_signal_strength_indicator()
+        msg.reg_status = reg_status
+        msg.signal_strength = signal_strength
+        msg.connectivity = connectivity
 
         self.modem_publisher.publish(msg)
-
-    def ping(self, request, response):
-        google_dns_server_url = "https://8.8.8.8"
-        acceptable_response_time = 1.0
-
-        try:
-            req_response = requests.get(google_dns_server_url, timeout=acceptable_response_time)
-            status_code = req_response.status_code
-            response_time = req_response.elapsed.total_seconds()
-        except (ConnectionError, ConnectTimeout) as e:
-            status_code = 408
-            response_time = -1.0
-
-        self.logger.info(f"Pinged {google_dns_server_url}, status code: {status_code} with response time {response_time}")
-
-        response.status_code = int(status_code)
-        response.response_time = float(response_time)
-
-        return response
 
 
 def main(args=None):

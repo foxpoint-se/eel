@@ -7,6 +7,10 @@ import time
 from .modem_source import ModemSource
 
 
+import requests
+from requests.exceptions import ConnectionError, ConnectTimeout
+
+
 AT_COMMAND_TIMEOUT_MS = 5000
 
 
@@ -96,6 +100,20 @@ class ModemSensor(ModemSource):
                 last_number = first_group.split(",")[0]
                 return int(last_number)
         return None
+    
+    def ping(self):
+        google_dns_server_url = "https://8.8.8.8"
+        acceptable_response_time = 1.0
+
+        try:
+            req_response = requests.get(google_dns_server_url, timeout=acceptable_response_time)
+            status_code = req_response.status_code
+        except (ConnectionError, ConnectTimeout) as e:
+            status_code = 408
+
+        connectivity = status_code == 200
+
+        return connectivity
 
 
 if __name__ == "__main__":
