@@ -30,3 +30,12 @@ class ModemSimulator(ModemSource):
         registration_status = 1 if self._current_depth < 0.2 else 0
         
         return registration_status
+
+    def ping(self):
+        if self._current_depth < 0.2:
+            connectivity  = True
+        else:
+            connectivity= False
+
+        return connectivity
+        
