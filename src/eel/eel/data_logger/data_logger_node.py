@@ -23,7 +23,7 @@ from ..utils.topics import (
 
 class DataLogger(Node):
     def __init__(self):
-        super().__init__("data_logger_node")
+        super().__init__("data_logger_node", parameter_overrides=[])
         self.logger = self.get_logger()
 
         self.depth = 0.0
@@ -50,7 +50,7 @@ class DataLogger(Node):
         self.history_event_publisher = self.create_publisher(
             HistoryEventList, HISTORY_EVENTS, 10
         )
-    
+
         self.history_event_loggs = []
         self.updater = self.create_timer(2.0, self.update)
 
@@ -60,7 +60,7 @@ class DataLogger(Node):
         # First check if the depth would allow us to have a back end connection
         should_logg_data = False
         valid_connectivity_depth = self.depth < 0.2
-        
+
         # If the depth could possibly allow us to have a backend connection, query mode for signal strength
         if valid_connectivity_depth:
             backend_connectivity = self.modem_reg_status == 1 and self.modem_signal_strength >= 13
@@ -69,11 +69,11 @@ class DataLogger(Node):
             if backend_connectivity and self.history_event_loggs:
                 self.publish_history_events()
                 self.history_event_loggs = []
-                
+
             # If we are on a good depth yet there is no back end connectivity, then logg data
             if not backend_connectivity:
                 should_logg_data = True
-        
+
         if not valid_connectivity_depth:
             should_logg_data = True
 
