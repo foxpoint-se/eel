@@ -3,13 +3,21 @@ from time import time
 
 import rclpy
 from rclpy.node import Node
-from eel_interfaces.msg import ImuStatus, Coordinate, PressureStatus, HistoryEvent, Coordinate, HistoryEventList, ModemStatus
+from eel_interfaces.msg import (
+    ImuStatus,
+    Coordinate,
+    PressureStatus,
+    HistoryEvent,
+    Coordinate,
+    HistoryEventList,
+    ModemStatus,
+)
 from ..utils.topics import (
     MODEM_STATUS,
     IMU_STATUS,
     LOCALIZATION_STATUS,
     PRESSURE_STATUS,
-    HISTORY_EVENTS
+    HISTORY_EVENTS,
 )
 
 
@@ -25,9 +33,7 @@ class DataLogger(Node):
 
         self.pitch = 0.0
         self.heading = 0.0
-        self.create_subscription(
-            ImuStatus, IMU_STATUS, self.handle_imu_status_msg, 10
-        )
+        self.create_subscription(ImuStatus, IMU_STATUS, self.handle_imu_status_msg, 10)
 
         self.latitude = 0.0
         self.longitude = 0.0
@@ -76,7 +82,9 @@ class DataLogger(Node):
             self.logg_history_event()
 
     def logg_history_event(self):
-        self.logger.debug(f"Adding data, now {len(self.history_event_loggs) + 1} entries")
+        self.logger.debug(
+            f"Adding data, now {len(self.history_event_loggs) + 1} entries"
+        )
 
         msg = HistoryEvent()
         msg.recorded_at = int(time())
@@ -107,7 +115,9 @@ class DataLogger(Node):
         self.modem_signal_strength = msg.signal_strength
 
     def publish_history_events(self):
-        self.logger.info(f"Sending {len(self.history_event_loggs)} events on topic {HISTORY_EVENTS}")
+        self.logger.info(
+            f"Sending {len(self.history_event_loggs)} events on topic {HISTORY_EVENTS}"
+        )
 
         msg = HistoryEventList()
         msg.history_events = self.history_event_loggs
