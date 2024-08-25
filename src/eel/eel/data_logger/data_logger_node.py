@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 from time import time
+from typing import List
 
 import rclpy
 from rclpy.node import Node
+from std_msgs.msg import Bool
 from eel_interfaces.msg import (
     ImuStatus,
     Coordinate,
@@ -19,6 +21,7 @@ from ..utils.topics import (
     PRESSURE_STATUS,
     HISTORY_EVENTS,
 )
+from .data_recorder import PathRecorder, Segment
 
 
 class DataLogger(Node):
@@ -54,6 +57,10 @@ class DataLogger(Node):
         self.history_event_loggs = []
         self.updater = self.create_timer(2.0, self.update)
 
+        self.worker = self.create_timer(2.0, self.do_stuff)
+        self.recorder = PathRecorder()
+        self.has_connection: bool = False
+
         self.logger.info("Data logger node started")
 
     def update(self):
@@ -80,6 +87,26 @@ class DataLogger(Node):
         # If we should logg data, first check if there is a active logg file and then logg the data to file
         if should_logg_data:
             self.logg_history_event()
+
+    def do_stuff(self) -> None:
+        # self.recorder.update_3d_position()
+        # if self.has_connection:
+        #     self.recorder
+        self.recorder.step()
+
+
+    def handle_publish(self, segments: List[Segment]) -> None:
+        pass
+
+    def on_get_all_cmd(self, msg: Bool)
+
+    def on_connectivity_msg(self, modem_status: ModemStatus) -> None:
+        if self.has_connection != modem_status.connectivity:
+            self.has_connection = modem_status.connectivity
+            if self.has_connection:
+                self.recorder.flush()
+                
+
 
     def logg_history_event(self):
         self.logger.debug(
