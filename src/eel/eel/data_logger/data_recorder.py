@@ -4,23 +4,29 @@
 #           bank()
 #           spara lokation och djup
 #
-# om det kommer meddelande på /history/broadcast/cmd
-#   publicera på /history/events
+# om det kommer meddelande på /history/all/cmd
+#   publicera på /history/all/status
 #
 # när det finns connectivity
-#   publicera regelbundet på /history/unpublished
+#   publicera regelbundet på /history/updates/status
 
 # regelbundet, var 10e sekund
 #
 
+# TODO:
+# - simplify
+
 import math
 
-from typing import List, Union
+from typing import Callable, List, Union
 from .common import (
     Coord3d,
     LatLon,
     TimedCoord3d,
     Segment,
+)
+from ..utils.nav import (
+    get_distance_in_meters,
 )
 
 
@@ -31,11 +37,21 @@ def get_3d_distance(coord1: Coord3d, coord2: Coord3d) -> float:
     return math.sqrt(delta_x**2 + delta_y**2 + delta_z**2)
 
 
+def get_2d_distance_earth(coord1: Coord3d, coord2: Coord3d) -> float:
+    return get_distance_in_meters(
+        coord1["x"],
+        coord1["y"],
+        coord2["x"],
+        coord2["y"],
+    )
+
+
 class PathRecorder:
     def __init__(
         self,
         meters_threshold: float,
         seconds_threshold: float,
+        on_new_segment: Callable[[Segment], None],
     ) -> None:
         self.last_recorded_3d_position = None
         self.meters_threshold = meters_threshold
@@ -46,6 +62,7 @@ class PathRecorder:
         self.segment_in_progress: Union[Segment, None] = None
         self.last_finalized_segment: Union[Segment, None] = None
         self.finalized_segments: List[Segment] = []
+        self.on_new_segment = on_new_segment
 
     def _has_moved_significantly(self, next_to_record: Coord3d) -> bool:
         if self.last_recorded_3d_position is None:
@@ -83,7 +100,7 @@ class PathRecorder:
         for index, coord in enumerate(path):
             if index != 0:
                 prev = path[index - 1]
-                dist = get_3d_distance(prev["coord"], coord["coord"])
+                dist = get_2d_distance_earth(prev["coord"], coord["coord"])
                 accumulated_distance += dist
         return accumulated_distance
 
@@ -103,25 +120,31 @@ class PathRecorder:
         )
 
     def add_pos_to_running(self, segment: Segment, pos: TimedCoord3d) -> None:
-        total_distance = segment["accumulated_distance"] + get_3d_distance(
+        total_distance = segment["accumulated_distance"] + get_2d_distance_earth(
             segment["polyline"][-1]["coord"], pos["coord"]
         )
         segment["polyline"].append(pos)
         segment["accumulated_distance"] = total_distance
+        # print("TOTAL DISTANCE", total_distance)
 
     def step(self, new_pos: TimedCoord3d) -> None:
         if not self.segment_in_progress:
+            # print("NO SEGMENT. CREATING ONE")
             self.segment_in_progress = self.init_segment(new_pos)
             return
 
         segment_start = self.segment_in_progress["polyline"][0]["created_at"]
 
+        # print("SEGMENT START", segment_start)
         if new_pos["created_at"] - segment_start < self.seconds_threshold:
+            # print("WITHIN TIMEFRAME", self.seconds_threshold, "ADDING")
             self.add_pos_to_running(self.segment_in_progress, new_pos)
+            # print(self.segment_in_progress)
             return
 
         else:
             finalized_segment = self.finalize_segment(self.segment_in_progress)
+            # print("NOT WITHIN TIMEFRAME. FINALIZING", finalized_segment)
             if len(finalized_segment) > 0:
                 last_from_previous = finalized_segment["polyline"][-1]
                 self.segment_in_progress = self.init_segment(last_from_previous)
@@ -129,9 +152,14 @@ class PathRecorder:
             else:
                 self.segment_in_progress = self.init_segment(new_pos)
 
+            # print(
+            #     "ACCUMULATED DISTANCE FINALIZED",
+            #     finalized_segment["accumulated_distance"],
+            # )
             if finalized_segment["accumulated_distance"] >= self.meters_threshold:
                 self.last_finalized_segment = finalized_segment
                 self.finalized_segments.append(finalized_segment)
+                self.on_new_segment(finalized_segment)
             return
 
     def get_finalized_segments(self) -> List[Segment]:

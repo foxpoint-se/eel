@@ -25,6 +25,26 @@ from .data_recorder import PathRecorder, Segment
 from .common import Segment, TimedCoord3d, Coord3d
 
 
+def to_history_event(coord: TimedCoord3d) -> HistoryEvent:
+    ev = HistoryEvent()
+    c = Coordinate()
+    c.lat = coord["coord"]["x"]
+    c.lon = coord["coord"]["y"]
+    ev.coordinate = c
+    ev.depth = coord["coord"]["z"]
+    ev.heading = 0.0
+    ev.pitch = 0.0
+    # TODO: what format for recorded_at
+    ev.recorded_at = int(coord["created_at"])
+    return ev
+
+
+def to_history_event_list(segment: Segment) -> HistoryEventList:
+    event_list = HistoryEventList()
+    event_list.history_events = [to_history_event(c) for c in segment["polyline"]]
+    return event_list
+
+
 class DataLogger(Node):
     def __init__(self):
         super().__init__("data_logger_node", parameter_overrides=[])
@@ -49,7 +69,7 @@ class DataLogger(Node):
         # self.modem_signal_strength = 0.0
         self.current_modem_status: Union[ModemStatus, None] = None
         self.create_subscription(
-            ModemStatus, MODEM_STATUS, self.handle_modem_status_msg, 10
+            ModemStatus, MODEM_STATUS, self.on_connectivity_msg, 10
         )
 
         self.history_event_publisher = self.create_publisher(
@@ -57,21 +77,34 @@ class DataLogger(Node):
         )
 
         self.history_event_loggs = []
-        self.updater = self.create_timer(2.0, self.update)
+        # self.updater = self.create_timer(2.0, self.update)
 
-        self.worker = self.create_timer(2.0, self.do_stuff)
-        self.recorder = PathRecorder()
+        self.worker = self.create_timer(0.5, self.do_stuff)
+        self.recorder = PathRecorder(
+            meters_threshold=1.0,
+            seconds_threshold=10.0,
+            on_new_segment=self.handle_new_segment,
+        )
         self.has_connection: bool = False
         self.current_coord: Union[Coordinate, None] = None
         self.current_depth: Union[float, None] = None
-        # self.
+        self.stored: List[HistoryEventList] = []
 
         self.logger.info("Data logger node started")
+
+    def handle_new_segment(self, segment: Segment) -> None:
+        msg = to_history_event_list(segment)
+        # print("HAS CONNECTION", self.has_connection)
+        if self.has_connection:
+            self.history_event_publisher.publish(msg)
+
+        else:
+            self.stored.append(msg)
 
     def update(self):
         # First check if the depth would allow us to have a back end connection
         should_logg_data = False
-        valid_connectivity_depth = self.depth < 0.2
+        valid_connectivity_depth = self.current_depth and self.current_depth < 0.2
 
         # If the depth could possibly allow us to have a backend connection, query mode for signal strength
         if valid_connectivity_depth:
@@ -108,7 +141,12 @@ class DataLogger(Node):
                 ),
                 created_at=time(),
             )
+            # print("STEPPING", new_pos)
             self.recorder.step(new_pos=new_pos)
+        # print("ALL", len(self.recorder.get_finalized_segments()))
+        in_progress = self.recorder.get_segment_in_progress()
+        length = 0 if in_progress is None else len(in_progress["polyline"])
+        # print("IN PROGRESS", length)
 
     def handle_publish(self, segments: List[Segment]) -> None:
         pass
@@ -117,10 +155,14 @@ class DataLogger(Node):
         pass
 
     def on_connectivity_msg(self, modem_status: ModemStatus) -> None:
-        if self.has_connection != modem_status.connectivity:
-            self.has_connection = modem_status.connectivity
-            if self.has_connection:
-                self.recorder.flush()
+        # print("GETTING MODEM STATUS", modem_status.connectivity)
+        # if self.has_connection != modem_status.connectivity:
+        self.has_connection = modem_status.connectivity
+        if self.has_connection:
+            for msg in self.stored:
+                self.history_event_publisher.publish(msg)
+                self.stored = []
+                # self.recorder.flush()
 
     def logg_history_event(self):
         self.logger.debug(
@@ -129,13 +171,13 @@ class DataLogger(Node):
 
         msg = HistoryEvent()
         msg.recorded_at = int(time())
-        msg.depth = self.depth
-        msg.pitch = self.pitch
-        msg.heading = self.heading
+        msg.depth = self.current_depth
+        msg.pitch = 0.0
+        msg.heading = 0.0
 
         coordinate = Coordinate()
-        coordinate.lat = self.latitude
-        coordinate.lon = self.longitude
+        # coordinate.lat = self.current_coord.lat
+        # coordinate.lon = self.current_coord.lon
         msg.coordinate = coordinate
 
         self.history_event_loggs.append(msg)
@@ -148,7 +190,7 @@ class DataLogger(Node):
     #     self.heading = msg.heading
 
     def handle_location_msg(self, msg: Coordinate) -> None:
-        self.current_coord = Coordinate
+        self.current_coord = msg
 
     def handle_modem_status_msg(self, msg):
         self.modem_reg_status = msg.reg_status
