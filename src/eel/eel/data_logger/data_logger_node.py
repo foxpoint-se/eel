@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from time import time
-from typing import List
+from typing import List, Union
 
 import rclpy
 from rclpy.node import Node
@@ -22,6 +22,7 @@ from ..utils.topics import (
     HISTORY_EVENTS,
 )
 from .data_recorder import PathRecorder, Segment
+from .common import Segment, TimedCoord3d, Coord3d
 
 
 class DataLogger(Node):
@@ -29,23 +30,24 @@ class DataLogger(Node):
         super().__init__("data_logger_node", parameter_overrides=[])
         self.logger = self.get_logger()
 
-        self.depth = 0.0
+        # self.depth = 0.0
         self.create_subscription(
-            PressureStatus, PRESSURE_STATUS, self.handle_depth_status_msg, 10
+            PressureStatus, PRESSURE_STATUS, self.handle_pressure_msg, 10
         )
 
-        self.pitch = 0.0
-        self.heading = 0.0
-        self.create_subscription(ImuStatus, IMU_STATUS, self.handle_imu_status_msg, 10)
+        # self.pitch = 0.0
+        # self.heading = 0.0
+        # self.create_subscription(ImuStatus, IMU_STATUS, self.handle_imu_status_msg, 10)
 
-        self.latitude = 0.0
-        self.longitude = 0.0
+        # self.latitude = 0.0
+        # self.longitude = 0.0
         self.create_subscription(
-            Coordinate, LOCALIZATION_STATUS, self.handle_gnss_status_msg, 10
+            Coordinate, LOCALIZATION_STATUS, self.handle_location_msg, 10
         )
 
-        self.modem_reg_status = 0.0
-        self.modem_signal_strength = 0.0
+        # self.modem_reg_status = 0.0
+        # self.modem_signal_strength = 0.0
+        self.current_modem_status: Union[ModemStatus, None] = None
         self.create_subscription(
             ModemStatus, MODEM_STATUS, self.handle_modem_status_msg, 10
         )
@@ -60,6 +62,9 @@ class DataLogger(Node):
         self.worker = self.create_timer(2.0, self.do_stuff)
         self.recorder = PathRecorder()
         self.has_connection: bool = False
+        self.current_coord: Union[Coordinate, None] = None
+        self.current_depth: Union[float, None] = None
+        # self.
 
         self.logger.info("Data logger node started")
 
@@ -92,21 +97,30 @@ class DataLogger(Node):
         # self.recorder.update_3d_position()
         # if self.has_connection:
         #     self.recorder
-        self.recorder.step()
 
+        # self.recorder.step()
+        if self.current_coord and self.current_depth:
+            new_pos = TimedCoord3d(
+                coord=Coord3d(
+                    x=self.current_coord.lat,
+                    y=self.current_coord.lon,
+                    z=self.current_depth,
+                ),
+                created_at=time(),
+            )
+            self.recorder.step(new_pos=new_pos)
 
     def handle_publish(self, segments: List[Segment]) -> None:
         pass
 
-    def on_get_all_cmd(self, msg: Bool)
+    def on_get_all_cmd(self, msg: Bool) -> None:
+        pass
 
     def on_connectivity_msg(self, modem_status: ModemStatus) -> None:
         if self.has_connection != modem_status.connectivity:
             self.has_connection = modem_status.connectivity
             if self.has_connection:
                 self.recorder.flush()
-                
-
 
     def logg_history_event(self):
         self.logger.debug(
@@ -126,16 +140,15 @@ class DataLogger(Node):
 
         self.history_event_loggs.append(msg)
 
-    def handle_depth_status_msg(self, msg):
-        self.depth = msg.depth
+    def handle_pressure_msg(self, msg: PressureStatus):
+        self.current_depth = msg.depth
 
-    def handle_imu_status_msg(self, msg):
-        self.pitch = msg.pitch
-        self.heading = msg.heading
+    # def handle_imu_status_msg(self, msg):
+    #     self.pitch = msg.pitch
+    #     self.heading = msg.heading
 
-    def handle_gnss_status_msg(self, msg):
-        self.latitude = msg.lat
-        self.longitude = msg.lon
+    def handle_location_msg(self, msg: Coordinate) -> None:
+        self.current_coord = Coordinate
 
     def handle_modem_status_msg(self, msg):
         self.modem_reg_status = msg.reg_status

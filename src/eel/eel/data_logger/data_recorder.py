@@ -15,15 +15,12 @@
 
 import math
 
-from typing import Callable, List, TypedDict, Union
+from typing import List, Union
 from .common import (
-    Segment,
     Coord3d,
     LatLon,
     TimedCoord3d,
-    Segment2,
-    # SegmentInProgress,
-    # FinalizedSegment,
+    Segment,
 )
 
 
@@ -38,7 +35,6 @@ class PathRecorder:
     def __init__(
         self,
         meters_threshold: float,
-        on_publish: Callable[[Segment], None],
         seconds_threshold: float,
     ) -> None:
         self.last_recorded_3d_position = None
@@ -47,9 +43,9 @@ class PathRecorder:
         self.current_latlon: Union[LatLon, None] = None
         self.current_depth: Union[float, None] = None
         self.seconds_threshold = 2.0
-        self.segment_in_progress: Union[Segment2, None] = None
-        self.last_finalized_segment: Union[Segment2, None] = None
-        self.finalized_segments: List[Segment2] = []
+        self.segment_in_progress: Union[Segment, None] = None
+        self.last_finalized_segment: Union[Segment, None] = None
+        self.finalized_segments: List[Segment] = []
 
     def _has_moved_significantly(self, next_to_record: Coord3d) -> bool:
         if self.last_recorded_3d_position is None:
@@ -69,8 +65,8 @@ class PathRecorder:
     def update_connectivity(self, new_connectivity: bool) -> None:
         pass
 
-    def init_segment(self, pos: TimedCoord3d) -> Segment2:
-        return Segment2(
+    def init_segment(self, pos: TimedCoord3d) -> Segment:
+        return Segment(
             accumulated_distance=0.0,
             ended_at_seconds=pos["created_at"],
             finalized=False,
@@ -91,14 +87,14 @@ class PathRecorder:
                 accumulated_distance += dist
         return accumulated_distance
 
-    def finalize_segment(self, segment: Segment2) -> Segment2:
+    def finalize_segment(self, segment: Segment) -> Segment:
         start_time = segment["polyline"][0]["created_at"]
         end_time = segment["polyline"][-1]["created_at"]
 
         path = self.simplify_path(path=segment["polyline"])
         path_distance = self.get_path_distance(path)
 
-        return Segment2(
+        return Segment(
             started_at_seconds=start_time,
             ended_at_seconds=end_time,
             accumulated_distance=path_distance,
@@ -106,7 +102,7 @@ class PathRecorder:
             polyline=path,
         )
 
-    def add_pos_to_running(self, segment: Segment2, pos: TimedCoord3d) -> None:
+    def add_pos_to_running(self, segment: Segment, pos: TimedCoord3d) -> None:
         total_distance = segment["accumulated_distance"] + get_3d_distance(
             segment["polyline"][-1]["coord"], pos["coord"]
         )
@@ -138,10 +134,10 @@ class PathRecorder:
                 self.finalized_segments.append(finalized_segment)
             return
 
-    def get_finalized_segments(self) -> List[Segment2]:
+    def get_finalized_segments(self) -> List[Segment]:
         return self.finalized_segments
 
-    def get_segment_in_progress(self) -> Union[Segment2, None]:
+    def get_segment_in_progress(self) -> Union[Segment, None]:
         return self.segment_in_progress
 
     def set_thresholds(self, meters_threshold: float, seconds_threshold: float) -> None:
