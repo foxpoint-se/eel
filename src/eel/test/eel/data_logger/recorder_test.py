@@ -61,36 +61,39 @@ def test__should_get_distance_properly() -> None:
 
 def test__when_instantiated__should_not_have_a_position() -> None:
     instance_to_test = PathRecorder(
-        distance_threshold=1, on_publish=print_what_to_publish
+        meters_threshold=1, on_publish=print_what_to_publish, seconds_threshold=2.0
     )
 
     assert instance_to_test.last_recorded_3d_position is None
 
 
+# TODO: remove
 def test__when_no_position__should_have_moved_significantly() -> None:
     instance_to_test = PathRecorder(
-        distance_threshold=1, on_publish=print_what_to_publish
+        meters_threshold=1, on_publish=print_what_to_publish, seconds_threshold=2.0
     )
     actual = instance_to_test._has_moved_significantly(Coord3d(x=1, y=1, z=1))
     assert actual is True
 
 
+# TODO: remove
 def test__when_moved_distance_less_than_threshold__should_NOT_have_moved_significantly() -> (
     None
 ):
     instance_to_test = PathRecorder(
-        distance_threshold=1, on_publish=print_what_to_publish
+        meters_threshold=1, on_publish=print_what_to_publish, seconds_threshold=2.0
     )
     instance_to_test.last_recorded_3d_position = Coord3d(x=0, y=0, z=0)
     actual = instance_to_test._has_moved_significantly(Coord3d(x=0.5, y=0.5, z=0.5))
     assert actual is False
 
 
+# TODO: remove
 def test__when_moved_distance_more_than_threshold__should_have_moved_significantly() -> (
     None
 ):
     instance_to_test = PathRecorder(
-        distance_threshold=1, on_publish=print_what_to_publish
+        meters_threshold=1, on_publish=print_what_to_publish, seconds_threshold=2.0
     )
     instance_to_test.last_recorded_3d_position = Coord3d(x=0, y=0, z=0)
     actual = instance_to_test._has_moved_significantly(Coord3d(x=1, y=1, z=1))
@@ -99,20 +102,21 @@ def test__when_moved_distance_more_than_threshold__should_have_moved_significant
 
 def test__when_NOT_enough_time_passed__should_NOT_return_new_segment() -> None:
     instance_to_test = PathRecorder(
-        distance_threshold=1, on_publish=print_what_to_publish
+        meters_threshold=1, on_publish=print_what_to_publish, seconds_threshold=2.0
     )
-    position_1 = Coord3d(x=0, y=0, z=0)
-    timed_1 = TimedCoord3d(coord=position_1, created_at=0)
-    timed_2 = TimedCoord3d(coord=position_1, created_at=1)
-    possible_segment_1 = instance_to_test.step(new_pos=timed_1)
-    assert possible_segment_1 is None
-    possible_segment_2 = instance_to_test.step(new_pos=timed_1)
-    assert possible_segment_2 is None
+    instance_to_test.step(
+        new_pos=TimedCoord3d(coord=Coord3d(x=0, y=0, z=0), created_at=0)
+    )
+    instance_to_test.step(
+        new_pos=TimedCoord3d(coord=Coord3d(x=0, y=0, z=0), created_at=1)
+    )
+    actual = instance_to_test.get_finalized_segments()
+    assert len(actual) == 0
 
 
 def test__should_be_one_finalized_segment() -> None:
     instance_to_test = PathRecorder(
-        distance_threshold=1, on_publish=print_what_to_publish
+        meters_threshold=1, on_publish=print_what_to_publish, seconds_threshold=2.0
     )
     instance_to_test.step(TimedCoord3d(coord=Coord3d(x=0, y=0, z=0), created_at=0))
     instance_to_test.step(TimedCoord3d(coord=Coord3d(x=1, y=1, z=1), created_at=1))
@@ -123,7 +127,7 @@ def test__should_be_one_finalized_segment() -> None:
 
 def test__should_be_one_finalized_and_one_in_progress() -> None:
     instance_to_test = PathRecorder(
-        distance_threshold=1, on_publish=print_what_to_publish
+        meters_threshold=1, on_publish=print_what_to_publish, seconds_threshold=2.0
     )
     instance_to_test.step(TimedCoord3d(coord=Coord3d(x=1, y=1, z=1), created_at=0))
     instance_to_test.step(TimedCoord3d(coord=Coord3d(x=2, y=2, z=2), created_at=1))
@@ -132,14 +136,11 @@ def test__should_be_one_finalized_and_one_in_progress() -> None:
     actual_finalized = instance_to_test.get_finalized_segments()
     assert len(actual_finalized) == 1
     assert instance_to_test.get_segment_in_progress() is not None
-    # assert actual["ended_at_seconds"] == 1.5
-    # assert actual["polyline"][-1] == Coord3d(x=3, y=3, z=3)
-    # assert len(actual["polyline"]) == 3
 
 
 def test__the_finalized_should_have_correct_start_and_finish() -> None:
     instance_to_test = PathRecorder(
-        distance_threshold=1, on_publish=print_what_to_publish
+        meters_threshold=1, on_publish=print_what_to_publish, seconds_threshold=2.0
     )
     instance_to_test.step(TimedCoord3d(coord=Coord3d(x=1, y=1, z=1), created_at=0))
     instance_to_test.step(TimedCoord3d(coord=Coord3d(x=2, y=2, z=2), created_at=1))
@@ -150,16 +151,11 @@ def test__the_finalized_should_have_correct_start_and_finish() -> None:
     assert actual_finalized[0]["ended_at_seconds"] == 1.5
     assert actual_finalized[0]["polyline"][0]["coord"] == Coord3d(x=1, y=1, z=1)
     assert actual_finalized[0]["polyline"][-1]["coord"] == Coord3d(x=3, y=3, z=3)
-    # assert len(actual_finalized) == 1
-    # assert instance_to_test.get_segment_in_progress() is not None
-    # assert actual["ended_at_seconds"] == 1.5
-    # assert actual["polyline"][-1] == Coord3d(x=3, y=3, z=3)
-    # assert len(actual["polyline"]) == 3
 
 
 def test__finalized_segments_should_be_connected() -> None:
     instance_to_test = PathRecorder(
-        distance_threshold=1, on_publish=print_what_to_publish
+        meters_threshold=1, on_publish=print_what_to_publish, seconds_threshold=2.0
     )
     instance_to_test.step(TimedCoord3d(coord=Coord3d(x=1, y=1, z=1), created_at=0))
     instance_to_test.step(TimedCoord3d(coord=Coord3d(x=2, y=2, z=2), created_at=1.9))
@@ -172,7 +168,7 @@ def test__finalized_segments_should_be_connected() -> None:
 
 def test__when_segment_without_movement__should_discard_that() -> None:
     instance_to_test = PathRecorder(
-        distance_threshold=1, on_publish=print_what_to_publish
+        meters_threshold=1, on_publish=print_what_to_publish, seconds_threshold=2.0
     )
     # some movement
     instance_to_test.step(TimedCoord3d(coord=Coord3d(x=0, y=0, z=0), created_at=0))
@@ -196,61 +192,24 @@ def test__when_segment_without_movement__should_discard_that() -> None:
     actual_finalized = instance_to_test.get_finalized_segments()
 
     assert len(actual_finalized) == 2
-    # assert actual_finalized[0]["started_at_seconds"] == 0
-    # assert actual_finalized[0]["ended_at_seconds"] == 1.5
-    # assert actual_finalized[0]["polyline"][0] == Coord3d(x=1, y=1, z=1)
-    # assert actual_finalized[0]["polyline"][-1] == Coord3d(x=3, y=3, z=3)
-
-    # assert len(actual_finalized) == 1
-    # assert instance_to_test.get_segment_in_progress() is not None
-    # assert actual["ended_at_seconds"] == 1.5
-    # assert actual["polyline"][-1] == Coord3d(x=3, y=3, z=3)
-    # assert len(actual["polyline"]) == 3
 
 
-# def test__when_time_has_passed_but_not_enough_distance__should_return_connected_segments() -> (
-#     None
-# ):
-#     instance_to_test = PathRecorder(
-#         distance_threshold=1, on_publish=print_what_to_publish
-#     )
-#     # some movement within time threshold
-#     instance_to_test.step(TimedCoord3d(coord=Coord3d(x=1, y=1, z=1), created_at=0))
-#     instance_to_test.step(TimedCoord3d(coord=Coord3d(x=2, y=2, z=2), created_at=1))
-#     instance_to_test.step(TimedCoord3d(coord=Coord3d(x=3, y=3, z=3), created_at=1.5))
-#     instance_to_test.step(TimedCoord3d(coord=Coord3d(x=4, y=4, z=4), created_at=1.99))
+def test__should_be_able_to_change_distance_and_time_threshold() -> None:
+    instance_to_test = PathRecorder(
+        meters_threshold=2, on_publish=print_what_to_publish, seconds_threshold=10
+    )
+    instance_to_test.step(TimedCoord3d(coord=Coord3d(x=0, y=0, z=0), created_at=0))
+    instance_to_test.step(TimedCoord3d(coord=Coord3d(x=2, y=2, z=2), created_at=9.9))
 
-#     # new segment without much movement
-#     segment_1 = instance_to_test.step(
-#         TimedCoord3d(coord=Coord3d(x=5, y=5, z=5), created_at=2.01)
-#     )
+    # change thresholds
+    instance_to_test.set_thresholds(seconds_threshold=2.0, meters_threshold=0.5)
 
-#     possible_segment_2 = instance_to_test.step(
-#         TimedCoord3d(coord=Coord3d(x=5.1, y=5.1, z=5.1), created_at=2.2)
-#     )
-#     possible_segment_3 = instance_to_test.step(
-#         TimedCoord3d(coord=Coord3d(x=5.1, y=5.1, z=5.1), created_at=2.5)
-#     )
-#     possible_segment_4 = instance_to_test.step(
-#         TimedCoord3d(coord=Coord3d(x=5.2, y=5.2, z=5.2), created_at=3.9)
-#     )
+    # more steps
+    instance_to_test.step(TimedCoord3d(coord=Coord3d(x=3, y=3, z=3), created_at=10.5))
+    instance_to_test.step(TimedCoord3d(coord=Coord3d(x=4, y=4, z=4), created_at=11.5))
 
-#     possible_segment_5 = instance_to_test.step(
-#         TimedCoord3d(coord=Coord3d(x=5.2, y=5.2, z=5.2), created_at=4.01)
-#     )
-#     possible_segment_6 = instance_to_test.step(
-#         TimedCoord3d(coord=Coord3d(x=6.2, y=6.2, z=6.2), created_at=5.99)
-#     )
-#     possible_segment_7 = instance_to_test.step(
-#         TimedCoord3d(coord=Coord3d(x=7, y=7, z=7), created_at=6.01)
-#     )
+    # one more, to finalize the previous
+    instance_to_test.step(TimedCoord3d(coord=Coord3d(x=5, y=5, z=5), created_at=13))
 
-#     assert segment_1["finalized"] == False
-#     assert segment_1["started_at_seconds"] == 0
-#     assert segment_1["ended_at_seconds"] == 1.99
-#     assert segment_1["polyline"][0] == Coord3d(x=1, y=1, z=1)
-#     assert segment_1["polyline"][-1] == Coord3d(x=4, y=4, z=4)
-
-#     assert possible_segment_5 is None
-
-#     assert possible_segment_7 is not None
+    actual = instance_to_test.get_finalized_segments()
+    assert len(actual) == 2

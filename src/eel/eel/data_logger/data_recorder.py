@@ -36,23 +36,26 @@ def get_3d_distance(coord1: Coord3d, coord2: Coord3d) -> float:
 
 class PathRecorder:
     def __init__(
-        self, distance_threshold: float, on_publish: Callable[[Segment], None]
+        self,
+        meters_threshold: float,
+        on_publish: Callable[[Segment], None],
+        seconds_threshold: float,
     ) -> None:
         self.last_recorded_3d_position = None
-        self.distance_threshold = distance_threshold
+        self.meters_threshold = meters_threshold
+        self.seconds_threshold = seconds_threshold
         self.current_latlon: Union[LatLon, None] = None
         self.current_depth: Union[float, None] = None
         self.seconds_threshold = 2.0
         self.segment_in_progress: Union[Segment2, None] = None
         self.last_finalized_segment: Union[Segment2, None] = None
         self.finalized_segments: List[Segment2] = []
-        # self.last_recor
 
     def _has_moved_significantly(self, next_to_record: Coord3d) -> bool:
         if self.last_recorded_3d_position is None:
             return True
         distance = get_3d_distance(next_to_record, self.last_recorded_3d_position)
-        return distance >= self.distance_threshold
+        return distance >= self.meters_threshold
 
     def update_3d_position(self, new_pos: Coord3d) -> None:
         self.last_recorded_3d_position = new_pos
@@ -89,7 +92,6 @@ class PathRecorder:
         return accumulated_distance
 
     def finalize_segment(self, segment: Segment2) -> Segment2:
-        # segment["finalized"] = True
         start_time = segment["polyline"][0]["created_at"]
         end_time = segment["polyline"][-1]["created_at"]
 
@@ -104,9 +106,6 @@ class PathRecorder:
             polyline=path,
         )
 
-        # segment["ended_at_seconds"] = segment["polyline"][-1][]
-        # return segment
-
     def add_pos_to_running(self, segment: Segment2, pos: TimedCoord3d) -> None:
         total_distance = segment["accumulated_distance"] + get_3d_distance(
             segment["polyline"][-1]["coord"], pos["coord"]
@@ -115,26 +114,9 @@ class PathRecorder:
         segment["accumulated_distance"] = total_distance
 
     def step(self, new_pos: TimedCoord3d) -> None:
-
-        # if self.segment_in_progress:
-        #     # check if we should add to this one
-        #     segment_start = self.segment_in_progress["polyline"][0]["created_at"]
-        #     if new_pos["created_at"] - segment_start >= self.seconds_threshold:
-        #         # finalize the running one
-        #         # return it
-        #         #
-        #         pass
-        #     else:
-        #         self.add_pos_to_running(self.segment_in_progress, new_pos)
-
-        # else:
-        #     self.segment_in_progress = self.init_segment(new_pos)
-
         if not self.segment_in_progress:
             self.segment_in_progress = self.init_segment(new_pos)
-            # return self.segment_in_progress
             return
-            # self.segment_in_progress["polyline"].append(new_pos)
 
         segment_start = self.segment_in_progress["polyline"][0]["created_at"]
 
@@ -151,43 +133,17 @@ class PathRecorder:
             else:
                 self.segment_in_progress = self.init_segment(new_pos)
 
-            if finalized_segment["accumulated_distance"] >= self.distance_threshold:
-                # TODO: check if it's worth keeping
+            if finalized_segment["accumulated_distance"] >= self.meters_threshold:
                 self.last_finalized_segment = finalized_segment
                 self.finalized_segments.append(finalized_segment)
             return
-
-        if new_pos["created_at"] - segment_start >= self.seconds_threshold:
-            if (
-                self.segment_in_progress["accumulated_distance"]
-                >= self.distance_threshold
-            ):
-                finalized_segment = self.finalize_segment(self.segment_in_progress)
-                self.segment_in_progress = self.init_segment(new_pos)
-                self.last_finalized_segment = finalized_segment
-                self.finalized_segments.append(finalized_segment)
-                return
-            else:
-                if self.last_finalized_segment:
-                    last_finalized_pos = self.last_finalized_segment["polyline"][-1]
-                    # last_finalized_end = self.last_finalized_segment["ended_at_seconds"]
-                    self.init_segment(
-                        last_finalized_pos
-                        # TimedCoord3d(
-                        #     coord=last_finalized_pos, created_at=last_finalized_end
-                        # )
-                    )
-                else:
-                    self.init_segment(new_pos)
-                return
-        else:
-            # if len(self.segment_in_progress) != 1:
-            self.add_pos_to_running(self.segment_in_progress, new_pos)
-            return
-            # self.segment_in_progress["polyline"].append(new_pos)
 
     def get_finalized_segments(self) -> List[Segment2]:
         return self.finalized_segments
 
     def get_segment_in_progress(self) -> Union[Segment2, None]:
         return self.segment_in_progress
+
+    def set_thresholds(self, meters_threshold: float, seconds_threshold: float) -> None:
+        self.meters_threshold = meters_threshold
+        self.seconds_threshold = seconds_threshold
