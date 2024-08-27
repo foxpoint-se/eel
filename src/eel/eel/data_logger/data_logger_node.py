@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from time import time
+from datetime import datetime, timezone
 from typing import List, Union
 
 import rclpy
@@ -7,9 +8,9 @@ from rclpy.node import Node
 from eel_interfaces.msg import (
     Coordinate,
     PressureStatus,
-    HistoryEvent,
     Coordinate,
-    HistoryEventList,
+    TracedRoute,
+    SubmergedCoordinate,
     ModemStatus,
 )
 from ..utils.topics import (
@@ -22,24 +23,29 @@ from .data_recorder import PathRecorder, Segment
 from .common import Segment, TimedCoord3d, Coord3d
 
 
-def to_history_event(coord: TimedCoord3d) -> HistoryEvent:
-    ev = HistoryEvent()
+def to_submerged_coordinate(coord: TimedCoord3d) -> SubmergedCoordinate:
+    ev = SubmergedCoordinate()
     c = Coordinate()
     c.lat = coord["coord"]["x"]
     c.lon = coord["coord"]["y"]
     ev.coordinate = c
     ev.depth = coord["coord"]["z"]
-    ev.heading = 0.0
-    ev.pitch = 0.0
-    # TODO: what format for recorded_at
-    ev.recorded_at = int(coord["created_at"])
     return ev
 
 
-def to_history_event_list(segment: Segment) -> HistoryEventList:
-    event_list = HistoryEventList()
-    event_list.history_events = [to_history_event(c) for c in segment["polyline"]]
-    return event_list
+def to_utc_string(timestamp: float) -> str:
+    return datetime.fromtimestamp(timestamp, tz=timezone.utc).isoformat()
+
+
+def to_traced_route(segment: Segment) -> TracedRoute:
+    route = TracedRoute()
+    route.path = [to_submerged_coordinate(c) for c in segment["polyline"]]
+    route.duration_seconds = segment["ended_at_seconds"] - segment["started_at_seconds"]
+    route.xy_distance_covered_meters = segment["accumulated_distance"]
+    route.average_depth_meters = sum([d.depth for d in route.path]) / len(route.path)
+    route.started_at = to_utc_string(segment["started_at_seconds"])
+    route.ended_at = to_utc_string(segment["ended_at_seconds"])
+    return route
 
 
 class DataLogger(Node):
@@ -57,7 +63,7 @@ class DataLogger(Node):
             ModemStatus, MODEM_STATUS, self.on_connectivity_msg, 10
         )
         self.history_event_publisher = self.create_publisher(
-            HistoryEventList, HISTORY_EVENTS, 10
+            TracedRoute, HISTORY_EVENTS, 10
         )
         self.worker = self.create_timer(0.5, self.update_recorder)
 
@@ -70,12 +76,12 @@ class DataLogger(Node):
         self.has_connection: bool = False
         self.current_coord: Union[Coordinate, None] = None
         self.current_depth: Union[float, None] = None
-        self.stored: List[HistoryEventList] = []
+        self.stored: List[TracedRoute] = []
 
         self.logger.info("Data logger node started")
 
     def handle_new_segment(self, segment: Segment) -> None:
-        msg = to_history_event_list(segment)
+        msg = to_traced_route(segment)
         if self.has_connection:
             self.history_event_publisher.publish(msg)
         else:

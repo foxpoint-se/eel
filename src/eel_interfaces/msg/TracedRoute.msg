@@ -1,0 +1,6 @@
+SubmergedCoordinate[] path
+string started_at
+string ended_at
+float32 duration_seconds
+float32 xy_distance_covered_meters
+float32 average_depth_meters

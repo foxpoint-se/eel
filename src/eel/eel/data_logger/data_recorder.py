@@ -16,8 +16,6 @@ from ..utils.nav import (
 # - make it possible to get all the segments at once (in case of reload, for example)
 #   - /history/all/cmd -> publish on /history/all/status ... or something
 #   - publish regularly on /history/updates/status ... or something
-# - remove heading and pitch from events
-# - remove recorded_at from events
 
 
 def get_2d_distance_earth(coord1: Coord3d, coord2: Coord3d) -> float:
