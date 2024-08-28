@@ -10,15 +10,15 @@ from ..utils.nav import (
 
 
 # TODO:
-# - change from xyz coords to latlon
+# - change topic names
 
 
 def get_2d_distance_earth(coord1: Coord3d, coord2: Coord3d) -> float:
     return get_distance_in_meters(
-        coord1["x"],
-        coord1["y"],
-        coord2["x"],
-        coord2["y"],
+        coord1["lat"],
+        coord1["lon"],
+        coord2["lat"],
+        coord2["lon"],
     )
 
 

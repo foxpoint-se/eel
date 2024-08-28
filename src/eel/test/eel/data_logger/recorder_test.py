@@ -7,13 +7,15 @@ from geopy import distance
 def add_meters(coord: Coord3d, meters_to_add: float) -> Coord3d:
     bearing = 45
     new_position = distance.distance(meters=meters_to_add).destination(
-        (coord["x"], coord["y"]),
+        (coord["lat"], coord["lon"]),
         bearing=bearing,
     )
-    return Coord3d(x=new_position.latitude, y=new_position.longitude, z=coord["z"])
+    return Coord3d(
+        lat=new_position.latitude, lon=new_position.longitude, depth=coord["depth"]
+    )
 
 
-origin = Coord3d(x=59.309395, y=17.974279, z=0)
+origin = Coord3d(lat=59.309395, lon=17.974279, depth=0)
 origin_plus1 = add_meters(origin, 1.1)
 origin_plus2 = add_meters(origin, 2.1)
 origin_plus3 = add_meters(origin, 3.1)

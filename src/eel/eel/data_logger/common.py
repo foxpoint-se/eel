@@ -2,9 +2,9 @@ from typing import List, TypedDict
 
 
 class Coord3d(TypedDict):
-    x: float
-    y: float
-    z: float
+    lat: float
+    lon: float
+    depth: float
 
 
 class LatLon(TypedDict):

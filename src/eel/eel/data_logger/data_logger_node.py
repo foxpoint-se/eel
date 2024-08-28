@@ -26,10 +26,10 @@ from .common import Segment, TimedCoord3d, Coord3d
 def to_submerged_coordinate(coord: TimedCoord3d) -> SubmergedCoordinate:
     ev = SubmergedCoordinate()
     c = Coordinate()
-    c.lat = coord["coord"]["x"]
-    c.lon = coord["coord"]["y"]
+    c.lat = coord["coord"]["lat"]
+    c.lon = coord["coord"]["lon"]
     ev.coordinate = c
-    ev.depth = coord["coord"]["z"]
+    ev.depth = coord["coord"]["depth"]
     return ev
 
 
@@ -91,9 +91,9 @@ class DataLogger(Node):
         if self.current_coord and self.current_depth is not None:
             new_pos = TimedCoord3d(
                 coord=Coord3d(
-                    x=self.current_coord.lat,
-                    y=self.current_coord.lon,
-                    z=self.current_depth,
+                    lat=self.current_coord.lat,
+                    lon=self.current_coord.lon,
+                    depth=self.current_depth,
                 ),
                 created_at=time(),
             )
