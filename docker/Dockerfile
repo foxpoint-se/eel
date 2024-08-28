@@ -31,11 +31,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-${ROS_DISTRO}-rosbridge-suite && \
     rm -rf /var/lib/apt/lists/*
 
-# Install ros bag and mpac storage extension
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ros-${ROS_DISTRO}-ros2bag && \
-    rm -rf /var/lib/apt/lists/*
-
+# Install ros bag mpac storage extension, which works better than sqlite
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-${ROS_DISTRO}-rosbag2-storage-mcap && \
     rm -rf /var/lib/apt/lists/*
