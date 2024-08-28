@@ -155,11 +155,14 @@ class NavigationActionClient(Node):
         """Smelly function that does two things, first check incoming leakage status message, 
         then checks battery level and mission time. These are all sources for mission aborts, 
         if any of them is in a trigger state then cancel current mission."""
-        battery_level_threshold = 10.0
+        battery_level_threshold = 0.10
         battery_level_low = self.last_seen_battery_level < battery_level_threshold
         
-        maximum_mission_time_s = 2700
-        mission_time_exceeded = int(time() - self.mission_start_time) > maximum_mission_time_s
+        if self.mission_start_time:
+            maximum_mission_time_s = 2700
+            mission_time_exceeded = int(time() - self.mission_start_time) > maximum_mission_time_s
+        else:
+            mission_time_exceeded = False
 
         leakage_detected = msg.data
 
