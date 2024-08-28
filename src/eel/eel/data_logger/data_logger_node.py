@@ -17,7 +17,7 @@ from ..utils.topics import (
     MODEM_STATUS,
     LOCALIZATION_STATUS,
     PRESSURE_STATUS,
-    HISTORY_EVENTS,
+    ROUTE_TRACING_UPDATES,
 )
 from .data_recorder import PathRecorder, Segment
 from .common import Segment, TimedCoord3d, Coord3d
@@ -63,7 +63,7 @@ class DataLogger(Node):
             ModemStatus, MODEM_STATUS, self.on_connectivity_msg, 10
         )
         self.history_event_publisher = self.create_publisher(
-            TracedRoute, HISTORY_EVENTS, 10
+            TracedRoute, ROUTE_TRACING_UPDATES, 10
         )
         self.worker = self.create_timer(1.0, self.update_recorder)
 

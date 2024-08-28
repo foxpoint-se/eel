@@ -9,10 +9,6 @@ from ..utils.nav import (
 )
 
 
-# TODO:
-# - change topic names
-
-
 def get_2d_distance_earth(coord1: Coord3d, coord2: Coord3d) -> float:
     return get_distance_in_meters(
         coord1["lat"],
@@ -60,13 +56,13 @@ class PathRecorder:
         start_time = first["created_at"]
         end_time = last["created_at"]
 
-        # TODO: we could simplify the path here.
-        # but that would involve having to ensure that the two endpoints are correct
-        # as well as setting the depth for each new coordinate, based on some sort of
-        # algorithm to determine it from the adjacent coordinates in the original path
-        # or something
         path_distance = self.get_path_distance(segment["polyline"])
 
+        # NOTE: We could simplify the path more elegantly here.
+        # But that would involve having to ensure that the two endpoints are correct
+        # as well as setting the depth for each new coordinate, based on some sort of
+        # algorithm to determine it from the adjacent coordinates in the original path
+        # or something.
         simplified_polyline = [first, last]
 
         return Segment(

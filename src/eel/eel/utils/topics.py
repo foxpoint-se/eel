@@ -37,7 +37,7 @@ DEPTH_CONTROL_CMD = "depth_control/cmd"
 BATTERY_STATUS = "battery/status"
 
 # History
-HISTORY_EVENTS = "history/events"
+ROUTE_TRACING_UPDATES = "route_tracing/updates"
 
 # Modem
 MODEM_STATUS = "modem/status"
