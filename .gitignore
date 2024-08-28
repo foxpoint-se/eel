@@ -16,7 +16,7 @@ log
 .idea
 
 # ros bags folder
-# ros_bags
+ros_bags
 
 # pigpio stuff
 pigpio-master
