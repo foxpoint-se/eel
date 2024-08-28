@@ -11,11 +11,6 @@ from ..utils.nav import (
 
 # TODO:
 # - change from xyz coords to latlon
-# - make it possible to switch on and off recording. can be done from the nav node
-# - change chunk size above and below surface. change both seconds and meters
-# - make it possible to get all the segments at once (in case of reload, for example)
-#   - /history/all/cmd -> publish on /history/all/status ... or something
-#   - publish regularly on /history/updates/status ... or something
 
 
 def get_2d_distance_earth(coord1: Coord3d, coord2: Coord3d) -> float:
@@ -60,8 +55,10 @@ class PathRecorder:
         return accumulated_distance
 
     def finalize_segment(self, segment: Segment) -> Segment:
-        start_time = segment["polyline"][0]["created_at"]
-        end_time = segment["polyline"][-1]["created_at"]
+        first = segment["polyline"][0]
+        last = segment["polyline"][-1]
+        start_time = first["created_at"]
+        end_time = last["created_at"]
 
         # TODO: we could simplify the path here.
         # but that would involve having to ensure that the two endpoints are correct
@@ -70,12 +67,14 @@ class PathRecorder:
         # or something
         path_distance = self.get_path_distance(segment["polyline"])
 
+        simplified_polyline = [first, last]
+
         return Segment(
             started_at_seconds=start_time,
             ended_at_seconds=end_time,
             accumulated_distance=path_distance,
             finalized=True,
-            polyline=segment["polyline"],
+            polyline=simplified_polyline,
         )
 
     def add_pos_to_running(self, segment: Segment, pos: TimedCoord3d) -> None:

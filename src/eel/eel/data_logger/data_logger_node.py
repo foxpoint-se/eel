@@ -65,7 +65,7 @@ class DataLogger(Node):
         self.history_event_publisher = self.create_publisher(
             TracedRoute, HISTORY_EVENTS, 10
         )
-        self.worker = self.create_timer(0.5, self.update_recorder)
+        self.worker = self.create_timer(1.0, self.update_recorder)
 
         # TODO: we need to change seconds threshold, either here or when connectivity is back
         self.recorder = PathRecorder(
@@ -88,7 +88,7 @@ class DataLogger(Node):
             self.stored.append(msg)
 
     def update_recorder(self) -> None:
-        if self.current_coord and self.current_depth:
+        if self.current_coord and self.current_depth is not None:
             new_pos = TimedCoord3d(
                 coord=Coord3d(
                     x=self.current_coord.lat,
@@ -102,9 +102,12 @@ class DataLogger(Node):
     def on_connectivity_msg(self, modem_status: ModemStatus) -> None:
         self.has_connection = modem_status.connectivity
         if self.has_connection:
+            self.recorder.set_thresholds(meters_threshold=1, seconds_threshold=3.0)
             for msg in self.stored:
                 self.history_event_publisher.publish(msg)
                 self.stored = []
+        else:
+            self.recorder.set_thresholds(meters_threshold=1, seconds_threshold=10.0)
 
     def handle_pressure_msg(self, msg: PressureStatus) -> None:
         self.current_depth = msg.depth
