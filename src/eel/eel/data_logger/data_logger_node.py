@@ -67,7 +67,6 @@ class DataLogger(Node):
         )
         self.worker = self.create_timer(1.0, self.update_recorder)
 
-        # TODO: we need to change seconds threshold, either here or when connectivity is back
         self.recorder = PathRecorder(
             meters_threshold=1.0,
             seconds_threshold=10.0,
