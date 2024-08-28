@@ -57,7 +57,7 @@ class DataLogger(Node):
         
         # If the depth could possibly allow us to have a backend connection, query mode for signal strength
         if valid_connectivity_depth:
-            backend_connectivity = self.modem_reg_status == 1 and self.modem_signal_strength >= 16
+            backend_connectivity = self.modem_reg_status == 1 and self.modem_signal_strength >= 13
 
             # If there is backend connectivity and there is a active log file, then send it and delete log file
             if backend_connectivity and self.history_event_loggs:
