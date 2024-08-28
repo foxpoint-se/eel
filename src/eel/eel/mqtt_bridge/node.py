@@ -15,6 +15,7 @@ from eel_interfaces.msg import (
     TankStatus,
     PressureStatus,
     DepthControlCmd,
+    ModemStatus,
 )
 
 from ..utils.topics import (
@@ -33,6 +34,7 @@ from ..utils.topics import (
     FRONT_TANK_STATUS,
     PRESSURE_STATUS,
     DEPTH_CONTROL_CMD,
+    MODEM_STATUS,
 )
 from ..utils.throttle import throttle
 
@@ -179,6 +181,8 @@ class MqttBridge(Node):
             self.get_parameter("path_for_config").get_parameter_value().string_value
         )
 
+        self.is_connected: bool = False
+
         self.get_logger().info("MQTT bridge node starting...")
 
         with open(path_for_config) as f:
@@ -291,6 +295,9 @@ class MqttBridge(Node):
         self.pressure_status_subscription = self.create_subscription(
             PressureStatus, PRESSURE_STATUS, self.pressure_status_callback, 10
         )
+        self.modem_status_subscription = self.create_subscription(
+            ModemStatus, MODEM_STATUS, self.modem_status_callback, 10
+        )
 
     def handle_incoming_front_tank_cmd(
         self,
@@ -402,6 +409,13 @@ class MqttBridge(Node):
             self.mqtt_conn.publish(
                 topic=topic, payload=json_payload, qos=mqtt.QoS.AT_LEAST_ONCE
             )
+
+    def modem_status_callback(self, msg: ModemStatus) -> None:
+        self.is_connected = msg.connectivity
+        if self.is_connected:
+            print("MQTT NODE CONNECTED")
+        else:
+            print("MQTT NODE --- DISCONNECTED! ---")
 
     @throttle(seconds=1)
     def battery_status_callback(self, msg: BatteryStatus) -> None:
