@@ -404,7 +404,7 @@ class MqttBridge(Node):
         self.rudder_vertical_publisher.publish(msg)
 
     def publish_mqtt(self, topic: str, mqtt_message: Mapping) -> None:
-        if self.mqtt_conn:
+        if self.is_connected is True and self.mqtt_conn:
             json_payload = json.dumps(mqtt_message)
             self.mqtt_conn.publish(
                 topic=topic, payload=json_payload, qos=mqtt.QoS.AT_LEAST_ONCE
