@@ -16,7 +16,7 @@ ENV ROS_DISTRO=${ROS_DISTRO}
 SHELL ["/bin/bash", "-c"]
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    git python3-pip wget unzip && \
+    git python3-pip wget unzip tini && \
     rm -rf /var/lib/apt/lists/*
 
 # Use Cyclone DDS as middleware
@@ -75,7 +75,7 @@ RUN colcon test \
 # Set up the entrypoint
 WORKDIR /eel
 COPY ./docker/entrypoint.sh /
-ENTRYPOINT [ "/entrypoint.sh" ]
+ENTRYPOINT ["tini", "--", "/entrypoint.sh"]
 
 #####################
 # Development Image #
