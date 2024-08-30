@@ -86,9 +86,10 @@ class BoolMsgMqtt(TypedDict):
 
 class NavigationStatusMqtt(TypedDict):
     meters_to_target: float
-    tolerance_in_meters: float
-    next_target: List[CoordinateMqtt]
     auto_mode_enabled: bool
+    waypoints_left: List[CoordinateMqtt]
+    count_goals_left: int
+    mission_total_meters: float
 
 
 class NavigationMissionMqtt(TypedDict):
@@ -145,9 +146,10 @@ def transform_bool_msg(msg: Bool) -> BoolMsgMqtt:
 def transform_nav_status(msg: NavigationStatus) -> NavigationStatusMqtt:
     return {
         "auto_mode_enabled": msg.auto_mode_enabled,
+        "count_goals_left": msg.count_goals_left,
         "meters_to_target": msg.meters_to_target,
-        "tolerance_in_meters": msg.tolerance_in_meters,
-        "next_target": [transform_coordinate_msg(t) for t in msg.next_target],
+        "mission_total_meters": msg.mission_total_meters,
+        "waypoints_left": [transform_coordinate_msg(w) for w in msg.waypoints_left],
     }
 
 
