@@ -1,7 +1,13 @@
 from abc import ABC, abstractmethod
 from typing import Callable, TypedDict
 from time import time
-from .common import LatLon, get_2d_distance, get_relative_bearing, get_next_rudder_turn
+from .common import (
+    LatLon,
+    get_2d_distance,
+    get_relative_bearing,
+    get_next_rudder_turn,
+    TOLERANCE_IN_METERS,
+)
 
 
 class AssignmentProgress(TypedDict):
@@ -29,9 +35,6 @@ class Assignment(ABC):
     def get_is_done(self) -> bool:
         """Check if the assignment is complete."""
         pass
-
-
-TOLERANCE_IN_METERS = 5.0
 
 
 class WaypointAndDepth(Assignment):

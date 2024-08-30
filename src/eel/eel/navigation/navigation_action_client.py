@@ -20,8 +20,7 @@ from ..utils.topics import (
 from ..utils.nav import (
     get_distance_in_meters,
 )
-
-TOLERANCE_IN_METERS = 5.0
+from .common import TOLERANCE_IN_METERS
 
 
 def create_waypoint_goal(coordinate: Coordinate) -> Navigate.Goal:

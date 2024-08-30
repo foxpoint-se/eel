@@ -27,3 +27,6 @@ def get_relative_bearing(pos1: LatLon, pos2: LatLon) -> float:
         pos2["lat"],
         pos2["lon"],
     )
+
+
+TOLERANCE_IN_METERS = 5.0
