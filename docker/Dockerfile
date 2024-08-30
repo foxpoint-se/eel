@@ -16,7 +16,7 @@ ENV ROS_DISTRO=${ROS_DISTRO}
 SHELL ["/bin/bash", "-c"]
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    git python3-pip wget unzip && \
+    git python3-pip wget unzip tini && \
     rm -rf /var/lib/apt/lists/*
 
 # Use Cyclone DDS as middleware
@@ -29,6 +29,11 @@ ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 # Install ros bridge for access to local websockets
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-${ROS_DISTRO}-rosbridge-suite && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install ros bag mpac storage extension, which works better than sqlite
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ros-${ROS_DISTRO}-rosbag2-storage-mcap && \
     rm -rf /var/lib/apt/lists/*
 
 # Install Eel specific python dependencies
@@ -70,7 +75,7 @@ RUN colcon test \
 # Set up the entrypoint
 WORKDIR /eel
 COPY ./docker/entrypoint.sh /
-ENTRYPOINT [ "/entrypoint.sh" ]
+ENTRYPOINT ["tini", "--", "/entrypoint.sh"]
 
 #####################
 # Development Image #

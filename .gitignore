@@ -15,6 +15,9 @@ log
 # pycharm stuff
 .idea
 
+# ros bags folder
+ros_bags
+
 # pigpio stuff
 pigpio-master
 master.zip
