@@ -102,7 +102,7 @@ services:
 
   ros_bag:
     image: foxpoint/eel:foxy
-    command: ros2 launch eel_bringup ros_bag.launch.py
+    command: bash -c "ros2 bag record --all --storage mcap --output ros_bags/$(date +'%Y-%m-%d_%H-%M-%S')"
     volumes:
       - ../ros_bags/:/eel/ros_bags/:rw
     network_mode: ${NETWORK_MODE:-bridge}
