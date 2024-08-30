@@ -223,6 +223,7 @@ class NavigationActionServer(Node):
         self.logger.info("Finished goal.")
         self.publish_motor_cmd(0.0)
         self.publish_rudder_cmd(0.0)
+        self.publish_depth_cmd(0.0)
 
         result = Navigate.Result()
         result.success = True
