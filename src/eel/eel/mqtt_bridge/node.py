@@ -15,6 +15,8 @@ from eel_interfaces.msg import (
     TankStatus,
     PressureStatus,
     DepthControlCmd,
+    ModemStatus,
+    TracedRoute,
 )
 
 from ..utils.topics import (
@@ -33,8 +35,11 @@ from ..utils.topics import (
     FRONT_TANK_STATUS,
     PRESSURE_STATUS,
     DEPTH_CONTROL_CMD,
+    MODEM_STATUS,
+    ROUTE_TRACING_UPDATES,
 )
 from ..utils.throttle import throttle
+from .types import CoordinateMqtt, transform_coordinate_msg, to_traced_route_mqtt
 
 
 class CertData(TypedDict):
@@ -75,11 +80,6 @@ class FloatMsgMqtt(TypedDict):
 
 class BoolMsgMqtt(TypedDict):
     data: bool
-
-
-class CoordinateMqtt(TypedDict):
-    lat: float
-    lon: float
 
 
 class NavigationStatusMqtt(TypedDict):
@@ -132,13 +132,6 @@ def transform_imu_msg(msg: ImuStatus) -> ImuStatusMqtt:
     }
 
 
-def transform_coordinate_msg(msg: Coordinate) -> CoordinateMqtt:
-    return {
-        "lat": msg.lat,
-        "lon": msg.lon,
-    }
-
-
 def transform_bool_msg(msg: Bool) -> BoolMsgMqtt:
     return {"data": msg.data}
 
@@ -178,6 +171,8 @@ class MqttBridge(Node):
         path_for_config = (
             self.get_parameter("path_for_config").get_parameter_value().string_value
         )
+
+        self.is_connected: bool = False
 
         self.get_logger().info("MQTT bridge node starting...")
 
@@ -291,6 +286,12 @@ class MqttBridge(Node):
         self.pressure_status_subscription = self.create_subscription(
             PressureStatus, PRESSURE_STATUS, self.pressure_status_callback, 10
         )
+        self.modem_status_subscription = self.create_subscription(
+            ModemStatus, MODEM_STATUS, self.modem_status_callback, 10
+        )
+        self.traced_routes_updates_subscription = self.create_subscription(
+            TracedRoute, ROUTE_TRACING_UPDATES, self.traced_routes_updates_callback, 10
+        )
 
     def handle_incoming_front_tank_cmd(
         self,
@@ -397,11 +398,14 @@ class MqttBridge(Node):
         self.rudder_vertical_publisher.publish(msg)
 
     def publish_mqtt(self, topic: str, mqtt_message: Mapping) -> None:
-        if self.mqtt_conn:
+        if self.is_connected is True and self.mqtt_conn:
             json_payload = json.dumps(mqtt_message)
             self.mqtt_conn.publish(
                 topic=topic, payload=json_payload, qos=mqtt.QoS.AT_LEAST_ONCE
             )
+
+    def modem_status_callback(self, msg: ModemStatus) -> None:
+        self.is_connected = msg.connectivity
 
     @throttle(seconds=1)
     def battery_status_callback(self, msg: BatteryStatus) -> None:
@@ -449,6 +453,11 @@ class MqttBridge(Node):
     def pressure_status_callback(self, msg: PressureStatus) -> None:
         topic = f"{self.robot_name}/{PRESSURE_STATUS}"
         mqtt_message = transform_pressure_status_msg(msg)
+        self.publish_mqtt(topic, mqtt_message)
+
+    def traced_routes_updates_callback(self, msg: TracedRoute) -> None:
+        topic = f"{self.robot_name}/{ROUTE_TRACING_UPDATES}"
+        mqtt_message = to_traced_route_mqtt(msg)
         self.publish_mqtt(topic, mqtt_message)
 
 
