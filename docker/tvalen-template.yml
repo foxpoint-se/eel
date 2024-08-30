@@ -93,3 +93,10 @@ services:
     image: foxpoint/eel:foxy
     command: ros2 run eel localization
     network_mode: ${NETWORK_MODE:-bridge}
+
+  ros_bag:
+    image: foxpoint/eel:foxy
+    command: ros2 launch eel_bringup ros_bag.launch.py
+    volumes:
+      - ../ros_bags/:/eel/ros_bags/:rw
+    network_mode: ${NETWORK_MODE:-bridge}
