@@ -17,6 +17,7 @@ from eel_interfaces.msg import (
     DepthControlCmd,
     ModemStatus,
     TracedRoute,
+    NavigationMission,
 )
 
 from ..utils.topics import (
@@ -37,6 +38,7 @@ from ..utils.topics import (
     DEPTH_CONTROL_CMD,
     MODEM_STATUS,
     ROUTE_TRACING_UPDATES,
+    NAVIGATION_LOAD_MISSION,
 )
 from ..utils.throttle import throttle
 from .types import CoordinateMqtt, transform_coordinate_msg, to_traced_route_mqtt
@@ -87,6 +89,10 @@ class NavigationStatusMqtt(TypedDict):
     tolerance_in_meters: float
     next_target: List[CoordinateMqtt]
     auto_mode_enabled: bool
+
+
+class NavigationMissionMqtt(TypedDict):
+    coordinate_list: List[CoordinateMqtt]
 
 
 class TankStatusMqtt(TypedDict):
@@ -232,6 +238,10 @@ class MqttBridge(Node):
                 f"{self.robot_name}/{DEPTH_CONTROL_CMD}",
                 self.handle_incoming_depth_control_cmd,
             ),
+            (
+                f"{self.robot_name}/{NAVIGATION_LOAD_MISSION}",
+                self.handle_incoming_mission,
+            ),
         ]
         if self.mqtt_conn:
             for t in topics_and_callbacks:
@@ -259,6 +269,9 @@ class MqttBridge(Node):
         self.rear_tank_cmd_publisher = self.create_publisher(Float32, REAR_TANK_CMD, 10)
         self.depth_pitch_publisher = self.create_publisher(
             DepthControlCmd, DEPTH_CONTROL_CMD, 10
+        )
+        self.mission_publisher = self.create_publisher(
+            NavigationMission, NAVIGATION_LOAD_MISSION, 10
         )
 
     def init_subs(self) -> None:
@@ -396,6 +409,25 @@ class MqttBridge(Node):
         msg = Float32()
         msg.data = value
         self.rudder_vertical_publisher.publish(msg)
+
+    def handle_incoming_mission(
+        self,
+        topic: str,
+        payload: bytes,
+        dup: bool,
+        qos: mqtt.QoS,
+        retain: bool,
+        **kwargs,
+    ) -> None:
+        converted = cast(NavigationMissionMqtt, json.loads(payload))
+        msg = NavigationMission()
+        msg.coordinate_list = []
+        for c in converted["coordinate_list"]:
+            coord = Coordinate()
+            coord.lat = c["lat"]
+            coord.lon = c["lon"]
+            msg.coordinate_list.append(coord)
+        self.mission_publisher.publish(msg)
 
     def publish_mqtt(self, topic: str, mqtt_message: Mapping) -> None:
         if self.is_connected is True and self.mqtt_conn:
