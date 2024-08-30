@@ -1,4 +1,5 @@
 float32 meters_to_target
-float32 tolerance_in_meters
-Coordinate[] next_target
 bool auto_mode_enabled
+Coordinate[] waypoints_left
+int16 count_goals_left
+float32 mission_total_meters

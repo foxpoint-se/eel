@@ -1,3 +1,4 @@
+from eel_interfaces.msg import Coordinate
 from typing import TypedDict
 from ..utils.nav import (
     get_distance_in_meters,
@@ -20,6 +21,15 @@ def get_2d_distance(pos1: LatLon, pos2: LatLon) -> float:
     )
 
 
+def get_2d_distance_from_coords(coord1: Coordinate, coord2: Coordinate) -> float:
+    return get_distance_in_meters(
+        coord1.lat,
+        coord1.lon,
+        coord2.lat,
+        coord2.lon,
+    )
+
+
 def get_relative_bearing(pos1: LatLon, pos2: LatLon) -> float:
     return get_relative_bearing_in_degrees(
         pos1["lat"],
@@ -27,3 +37,6 @@ def get_relative_bearing(pos1: LatLon, pos2: LatLon) -> float:
         pos2["lat"],
         pos2["lon"],
     )
+
+
+TOLERANCE_IN_METERS = 5.0

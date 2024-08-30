@@ -9,7 +9,13 @@ from rclpy.action import ActionClient
 from rclpy.node import Node
 
 from eel_interfaces.action import Navigate
-from eel_interfaces.msg import NavigationStatus, NavigationMission, Coordinate, BatteryStatus
+from eel_interfaces.action._navigate import Navigate_FeedbackMessage
+from eel_interfaces.msg import (
+    NavigationStatus,
+    NavigationMission,
+    Coordinate,
+    BatteryStatus,
+)
 from ..utils.topics import (
     BATTERY_STATUS,
     LEAKAGE_STATUS,
@@ -20,8 +26,7 @@ from ..utils.topics import (
 from ..utils.nav import (
     get_distance_in_meters,
 )
-
-TOLERANCE_IN_METERS = 5.0
+from .common import get_2d_distance_from_coords
 
 
 def create_waypoint_goal(coordinate: Coordinate) -> Navigate.Goal:
@@ -72,6 +77,30 @@ def create_goals(coordinates: Sequence[Coordinate]) -> Deque[Navigate.Goal]:
     return result
 
 
+def is_waypoint_goal(goal: Navigate.Goal) -> bool:
+    return goal.type == Navigate.Goal.TYPE_WAYPOINT
+
+
+def extract_waypoints_from_goals(goals: Deque[Navigate.Goal]) -> List[Coordinate]:
+    waypoints: List[Coordinate] = []
+    for goal in goals:
+        if is_waypoint_goal(goal):
+            waypoints.append(goal.next_coordinate)
+    return waypoints
+
+
+def calculate_mission_distance_meters(goals: Deque[Navigate.Goal]) -> float:
+    waypoints = extract_waypoints_from_goals(goals)
+    total = 0.0
+    for index, elem in enumerate(waypoints):
+        has_next = index < (len(waypoints) - 1)
+        if has_next:
+            next = waypoints[index + 1]
+            distance_to_next = get_2d_distance_from_coords(elem, next)
+            total += distance_to_next
+    return total
+
+
 class NavigationActionClient(Node):
 
     def __init__(self):
@@ -99,6 +128,8 @@ class NavigationActionClient(Node):
             NavigationStatus, NAVIGATION_STATUS, 10
         )
 
+        self.updater = self.create_timer(1.0, self.publish_status)
+
         self.last_seen_battery_level = 100.0
 
         self.goals: Deque[Navigate.Goal] = deque()
@@ -106,8 +137,19 @@ class NavigationActionClient(Node):
         self.mission_start_time = None
         self.goals_in_progress = False
         self.auto_mode = False
+        self.meters_to_next_target: float = 0.0
+        self.mission_total_meters: float = 0.0
 
         self.logger.info("Navigation client started")
+
+    def publish_status(self) -> None:
+        nav_msg = NavigationStatus()
+        nav_msg.auto_mode_enabled = self.auto_mode
+        nav_msg.meters_to_target = self.meters_to_next_target
+        nav_msg.mission_total_meters = self.mission_total_meters
+        nav_msg.waypoints_left = extract_waypoints_from_goals(self.goals)
+        nav_msg.count_goals_left = len(self.goals)
+        self.nav_publisher.publish(nav_msg)
 
     def set_mission(self, msg: NavigationMission) -> None:
         """Takes a list of coordinates and converts them to a list of navigation goals."""
@@ -118,9 +160,12 @@ class NavigationActionClient(Node):
         else:
             self.goals = create_goals(coordinates)
 
-        self.logger.info(f"Set mission with {len(self.goals)} coordinates.")
+        self.mission_total_meters = calculate_mission_distance_meters(self.goals)
+        self.logger.info(
+            f"Set mission with {len(self.goals)} goals over {self.mission_total_meters} meters."
+        )
 
-    def handle_nav_cmd(self, msg):
+    def handle_nav_cmd(self, msg: Bool) -> None:
         """Handler for nav cmd messages, either automode or manual as bool."""
         new_auto_mode = msg.data
 
@@ -147,27 +192,34 @@ class NavigationActionClient(Node):
 
         self.auto_mode = new_auto_mode
 
-    def handle_battery_status(self, msg):
+    def handle_battery_status(self, msg: BatteryStatus) -> None:
         """Updates the last seen battery level variable."""
         self.last_seen_battery_level = msg.voltage_percent
 
     def check_mission_abort_status(self, msg):
-        """Smelly function that does two things, first check incoming leakage status message, 
-        then checks battery level and mission time. These are all sources for mission aborts, 
+        """Smelly function that does two things, first check incoming leakage status message,
+        then checks battery level and mission time. These are all sources for mission aborts,
         if any of them is in a trigger state then cancel current mission."""
         battery_level_threshold = 0.10
         battery_level_low = self.last_seen_battery_level < battery_level_threshold
-        
+
         if self.mission_start_time:
             maximum_mission_time_s = 2700
-            mission_time_exceeded = int(time() - self.mission_start_time) > maximum_mission_time_s
+            mission_time_exceeded = (
+                int(time() - self.mission_start_time) > maximum_mission_time_s
+            )
         else:
             mission_time_exceeded = False
 
         leakage_detected = msg.data
 
-        if any([battery_level_low, leakage_detected, mission_time_exceeded]) and self.goals_in_progress:
-            self.logger.info(f"Battery low: {battery_level_low}\tMission time exceeded: {mission_time_exceeded}\t Leakage detected: {leakage_detected}")
+        if (
+            any([battery_level_low, leakage_detected, mission_time_exceeded])
+            and self.goals_in_progress
+        ):
+            self.logger.info(
+                f"Battery low: {battery_level_low}\tMission time exceeded: {mission_time_exceeded}\t Leakage detected: {leakage_detected}"
+            )
             self.logger.info("Aborting mission")
             self.auto_mode = False
             self.cancel_goals_in_progress()
@@ -215,24 +267,17 @@ class NavigationActionClient(Node):
                 self.logger.info(f"Finished mission, no more goals left.")
                 self.goals_in_progress = False
                 self.mission_start_time = None
+                self.auto_mode = False
+                self.mission_total_meters = 0.0
             else:
                 self.send_goal(self.goals[0])
 
         elif status == GoalStatus.STATUS_CANCELED:
             self.logger.info(f"Goal was cancelled")
 
-    def feedback_callback(self, feedback):
+    def feedback_callback(self, feedback: Navigate_FeedbackMessage):
         """Feed back message from action server sent once per second when action server gets a gps position."""
-        nav_msg = NavigationStatus()
-        nav_msg.auto_mode_enabled = self.auto_mode
-        nav_msg.meters_to_target = feedback.feedback.distance_to_target
-        nav_msg.tolerance_in_meters = TOLERANCE_IN_METERS
-        coordinate = Coordinate()
-        coordinate.lat = self.goals[0].next_coordinate.lat
-        coordinate.lon = self.goals[0].next_coordinate.lon
-        nav_msg.next_target = [coordinate]
-
-        self.nav_publisher.publish(nav_msg)
+        self.meters_to_next_target = feedback.feedback.distance_to_target
 
     def send_goal(self, goal_msg):
         """Method for sending a goal to the action server, returns a goal handle from the server."""
