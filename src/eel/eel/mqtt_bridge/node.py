@@ -39,6 +39,7 @@ from ..utils.topics import (
     MODEM_STATUS,
     ROUTE_TRACING_UPDATES,
     NAVIGATION_LOAD_MISSION,
+    GNSS_STATUS,
 )
 from ..utils.throttle import throttle
 from .types import CoordinateMqtt, transform_coordinate_msg, to_traced_route_mqtt
@@ -244,6 +245,10 @@ class MqttBridge(Node):
                 f"{self.robot_name}/{NAVIGATION_LOAD_MISSION}",
                 self.handle_incoming_mission,
             ),
+            (
+                f"{self.robot_name}/{GNSS_STATUS}",
+                self.handle_incoming_gnss_status,
+            ),
         ]
         if self.mqtt_conn:
             for t in topics_and_callbacks:
@@ -275,6 +280,7 @@ class MqttBridge(Node):
         self.mission_publisher = self.create_publisher(
             NavigationMission, NAVIGATION_LOAD_MISSION, 10
         )
+        self.gnss_status_publisher = self.create_publisher(Coordinate, GNSS_STATUS, 10)
 
     def init_subs(self) -> None:
         self.imu_subscription = self.create_subscription(
@@ -430,6 +436,21 @@ class MqttBridge(Node):
             coord.lon = c["lon"]
             msg.coordinate_list.append(coord)
         self.mission_publisher.publish(msg)
+
+    def handle_incoming_gnss_status(
+        self,
+        topic: str,
+        payload: bytes,
+        dup: bool,
+        qos: mqtt.QoS,
+        retain: bool,
+        **kwargs,
+    ) -> None:
+        converted = cast(CoordinateMqtt, json.loads(payload))
+        msg = Coordinate()
+        msg.lat = converted["lat"]
+        msg.lon = converted["lon"]
+        self.gnss_status_publisher.publish(msg)
 
     def publish_mqtt(self, topic: str, mqtt_message: Mapping) -> None:
         if self.is_connected is True and self.mqtt_conn:
