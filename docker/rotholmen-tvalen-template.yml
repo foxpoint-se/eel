@@ -1,0 +1,82 @@
+version: "3.9"
+services:
+  imu:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel imu --ros-args -p simulate:=true
+    devices:
+      - "/dev/i2c-1:/dev/i2c-1"
+    network_mode: ${NETWORK_MODE:-host}
+
+  motor:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel motor
+    privileged: true
+    network_mode: ${NETWORK_MODE:-host}
+
+  rudder:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel rudder --ros-args -p pigpiod_host:=${PIGPIOD_HOST:-pigpiod}
+    privileged: true
+    network_mode: ${NETWORK_MODE:-host}
+
+  battery:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel battery --ros-args -p simulate:=true
+    devices:
+      - "/dev/i2c-1:/dev/i2c-1"
+    network_mode: ${NETWORK_MODE:-host}
+
+  pressure:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel pressure --ros-args -p simulate:=true
+    devices:
+      - "/dev/ttyUSB0:/dev/ttyUSB1"
+    network_mode: ${NETWORK_MODE:-host}
+
+  depth_control:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel depth_control_rudder
+    network_mode: ${NETWORK_MODE:-host}
+
+  modem:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel modem
+    devices:
+      - "/dev/ttyUSB4:/dev/ttyUSB4"
+    privileged: true
+    network_mode: ${NETWORK_MODE:-host}
+
+  mqtt_bridge:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel mqtt_bridge --ros-args -p path_for_config:=/home/ubuntu/fleet/local_certs_and_config/iot_config.json
+    volumes:
+      - ../../fleet/local_certs_and_config/:/home/ubuntu/fleet/local_certs_and_config/:r
+    network_mode: ${NETWORK_MODE:-host}
+
+  navigation_action_server:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel navigate
+    network_mode: ${NETWORK_MODE:-host}
+
+  navigation_action_client:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel navigate_client
+    network_mode: ${NETWORK_MODE:-host}
+
+  localization:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel localization
+    network_mode: ${NETWORK_MODE:-host}
+
+  data_logger:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel data_logger
+    network_mode: ${NETWORK_MODE:-host}
+
+  ros_bag:
+    image: foxpoint/eel:foxy
+    command: bash -c "ros2 bag record --all --storage mcap --output ros_bags/$(date +'%Y-%m-%d_%H-%M-%S')"
+    volumes:
+      - ../ros_bags/:/eel/ros_bags/:rw
+    network_mode: ${NETWORK_MODE:-host}
+
