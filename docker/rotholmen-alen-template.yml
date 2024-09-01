@@ -6,18 +6,30 @@ services:
     devices:
       - "/dev/i2c-1:/dev/i2c-1"
     network_mode: ${NETWORK_MODE:-host}
+    environment:
+      CYCLONEDDS_URI: file:///eel/cyclonedds.xml
+    volumes:
+      - ./cyclonedds.xml:/eel/cyclonedds.xml:r
 
   motor:
     image: foxpoint/eel:foxy
     command: ros2 run eel motor
     privileged: true
     network_mode: ${NETWORK_MODE:-host}
+    environment:
+      CYCLONEDDS_URI: file:///eel/cyclonedds.xml
+    volumes:
+      - ./cyclonedds.xml:/eel/cyclonedds.xml:r
 
   rudder:
     image: foxpoint/eel:foxy
     command: ros2 run eel rudder --ros-args -p pigpiod_host:=${PIGPIOD_HOST:-pigpiod}
     privileged: true
     network_mode: ${NETWORK_MODE:-host}
+    environment:
+      CYCLONEDDS_URI: file:///eel/cyclonedds.xml
+    volumes:
+      - ./cyclonedds.xml:/eel/cyclonedds.xml:r
 
   battery:
     image: foxpoint/eel:foxy
@@ -25,6 +37,10 @@ services:
     devices:
       - "/dev/i2c-1:/dev/i2c-1"
     network_mode: ${NETWORK_MODE:-host}
+    environment:
+      CYCLONEDDS_URI: file:///eel/cyclonedds.xml
+    volumes:
+      - ./cyclonedds.xml:/eel/cyclonedds.xml:r
 
   pressure:
     image: foxpoint/eel:foxy
@@ -32,6 +48,10 @@ services:
     devices:
       - "/dev/ttyUSB0:/dev/ttyUSB0"
     network_mode: ${NETWORK_MODE:-host}
+    environment:
+      CYCLONEDDS_URI: file:///eel/cyclonedds.xml
+    volumes:
+      - ./cyclonedds.xml:/eel/cyclonedds.xml:r
 
   gnss:
     image: foxpoint/eel:foxy
@@ -39,11 +59,19 @@ services:
     devices:
       - "/dev/ttyUSB1:/dev/ttyUSB1"
     network_mode: ${NETWORK_MODE:-host}
+    environment:
+      CYCLONEDDS_URI: file:///eel/cyclonedds.xml
+    volumes:
+      - ./cyclonedds.xml:/eel/cyclonedds.xml:r
 
   depth_control:
     image: foxpoint/eel:foxy
     command: ros2 run eel depth_control_rudder
     network_mode: ${NETWORK_MODE:-host}
+    environment:
+      CYCLONEDDS_URI: file:///eel/cyclonedds.xml
+    volumes:
+      - ./cyclonedds.xml:/eel/cyclonedds.xml:r
 
   modem:
     image: foxpoint/eel:foxy
@@ -52,43 +80,73 @@ services:
       - "/dev/ttyUSB4:/dev/ttyUSB4"
     privileged: true
     network_mode: ${NETWORK_MODE:-host}
+    environment:
+      CYCLONEDDS_URI: file:///eel/cyclonedds.xml
+    volumes:
+      - ./cyclonedds.xml:/eel/cyclonedds.xml:r
 
   mqtt_bridge:
     image: foxpoint/eel:foxy
     command: ros2 run eel mqtt_bridge --ros-args -p path_for_config:=/home/ubuntu/fleet/local_certs_and_config/iot_config.json
     volumes:
       - ../../fleet/local_certs_and_config/:/home/ubuntu/fleet/local_certs_and_config/:r
+      - ./cyclonedds.xml:/eel/cyclonedds.xml:r
     network_mode: ${NETWORK_MODE:-host}
+    environment:
+      CYCLONEDDS_URI: file:///eel/cyclonedds.xml
 
   navigation_action_server:
     image: foxpoint/eel:foxy
     command: ros2 run eel navigate
     network_mode: ${NETWORK_MODE:-host}
+    environment:
+      CYCLONEDDS_URI: file:///eel/cyclonedds.xml
+    volumes:
+      - ./cyclonedds.xml:/eel/cyclonedds.xml:r
 
   navigation_action_client:
     image: foxpoint/eel:foxy
     command: ros2 run eel navigate_client
     network_mode: ${NETWORK_MODE:-host}
+    environment:
+      CYCLONEDDS_URI: file:///eel/cyclonedds.xml
+    volumes:
+      - ./cyclonedds.xml:/eel/cyclonedds.xml:r
 
   leakage:
     image: foxpoint/eel:foxy
     command: ros2 run eel leakage
     network_mode: ${NETWORK_MODE:-host}
     privileged: true
+    environment:
+      CYCLONEDDS_URI: file:///eel/cyclonedds.xml
+    volumes:
+      - ./cyclonedds.xml:/eel/cyclonedds.xml:r
 
   localization:
     image: foxpoint/eel:foxy
     command: ros2 run eel localization
     network_mode: ${NETWORK_MODE:-host}
+    environment:
+      CYCLONEDDS_URI: file:///eel/cyclonedds.xml
+    volumes:
+      - ./cyclonedds.xml:/eel/cyclonedds.xml:r
 
   data_logger:
     image: foxpoint/eel:foxy
     command: ros2 run eel data_logger
     network_mode: ${NETWORK_MODE:-host}
+    environment:
+      CYCLONEDDS_URI: file:///eel/cyclonedds.xml
+    volumes:
+      - ./cyclonedds.xml:/eel/cyclonedds.xml:r
 
   ros_bag:
     image: foxpoint/eel:foxy
     command: bash -c "ros2 bag record --all --storage mcap --output ros_bags/$(date +'%Y-%m-%d_%H-%M-%S')"
     volumes:
       - ../ros_bags/:/eel/ros_bags/:rw
+      - ./cyclonedds.xml:/eel/cyclonedds.xml:r
     network_mode: ${NETWORK_MODE:-host}
+    environment:
+      CYCLONEDDS_URI: file:///eel/cyclonedds.xml
