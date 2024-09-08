@@ -18,6 +18,7 @@ from eel_interfaces.msg import (
     ModemStatus,
     TracedRoute,
     NavigationMission,
+    NavigationAssignment,
 )
 
 from ..utils.topics import (
@@ -85,6 +86,12 @@ class BoolMsgMqtt(TypedDict):
     data: bool
 
 
+class AssignmentMqtt(TypedDict):
+    coordinate: CoordinateMqtt
+    target_depth: float
+    sync_after: bool
+
+
 class NavigationStatusMqtt(TypedDict):
     meters_to_target: float
     auto_mode_enabled: bool
@@ -94,7 +101,7 @@ class NavigationStatusMqtt(TypedDict):
 
 
 class NavigationMissionMqtt(TypedDict):
-    coordinate_list: List[CoordinateMqtt]
+    assignments: List[AssignmentMqtt]
 
 
 class TankStatusMqtt(TypedDict):
@@ -429,12 +436,17 @@ class MqttBridge(Node):
     ) -> None:
         converted = cast(NavigationMissionMqtt, json.loads(payload))
         msg = NavigationMission()
-        msg.coordinate_list = []
-        for c in converted["coordinate_list"]:
+        ros_assignments: List[NavigationAssignment] = []
+        for assignment in converted["assignments"]:
+            ros_assignment = NavigationAssignment()
             coord = Coordinate()
-            coord.lat = c["lat"]
-            coord.lon = c["lon"]
-            msg.coordinate_list.append(coord)
+            coord.lat = float(assignment["coordinate"]["lat"])
+            coord.lon = float(assignment["coordinate"]["lon"])
+            ros_assignment.coordinate = coord
+            ros_assignment.sync_after = bool(assignment["sync_after"])
+            ros_assignment.target_depth = float(assignment["target_depth"])
+            ros_assignments.append(ros_assignment)
+        msg.assignments = ros_assignments
         self.mission_publisher.publish(msg)
 
     def handle_incoming_gnss_status(
