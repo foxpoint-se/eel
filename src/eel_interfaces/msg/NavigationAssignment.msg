@@ -1,0 +1,3 @@
+Coordinate coordinate
+float32 target_depth
+bool sync_after
