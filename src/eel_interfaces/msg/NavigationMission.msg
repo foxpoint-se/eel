@@ -1,1 +1,1 @@
-Coordinate[] coordinate_list
+NavigationAssignment[] assignments
