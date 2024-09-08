@@ -15,6 +15,7 @@ from eel_interfaces.msg import (
     NavigationMission,
     Coordinate,
     BatteryStatus,
+    NavigationAssignment,
 )
 from ..utils.topics import (
     BATTERY_STATUS,
@@ -23,19 +24,15 @@ from ..utils.topics import (
     NAVIGATION_STATUS,
     NAVIGATION_LOAD_MISSION,
 )
-from ..utils.nav import (
-    get_distance_in_meters,
-)
 from .common import get_2d_distance_from_coords
 
 
-def create_waypoint_goal(coordinate: Coordinate) -> Navigate.Goal:
+def create_waypoint_goal(assignment: NavigationAssignment) -> Navigate.Goal:
     result = Navigate.Goal()
-    result.next_coordinate = coordinate
+    result.next_coordinate = assignment.coordinate
     result.type = Navigate.Goal.TYPE_WAYPOINT
     result.optional_sync_time = []
-    # TODO: depth should be dynamic
-    result.next_coordinate_depth = [1.5]
+    result.next_coordinate_depth = [assignment.target_depth]
     return result
 
 
@@ -53,26 +50,14 @@ def create_surface_goal(next_coordinate: Coordinate) -> Navigate.Goal:
 MINIMUM_SYNC_DISTANCE_METERS = 15.0
 
 
-def create_goals(coordinates: Sequence[Coordinate]) -> Deque[Navigate.Goal]:
+def create_goals(assignments: Sequence[NavigationAssignment]) -> Deque[Navigate.Goal]:
     result: Deque[Navigate.Goal] = deque()
-    for index, elem in enumerate(coordinates):
+    for index, elem in enumerate(assignments):
         result.append(create_waypoint_goal(elem))
-        has_next = index < (len(coordinates) - 1)
-        if has_next:
-            next = coordinates[index + 1]
-            distance_to_next = get_distance_in_meters(
-                elem.lat, elem.lon, next.lat, next.lon
-            )
-            if distance_to_next >= MINIMUM_SYNC_DISTANCE_METERS:
-                result.append(create_surface_goal(next))
-
-    # NOTE: first and last waypoints always get the target depth of 0.0
-    # Should be dynamic, but this will do for Rotholmen.
-    result[-1].next_coordinate_depth = [0.0]
-    result[0].next_coordinate_depth = [0.0]
-
-    # TODO: if there are only two coordinates, we could probably remove the sync
-    # in between, since first and last are at surface anyway.
+        has_next = index < (len(assignments) - 1)
+        if elem.sync_after is True and has_next:
+            next = assignments[index + 1]
+            result.append(create_surface_goal(next.coordinate))
 
     return result
 
@@ -153,7 +138,7 @@ class NavigationActionClient(Node):
 
     def set_mission(self, msg: NavigationMission) -> None:
         """Takes a list of coordinates and converts them to a list of navigation goals."""
-        coordinates = cast(List[Coordinate], msg.coordinate_list)
+        coordinates = cast(List[NavigationAssignment], msg.assignments)
 
         if len(coordinates) == 0:
             self.goals.clear()
