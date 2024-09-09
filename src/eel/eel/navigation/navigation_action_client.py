@@ -136,6 +136,7 @@ class NavigationActionClient(Node):
         nav_msg.mission_total_meters = self.mission_total_meters
         nav_msg.waypoints_left = extract_waypoints_from_goals(self.goals)
         nav_msg.count_goals_left = len(self.goals)
+        nav_msg.mission_status = self.mission_status.value
         self.nav_publisher.publish(nav_msg)
 
     def set_mission(self, msg: NavigationMission) -> None:
