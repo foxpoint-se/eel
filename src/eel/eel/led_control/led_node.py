@@ -10,19 +10,19 @@ from eel_interfaces.msg import NavigationStatus
 
 
 PULSE_COUNT_MAP = {
-    NavigationMissionStatus.WAITING_FOR_MISSION: 2,
-    NavigationMissionStatus.MISSION_AQUIRED: 3,
-    NavigationMissionStatus.MISSION_STARTED: 4,
-    NavigationMissionStatus.MISSION_CANCELLED: 1,
-    NavigationMissionStatus.MISSION_FINISHED: 6
+    NavigationMissionStatus.WAITING_FOR_MISSION.value: 2,
+    NavigationMissionStatus.MISSION_AQUIRED.value: 3,
+    NavigationMissionStatus.MISSION_STARTED.value: 4,
+    NavigationMissionStatus.MISSION_CANCELLED.value: 1,
+    NavigationMissionStatus.MISSION_FINISHED.value: 6
 }
 
 PULSE_TIME_MAP = {
-    NavigationMissionStatus.WAITING_FOR_MISSION: 0.5,
-    NavigationMissionStatus.MISSION_AQUIRED: 0.25,
-    NavigationMissionStatus.MISSION_STARTED: 0.1,
-    NavigationMissionStatus.MISSION_CANCELLED: 1.5,
-    NavigationMissionStatus.MISSION_FINISHED: 0.25
+    NavigationMissionStatus.WAITING_FOR_MISSION.value: 0.5,
+    NavigationMissionStatus.MISSION_AQUIRED.value: 0.25,
+    NavigationMissionStatus.MISSION_STARTED.value: 0.1,
+    NavigationMissionStatus.MISSION_CANCELLED.value: 1.5,
+    NavigationMissionStatus.MISSION_FINISHED.value: 0.25
 
 }
 
