@@ -28,9 +28,11 @@ class LEDControl:
 
 if __name__ == "__main__":
     led_controller = LEDControl()
-    sleep(1.0)
-    led_controller.on()
-    sleep(1.0)
-    led_controller.off()
-    sleep(1.0)
-    led_controller.sequence(nof_pulses=5, pulse_time=0.1)
+
+    while(1):
+        sleep(1.0)
+        led_controller.on()
+        sleep(1.0)
+        led_controller.off()
+    #sleep(1.0)
+    #led_controller.sequence(nof_pulses=5, pulse_time=0.1)
