@@ -14,6 +14,7 @@ LOCALIZATION_STATUS = "localization/status"
 
 # IMU
 IMU_STATUS = "imu/status"
+IMU_OFFSETS = "imu/offsets"
 
 # Navigation
 NAVIGATION_STATUS = "nav/status"

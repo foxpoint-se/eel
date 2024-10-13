@@ -1,3 +1,6 @@
+from .types import CalibrationOffsets
+
+
 PITCH_CORRECTION = 1.69
 ROLL_CORRECTION = 0.0
 HEADING_CORRECTION = 0
@@ -61,9 +64,7 @@ class ImuSensor:
 
         i2c = board.I2C()
         self.sensor = adafruit_bno055.BNO055_I2C(i2c)
-        self.sensor.offsets_magnetometer = my_calibration["mag"]
-        self.sensor.offsets_gyroscope = my_calibration["gyr"]
-        self.sensor.offsets_accelerometer = my_calibration["acc"]
+        self.set_offset_values(CALIBRATION_1)
 
     def get_is_calibrated(self):
         return self.sensor.calibrated or False
@@ -79,3 +80,17 @@ class ImuSensor:
         roll = get_corrected_roll(float(roll or 0))
         pitch = get_corrected_pitch(-float(pitch or 0))
         return heading, roll, pitch
+    
+    def get_calibration_offsets(self) -> CalibrationOffsets:
+        offset_mapping = {
+            "mag": self.sensor.offsets_magnetometer,
+            "gyr": self.sensor.offsets_gyroscope,
+            "acc": self.sensor.offsets_accelerometer
+        }
+
+        return offset_mapping
+
+    def set_offset_values(self, offset_mapping: CalibrationOffsets):
+        self.sensor.offsets_magnetometer = offset_mapping["mag"]
+        self.sensor.offsets_gyroscope = offset_mapping["gyr"]
+        self.sensor.offsets_accelerometer = offset_mapping["acc"]
