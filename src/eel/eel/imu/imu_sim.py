@@ -3,6 +3,7 @@ from time import time
 from std_msgs.msg import Float32
 from geometry_msgs.msg import Vector3
 from eel_interfaces.msg import TankStatus
+from .types import CalibrationOffsets
 from ..utils.sim import ANGULAR_VELOCITY
 from ..utils.topics import (
     RUDDER_STATUS,
@@ -64,6 +65,12 @@ class ImuSimulator:
         self._rear_tank_level = 0.0
         self._current_pitch = 0.0
         self.last_updated_at = time()
+        self.sensor_offsets = {
+            "mag": (0, 0, 0),
+            "gyr": (0, 0, 0),
+            "acc": (0, 0, 0)
+        }
+
         self.rudder_subscription = parent_node.create_subscription(
             Vector3, RUDDER_STATUS, self._handle_rudder_msg, 10
         )
@@ -146,3 +153,9 @@ class ImuSimulator:
 
     def get_is_calibrated(self):
         return True
+
+    def get_calibration_offsets(self) -> CalibrationOffsets:
+        return self.sensor_offsets
+
+    def set_offset_values(self, offset_mapping: CalibrationOffsets):
+        self.sensor_offsets.update(offset_mapping)

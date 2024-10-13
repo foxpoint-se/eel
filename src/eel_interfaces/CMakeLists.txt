@@ -19,6 +19,7 @@ find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/ImuStatus.msg"
+  "msg/ImuOffsets.msg"
   "msg/Coordinate.msg"
   "msg/NavigationStatus.msg"
   "msg/TankStatus.msg"

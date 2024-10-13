@@ -9,6 +9,7 @@ from awsiot import mqtt_connection_builder
 from std_msgs.msg import Float32, Bool
 from eel_interfaces.msg import (
     ImuStatus,
+    ImuOffsets,
     BatteryStatus,
     Coordinate,
     NavigationStatus,
@@ -24,6 +25,7 @@ from eel_interfaces.msg import (
 from ..utils.topics import (
     MOTOR_CMD,
     IMU_STATUS,
+    IMU_OFFSETS,
     RUDDER_X_CMD,
     RUDDER_Y_CMD,
     BATTERY_STATUS,
@@ -72,6 +74,12 @@ class ImuStatusMqtt(TypedDict):
     roll: float
     pitch: float
     pitch_velocity: float
+
+
+class ImuOffsetsMqtt(TypedDict):
+    mag: List[int]
+    gyr: List[int]
+    acc: List[int]
 
 
 class BatteryStatusMqtt(TypedDict):
@@ -144,6 +152,14 @@ def transform_imu_msg(msg: ImuStatus) -> ImuStatusMqtt:
         "pitch_velocity": msg.pitch_velocity,
         "roll": msg.roll,
         "sys": msg.sys,
+    }
+
+
+def transform_imu_offsets_msg(msg: ImuOffsets) -> ImuOffsetsMqtt:
+    return {
+        "mag": msg.mag,
+        "gyr": msg.gyr,
+        "acc": msg.acc
     }
 
 
@@ -292,6 +308,9 @@ class MqttBridge(Node):
     def init_subs(self) -> None:
         self.imu_subscription = self.create_subscription(
             ImuStatus, IMU_STATUS, self.imu_status_callback, 10
+        )
+        self.imu_offsets_subscription = self.create_subscription(
+            ImuOffsets, IMU_OFFSETS, self.imu_offsets_callback, 10
         )
         self.battery_subscription = self.create_subscription(
             BatteryStatus, BATTERY_STATUS, self.battery_status_callback, 10
@@ -484,6 +503,12 @@ class MqttBridge(Node):
     def imu_status_callback(self, msg: ImuStatus) -> None:
         topic = f"{self.robot_name}/{IMU_STATUS}"
         mqtt_message = transform_imu_msg(msg)
+        self.publish_mqtt(topic, mqtt_message)
+
+    @throttle(seconds=1)
+    def imu_offsets_callback(self, msg: ImuOffsets) -> None:
+        topic = f"{self.robot_name}/{IMU_OFFSETS}"
+        mqtt_message = transform_imu_offsets_msg(msg)
         self.publish_mqtt(topic, mqtt_message)
 
     @throttle(seconds=1)
