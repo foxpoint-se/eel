@@ -17,11 +17,13 @@ def get_pitch_velocity(pitch, previous_pitch, now, previous_pitch_at):
     velocity = pitch_delta / time_delta
     return velocity
 
-SENSOR_CALIBRATION_OFFSETS = {
-    "mag": (193, 80, 84),
-    "gyr": (-2, -7, 1),
-    "acc": (-5, -13, -12),
-}
+
+SENSOR_CALIBRATION_OFFSETS = None
+# SENSOR_CALIBRATION_OFFSETS = {
+#     "mag": (193, 80, 84),
+#     "gyr": (-2, -7, 1),
+#     "acc": (-5, -13, -12),
+# }
 
 
 # example usage: ros2 run eel imu
