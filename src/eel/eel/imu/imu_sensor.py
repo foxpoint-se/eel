@@ -19,17 +19,17 @@ def get_corrected_heading(heading: float) -> float:
     return (heading - 180 + HEADING_CORRECTION) % 360
 
 
-CALIBRATION_1 = {
-    "mag": (193, 80, 84),
-    "gyr": (-2, -7, 1),
-    "acc": (-5, -13, -12),
-}
+# CALIBRATION_1 = {
+#     "mag": (193, 80, 84),
+#     "gyr": (-2, -7, 1),
+#     "acc": (-5, -13, -12),
+# }
 
-CALIBRATION_2 = {
-    "mag": (-32576, -32653, -32668),
-    "gyr": (-1, -6, 0),
-    "acc": (-14, -44, -34),
-}
+# CALIBRATION_2 = {
+#     "mag": (-32576, -32653, -32668),
+#     "gyr": (-1, -6, 0),
+#     "acc": (-14, -44, -34),
+# }
 
 # Indoor calibration 1
 # CALIBRATION COMPLETED
@@ -55,7 +55,8 @@ CALIBRATION_2 = {
 # offsets_gyroscope
 # offsets_accelerometer
 
-my_calibration = CALIBRATION_1
+# my_calibration = CALIBRATION_1
+
 
 class ImuSensor:
     def __init__(self):
@@ -64,7 +65,12 @@ class ImuSensor:
 
         i2c = board.I2C()
         self.sensor = adafruit_bno055.BNO055_I2C(i2c)
-        self.set_offset_values(CALIBRATION_1)
+        # self.set_offset_values(CALIBRATION_1)
+        print("Hello from Imu sensor constructor")
+        print("Setting offset in constructor")
+        self.sensor.offsets_magnetometer = (197, -106, 227)
+        self.sensor.offsets_gyroscope = (-1, -5, 1)
+        self.sensor.offsets_accelerometer = (-1, -32, -30)
 
     def get_is_calibrated(self):
         return self.sensor.calibrated or False
@@ -80,17 +86,19 @@ class ImuSensor:
         roll = get_corrected_roll(float(roll or 0))
         pitch = get_corrected_pitch(-float(pitch or 0))
         return heading, roll, pitch
-    
+
     def get_calibration_offsets(self) -> CalibrationOffsets:
+        print("Getting offset values inside sensor")
         offset_mapping = {
             "mag": self.sensor.offsets_magnetometer,
             "gyr": self.sensor.offsets_gyroscope,
-            "acc": self.sensor.offsets_accelerometer
+            "acc": self.sensor.offsets_accelerometer,
         }
 
         return offset_mapping
 
     def set_offset_values(self, offset_mapping: CalibrationOffsets):
+        print("Setting offset values inside sensor")
         self.sensor.offsets_magnetometer = offset_mapping["mag"]
         self.sensor.offsets_gyroscope = offset_mapping["gyr"]
         self.sensor.offsets_accelerometer = offset_mapping["acc"]
