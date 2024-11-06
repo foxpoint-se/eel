@@ -28,13 +28,3 @@ class BatterySensor:
 
     def get_shunt_voltage(self):
         return self.ina.shunt_voltage()
-
-
-if __name__ == "__main__":
-    battery_sensor = BatterySensor()
-
-    print("Bus Voltage    : %.3f V" % battery_sensor.voltage())
-    print("Bus Current    : %.3f mA" % battery_sensor.current())
-    print("Supply Voltage : %.3f V" % battery_sensor.supply_voltage())
-    print("Shunt voltage  : %.3f mV" % battery_sensor.shunt_voltage())
-    print("Power          : %.3f mW" % battery_sensor.power())
