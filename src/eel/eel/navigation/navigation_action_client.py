@@ -24,6 +24,7 @@ from ..utils.topics import (
     NAVIGATION_STATUS,
     NAVIGATION_LOAD_MISSION,
 )
+from ..utils.constants import NavigationMissionStatus
 from .common import get_2d_distance_from_coords
 
 
@@ -119,6 +120,7 @@ class NavigationActionClient(Node):
 
         self.goals: Deque[Navigate.Goal] = deque()
         self.goal_handles = []
+        self.mission_status = NavigationMissionStatus.WAITING_FOR_MISSION
         self.mission_start_time = None
         self.goals_in_progress = False
         self.auto_mode = False
@@ -134,6 +136,7 @@ class NavigationActionClient(Node):
         nav_msg.mission_total_meters = self.mission_total_meters
         nav_msg.waypoints_left = extract_waypoints_from_goals(self.goals)
         nav_msg.count_goals_left = len(self.goals)
+        nav_msg.mission_status = self.mission_status.value
         self.nav_publisher.publish(nav_msg)
 
     def set_mission(self, msg: NavigationMission) -> None:
@@ -145,6 +148,7 @@ class NavigationActionClient(Node):
         else:
             self.goals = create_goals(coordinates)
 
+        self.mission_status = NavigationMissionStatus.MISSION_AQUIRED
         self.mission_total_meters = calculate_mission_distance_meters(self.goals)
         self.logger.info(
             f"Set mission with {len(self.goals)} goals over {self.mission_total_meters} meters."
@@ -214,6 +218,7 @@ class NavigationActionClient(Node):
         self.send_goal(self.goals[0])
         self.goals_in_progress = True
         self.mission_start_time = time()
+        self.mission_status = NavigationMissionStatus.MISSION_STARTED
 
     def cancel_goals_in_progress(self):
         """Method to cancel all the ongoing actions"""
@@ -223,6 +228,7 @@ class NavigationActionClient(Node):
         self.goal_handles = []
         self.goals_in_progress = False
         self.mission_start_time = None
+        self.mission_status = NavigationMissionStatus.MISSION_CANCELLED
 
     def goal_response_callback(self, future):
         """Call back for when client has sent a goal to the server, will be accepted / rejected"""
@@ -254,11 +260,13 @@ class NavigationActionClient(Node):
                 self.mission_start_time = None
                 self.auto_mode = False
                 self.mission_total_meters = 0.0
+                self.mission_status = NavigationMissionStatus.MISSION_FINISHED
             else:
                 self.send_goal(self.goals[0])
 
         elif status == GoalStatus.STATUS_CANCELED:
             self.logger.info(f"Goal was cancelled")
+            self.mission_status = NavigationMissionStatus.MISSION_CANCELLED
 
     def feedback_callback(self, feedback: Navigate_FeedbackMessage):
         """Feed back message from action server sent once per second when action server gets a gps position."""

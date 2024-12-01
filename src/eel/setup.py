@@ -38,6 +38,7 @@ setup(
             "localization = eel.localization.localization:main",
             "data_logger = eel.data_logger.data_logger_node:main",
             "leakage = eel.leakage.leakage_node:main",
+            "led_control = eel.led_control.led_node:main"
         ],
     },
 )
