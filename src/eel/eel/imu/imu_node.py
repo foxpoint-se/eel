@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
-from eel_interfaces.msg import ImuStatus
+from eel_interfaces.msg import ImuStatus, ImuOffsets
 from time import time
 from .imu_sensor import ImuSensor
 from .imu_sim import ImuSimulator
 from ..utils.constants import SIMULATE_PARAM
-from ..utils.topics import IMU_STATUS
+from ..utils.topics import IMU_STATUS, IMU_OFFSETS
 
 
 def get_pitch_velocity(pitch, previous_pitch, now, previous_pitch_at):
@@ -18,6 +18,14 @@ def get_pitch_velocity(pitch, previous_pitch, now, previous_pitch_at):
     return velocity
 
 
+SENSOR_CALIBRATION_OFFSETS = None
+# SENSOR_CALIBRATION_OFFSETS = {
+#     "mag": (193, 80, 84),
+#     "gyr": (-2, -7, 1),
+#     "acc": (-5, -13, -12),
+# }
+
+
 # example usage: ros2 run eel imu
 class ImuNode(Node):
     def __init__(self):
@@ -25,25 +33,29 @@ class ImuNode(Node):
         self.declare_parameter(SIMULATE_PARAM, False)
         self.should_simulate = self.get_parameter(SIMULATE_PARAM).value
         self.status_publisher = self.create_publisher(ImuStatus, IMU_STATUS, 10)
+        self.offset_publisher = self.create_publisher(ImuOffsets, IMU_OFFSETS, 10)
         self.previous_pitch = None
         self.previous_pitch_at = None
 
         # hertz (publications per second)
         self.update_frequency = 5
+        self.publish_offsets_freq = 0.5
+        self.update_calibration_offsets_freq = 0.2
 
         if not self.should_simulate:
-            sensor = ImuSensor()
-            self.get_euler = sensor.get_euler
-            self.get_calibration_status = sensor.get_calibration_status
-            self.get_is_calibrated = sensor.get_is_calibrated
+            self.sensor = ImuSensor()
 
         else:
-            simulator = ImuSimulator(self)
-            self.get_euler = simulator.get_euler
-            self.get_calibration_status = simulator.get_calibration_status
-            self.get_is_calibrated = simulator.get_is_calibrated
+            self.sensor = ImuSimulator(self)
+            
+        self.get_euler = self.sensor.get_euler
+        self.get_calibration_status = self.sensor.get_calibration_status
+        self.get_is_calibrated = self.sensor.get_is_calibrated
+        self.get_imu_offsets = self.sensor.get_calibration_offsets
 
         self.updater = self.create_timer(1.0 / self.update_frequency, self.publish_imu)
+        self.imu_offsets_updater = self.create_timer(1.0 / self.publish_offsets_freq, self.publish_imu_offsets)
+        self.imu_offsets_writer = self.create_timer(1.0 / self.update_calibration_offsets_freq, self.write_calibration_offsets)
 
         self.get_logger().info(
             "{}IMU node started.".format("SIMULATE " if self.should_simulate else "")
@@ -82,6 +94,21 @@ class ImuNode(Node):
 
         except (OSError, IOError) as err:
             self.get_logger().error(str(err))
+
+    def publish_imu_offsets(self):
+        imu_offsets_map = self.get_imu_offsets()
+        
+        msg = ImuOffsets()
+        msg.mag = list(imu_offsets_map["mag"])
+        msg.gyr = list(imu_offsets_map["gyr"])
+        msg.acc = list(imu_offsets_map["acc"])
+
+        self.offset_publisher.publish(msg)
+
+    def write_calibration_offsets(self):
+        if SENSOR_CALIBRATION_OFFSETS:
+            self.sensor.set_offset_values(SENSOR_CALIBRATION_OFFSETS)
+
 
 
 def main(args=None):
