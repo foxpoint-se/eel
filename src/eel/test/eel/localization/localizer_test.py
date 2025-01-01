@@ -1,4 +1,5 @@
 import math
+import time
 from eel.localization.localizer import Localizer, LatLon
 
 
@@ -24,7 +25,7 @@ def test__when_new_known_position__should_return_that_one_as_current_pos() -> No
 
     instance_to_test.update_known_position(known_position)
 
-    actual = instance_to_test.get_calculated_position(current_time_sec=0)
+    actual = instance_to_test.get_calculated_position(time.time())
 
     assert actual and math.isclose(
         a=actual["lat"], b=known_position["lat"], rel_tol=0.000001
@@ -36,7 +37,7 @@ def test__when_speed_zero__should_not_change_position() -> None:
     instance_to_test = Localizer()
     instance_to_test.update_speed_mps(0.0)
     instance_to_test.update_known_position({"lat": 0, "lon": 0})
-    actual = instance_to_test.get_calculated_position(0)
+    actual = instance_to_test.get_calculated_position(time.time())
     assert actual and actual["lat"] == 0.0
     assert actual["lon"] == 0.0
 
@@ -44,7 +45,7 @@ def test__when_speed_zero__should_not_change_position() -> None:
 def test__when_speed_zero__should_not_travel_any_distance() -> None:
     instance_to_test = Localizer()
     instance_to_test.update_speed_mps(0.0)
-    instance_to_test.get_calculated_position(10.0)
+    instance_to_test.get_calculated_position(time.time() + 10.0)
     assert instance_to_test.get_total_meters_traveled() == 0.0
 
 
@@ -52,15 +53,15 @@ def test__when_speed_1_mps__should_travel_1_m_after_1_second() -> None:
     instance_to_test = Localizer(start_time_sec=0)
     instance_to_test.update_known_position({"lat": 0, "lon": 0})
     instance_to_test.update_speed_mps(1.0)
-    instance_to_test.get_calculated_position(1.0)
+    instance_to_test.get_calculated_position(1)
     assert instance_to_test.get_total_meters_traveled() == 1.0
 
 
 def test__when_speed_1_mps_and_heading_zero__should_keep_same_lon() -> None:
-    instance_to_test = Localizer()
+    instance_to_test = Localizer(start_time_sec=0)
     instance_to_test.update_known_position({"lat": 20, "lon": 10})
     instance_to_test.update_speed_mps(1.0)
-    actual = instance_to_test.get_calculated_position(100)
+    actual = instance_to_test.get_calculated_position(100.0)
     assert actual and actual["lon"] == 10
 
 
@@ -68,7 +69,7 @@ def test__when_speed_1_mps_and_heading_zero__lat_should_be_slightly_bigger() -> 
     instance_to_test = Localizer(start_time_sec=0)
     instance_to_test.update_known_position({"lat": 0, "lon": 10})
     instance_to_test.update_speed_mps(1.0)
-    actual = instance_to_test.get_calculated_position(1)
+    actual = instance_to_test.get_calculated_position(1.0)
     assert actual and 9.043695e-06 > actual["lat"] > 9.043693e-060
 
 
@@ -77,20 +78,20 @@ def test__when_speed_1_mps_and_heading_90__should_keep_same_lat() -> None:
     instance_to_test.update_known_position({"lat": 0, "lon": 10})
     instance_to_test.update_speed_mps(1.0)
     instance_to_test.update_heading(90)
-    actual = instance_to_test.get_calculated_position(1)
+    actual = instance_to_test.get_calculated_position(time.time() + 1.0)
     assert actual and actual["lat"] == 0.0
 
 
 def test__when_speed_1_mps_and_heading_45__lat_and_lon_should_be_slightly_bigger() -> (
     None
 ):
-    instance_to_test = Localizer()
+    instance_to_test = Localizer(start_time_sec=0)
     instance_to_test.get_calculated_position(0)
     instance_to_test.update_known_position({"lat": 0, "lon": 0})
     instance_to_test.update_speed_mps(1.0)
     instance_to_test.update_heading(45)
 
-    actual = instance_to_test.get_calculated_position(1)
+    actual = instance_to_test.get_calculated_position(1.0)
     assert actual and 6.3948579e-06 > actual["lat"] > 6.3948578e-06
     assert 6.3520483e-06 > actual["lon"] > 6.3520482e-06
 
@@ -102,18 +103,18 @@ def test__when_speed_1mps_and_heading_45_and_100s_travel__should_move_a_fair_bit
     instance_to_test.update_known_position({"lat": 0, "lon": 0})
     instance_to_test.update_speed_mps(1.0)
     instance_to_test.update_heading(45)
-    actual = instance_to_test.get_calculated_position(100)
+    actual = instance_to_test.get_calculated_position(100.0)
     assert actual and 0.000639486 > actual["lat"] > 0.00063947
     assert 0.0006352049 > actual["lon"] > 0.0006352047
 
 
 def test__when_one_known_and_sequence_of_moves__should_move_as_specified() -> None:
-    current_time = 0
+    current_time = time.time()
     instance_to_test = Localizer(start_time_sec=current_time)
     instance_to_test.update_known_position({"lat": 0, "lon": 0})
     instance_to_test.update_speed_mps(1.0)
     # move north 10 seconds
-    current_time += 10
+    current_time += 10.0
     instance_to_test.update_heading(0)
     instance_to_test.get_calculated_position(current_time_sec=current_time)
 
@@ -136,7 +137,7 @@ def test__when_one_known_and_sequence_of_moves__should_move_as_specified() -> No
 def test__when_moving_from_two_very_distant_knowns__distance_traveled_should_not_be_huge() -> (
     None
 ):
-    instance_to_test = Localizer(start_time_sec=0)
+    instance_to_test = Localizer()
     instance_to_test.update_known_position({"lat": 0, "lon": 0})
     instance_to_test.update_speed_mps(1.0)
     instance_to_test.update_heading(0)
@@ -144,9 +145,9 @@ def test__when_moving_from_two_very_distant_knowns__distance_traveled_should_not
 
     # known position is very far from previous
     instance_to_test.update_known_position({"lat": 20, "lon": 20})
-    instance_to_test.get_calculated_position(20)
+    instance_to_test.get_calculated_position(time.time() + 20.0)
 
-    actual = instance_to_test.get_total_meters_traveled()
+    actual = round(instance_to_test.get_total_meters_traveled(), 1)
     assert actual == 20
 
 
@@ -162,12 +163,12 @@ def test__when_depth_is_three_decimeters__should_discard_gps_position() -> None:
     instance_to_test.update_speed_mps(1.0)
     instance_to_test.update_heading(0)
 
-    position_before_dive = instance_to_test.get_calculated_position(0)
+    position_before_dive = instance_to_test.get_calculated_position(time.time())
 
     instance_to_test.update_depth(0.3)
     wonky_position_under_water: LatLon = {"lat": 1, "lon": 1}
     instance_to_test.update_known_position(wonky_position_under_water)
-    position_after_dive = instance_to_test.get_calculated_position(0)
+    position_after_dive = instance_to_test.get_calculated_position(time.time())
 
     assert position_after_dive and not positions_are_close(
         wonky_position_under_water, position_after_dive
