@@ -80,27 +80,64 @@ class WaypointAndDepth(Assignment):
 
         bearing_to_target = get_relative_bearing(current_position, self.target_pos)
 
-        # Desired = Bearing of path - min(corrective turn angel, 90)
-        offset_angle = abs(bearing_to_target - self._initial_bearing_to_target) % 360
-        offset_angle = (
-            360 - offset_angle
-            if offset_angle > 180
-            else offset_angle
-        )
+        # offset_angle = abs(bearing_to_target - self._initial_bearing_to_target) % 360
+        # offset_angle = 360 - offset_angle if offset_angle > 180 else offset_angle
 
-        closest_turn = get_closest_turn_direction(self._initial_bearing_to_target, bearing_to_target)
-        offset = closest_turn * offset_angle
+        # closest_turn = get_closest_turn_direction(
+        #     self._initial_bearing_to_target, bearing_to_target
+        # )
+        # offset = closest_turn * offset_angle
 
-        print(f"Calculated offset is: {offset}")
+        offset = bearing_to_target - self._initial_bearing_to_target
+
+        # print(f"Calculated offset is: {offset}")
 
         cross_track_error = sin(radians(offset)) * distance_to_target
-        next_rudder_turn = cap_value(cross_track_error * 0.05, -1.0, 1.0)
-        
-        print(f"Cross track error: {cross_track_error}m")
-        print(f"Next rudder turn: {next_rudder_turn}")
+        # next_rudder_turn = cap_value(cross_track_error * 0.05, -1.0, 1.0)
 
-        #next_rudder_turn = get_next_rudder_turn(current_heading, bearing_to_target)
+        # print(f"Cross track error: {cross_track_error}m")
+        # print(f"Next rudder turn: {next_rudder_turn}")
+
+        # next_rudder_turn = get_next_rudder_turn(current_heading, bearing_to_target)
+        # self.on_set_rudder(next_rudder_turn)
+
+        # desired heading = bearing of path - min(corrective turn angle, 90)
+        # where
+        # corrective turn angle = kct * ect
+        # where
+        # kct = ???? kp-värde??
+        # ect = avstånd till optimal path
+
+        bearing_of_path = self._initial_bearing_to_target
+        ect = cross_track_error
+        kct = -5.0  # TODO: change this??
+        corrective_turn_angle = ect * kct
+
+        # NOTE: when capping here, we might get a value like -250, since it's smaller than 90
+        # this results in it turning full circle when we have a large error
+        # instead we're capping between -90 and 90. this way we're avoiding turning the wrong way
+
+        # NOTE: we have not solved what to do if we have passed the point.
+        # the eel will return to desired path, but since it has passed the waypoint,
+        # it will keep on going away from it. just following desired angle.
+        # we need to fix that somehow. like: if it has passed it (if some angle is greater than some
+        # value or something?) then we should just head for the waypoint instead.
+        # i dunno.
+
+        # desired_heading = (bearing_of_path - min(corrective_turn_angle, 90)) % 360
+        desired_heading = (
+            bearing_of_path - cap_value(corrective_turn_angle, -90, 90)
+        ) % 360
+        # desired_heading = bearing_of_path - min(corrective_turn_angle, 90)
+
+        print("bearing_of_path", bearing_of_path)
+        print("corrective_turn_angle", corrective_turn_angle)
+        print("desired_heading", desired_heading)
+
+        next_rudder_turn = get_next_rudder_turn(current_heading, desired_heading)
+
         self.on_set_rudder(next_rudder_turn)
+
         return {"distance_to_target": distance_to_target}
 
     def start(self) -> None:
@@ -158,7 +195,7 @@ class SurfaceAssignment(Assignment):
         bearing_to_target = get_relative_bearing(current_position, self.target_pos)
 
         next_rudder_turn = get_next_rudder_turn(current_heading, bearing_to_target)
-        
+
         print(f"Bearing to target: {bearing_to_target}")
         print(f"Distance to target: {distance_to_target}")
         print(f"Inital bearing to target: {self._initial_bearing_to_target}")
@@ -167,8 +204,8 @@ class SurfaceAssignment(Assignment):
 
         print(f"Angle offset: {offset_angle}")
 
-        # drift_in_meters = 
-        
+        # drift_in_meters =
+
         self.on_set_rudder(next_rudder_turn)
         self.last_update_at = time()
         return {"distance_to_target": distance_to_target}
