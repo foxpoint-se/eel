@@ -47,6 +47,29 @@ class Assignment(ABC):
         pass
 
 
+def has_passed_waypoint(prev_wp, cur_wp, vehicle_pos):
+    # Extract coordinates
+    x_prev, y_prev = prev_wp
+    x_cur, y_cur = cur_wp
+    x_veh, y_veh = vehicle_pos
+
+    # Direction vector and vector to vehicle
+    d_x = x_cur - x_prev
+    d_y = y_cur - y_prev
+    v_x = x_veh - x_prev
+    v_y = y_veh - y_prev
+
+    # Dot product and magnitude of direction vector
+    dot = v_x * d_x + v_y * d_y
+    mag_d_squared = d_x**2 + d_y**2
+
+    # Normalized projection
+    t = dot / mag_d_squared
+
+    # Check if waypoint is passed
+    return t > 1
+
+
 class WaypointAndDepth(Assignment):
     def __init__(
         self,
@@ -64,6 +87,8 @@ class WaypointAndDepth(Assignment):
         self.on_set_rudder = on_set_rudder
         self.on_set_depth = on_set_depth
         self._initial_bearing_to_target = get_relative_bearing(start_pos, target_pos)
+        self._prev_wp = (start_pos["lat"], start_pos["lon"])
+        self._curr_wp = (target_pos["lat"], target_pos["lon"])
 
     def step(
         self,
@@ -74,7 +99,11 @@ class WaypointAndDepth(Assignment):
     ) -> AssignmentProgress:
         distance_to_target = get_2d_distance(current_position, self.target_pos)
 
-        if distance_to_target <= TOLERANCE_IN_METERS:
+        vehicle_pos = (current_position["lat"], current_position["lon"])
+        has_passed = has_passed_waypoint(self._prev_wp, self._curr_wp, vehicle_pos)
+        print("HAS PASSED WAYPOINT?", has_passed)
+
+        if distance_to_target <= TOLERANCE_IN_METERS or has_passed:
             self.is_done = True
             return {"distance_to_target": distance_to_target}
 
@@ -110,7 +139,8 @@ class WaypointAndDepth(Assignment):
 
         bearing_of_path = self._initial_bearing_to_target
         ect = cross_track_error
-        kct = -5.0  # TODO: change this??
+        kct = -20.0  # NOTE: -20 works pretty good
+        # kct = -5.0
         corrective_turn_angle = ect * kct
 
         # NOTE: when capping here, we might get a value like -250, since it's smaller than 90
