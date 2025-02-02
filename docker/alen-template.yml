@@ -100,6 +100,11 @@ services:
     command: ros2 run eel localization
     network_mode: ${NETWORK_MODE:-bridge}
 
+  led_node:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel led_control
+    network_mode: ${NETWORK_MODE:-bridge}
+
   ros_bag:
     image: foxpoint/eel:foxy
     command: bash -c "ros2 bag record --all --storage mcap --output ros_bags/$(date +'%Y-%m-%d_%H-%M-%S')"
