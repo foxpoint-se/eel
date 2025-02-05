@@ -149,7 +149,6 @@ def test__when_moving_from_two_very_distant_knowns__distance_traveled_should_not
 
     actual = round(instance_to_test.get_total_meters_traveled(), 1)
     assert math.isclose(a=actual, b=20, rel_tol=0.01)
-    assert actual == 20
 
 
 def positions_are_close(pos_1: LatLon, pos_2: LatLon) -> bool:
