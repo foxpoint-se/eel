@@ -139,7 +139,7 @@ class WaypointAndDepth(Assignment):
 
         bearing_of_path = self._initial_bearing_to_target
         ect = cross_track_error
-        kct = -20.0  # NOTE: -20 works pretty good
+        kct = -7.0  # NOTE: -20 works pretty good
         # kct = -5.0
         corrective_turn_angle = ect * kct
 
