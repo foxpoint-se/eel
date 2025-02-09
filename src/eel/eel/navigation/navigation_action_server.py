@@ -156,6 +156,10 @@ class NavigationActionServer(Node):
                     lat=goal_request.next_coordinate.lat,
                     lon=goal_request.next_coordinate.lon,
                 ),
+                start_pos=LatLon(
+                    lat=self.current_position.lat,
+                    lon=self.current_position.lon,
+                ),
                 depth=(
                     0.0
                     if len(goal_request.next_coordinate_depth) == 0
@@ -170,6 +174,10 @@ class NavigationActionServer(Node):
                 target_pos=LatLon(
                     lat=goal_request.next_coordinate.lat,
                     lon=goal_request.next_coordinate.lon,
+                ),
+                start_pos=LatLon(
+                    lat=self.current_position.lat,
+                    lon=self.current_position.lon,
                 ),
                 depth=0.0,
                 on_set_motor=self.publish_motor_cmd,

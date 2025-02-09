@@ -11,6 +11,8 @@ GNSS_STATUS = "gnss/status"
 
 # Localization
 LOCALIZATION_STATUS = "localization/status"
+LOCALIZATION_DRIFT_SPEED = "localization/drift_speed"
+LOCALIZATION_DRIFT_BEARING = "localization/drift_bearing"
 
 # IMU
 IMU_STATUS = "imu/status"

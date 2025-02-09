@@ -157,9 +157,9 @@ def transform_imu_msg(msg: ImuStatus) -> ImuStatusMqtt:
 
 def transform_imu_offsets_msg(msg: ImuOffsets) -> ImuOffsetsMqtt:
     return {
-        "mag": msg.mag,
-        "gyr": msg.gyr,
-        "acc": msg.acc
+        "mag": [v for v in msg.mag],
+        "acc": [v for v in msg.acc],
+        "gyr": [v for v in msg.gyr],
     }
 
 

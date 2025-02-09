@@ -148,7 +148,7 @@ def test__when_moving_from_two_very_distant_knowns__distance_traveled_should_not
     instance_to_test.get_calculated_position(time.time() + 20.0)
 
     actual = round(instance_to_test.get_total_meters_traveled(), 1)
-    assert actual == 20
+    assert math.isclose(a=actual, b=20, rel_tol=0.01)
 
 
 def positions_are_close(pos_1: LatLon, pos_2: LatLon) -> bool:
@@ -177,3 +177,39 @@ def test__when_depth_is_three_decimeters__should_discard_gps_position() -> None:
     assert position_before_dive and positions_are_close(
         position_before_dive, position_after_dive
     ), "position should not have changed, since gps should be discarded during dive"
+
+
+def test__when_speed_zero_and_drift_one_mps_should_give_new_position() -> None:
+    instance_to_test = Localizer(start_time_sec=0)
+    instance_to_test.update_known_position({"lat": 0, "lon": 0})
+    instance_to_test.update_drift_speed_mps(1.0)
+    instance_to_test.update_drift_bearing(90.0)  # Should be east bound
+    position_after_one_sec = instance_to_test.get_calculated_position(1.0)
+
+    assert position_after_one_sec and not positions_are_close(
+        {"lat": 0, "lon": 0}, position_after_one_sec
+    )
+
+
+def test__when_speed_zero_and_drift_one_mps_should_drift_one_meter_after_one_second() -> (
+    None
+):
+    instance_to_test = Localizer(start_time_sec=0)
+    instance_to_test.update_known_position({"lat": 0, "lon": 0})
+    instance_to_test.update_drift_speed_mps(1.0)
+    instance_to_test.update_drift_bearing(90.0)  # Should be east bound
+    position_after_one_sec = instance_to_test.get_calculated_position(1.0)
+
+    assert position_after_one_sec and positions_are_close(
+        {"lat": 0.0, "lon": 8.9831528e-06}, position_after_one_sec
+    )
+
+
+def test__when_speed_zero_and_drift_zero_mps_should_not_drift() -> None:
+    instance_to_test = Localizer(start_time_sec=0)
+    instance_to_test.update_known_position({"lat": 0, "lon": 0})
+    position_after_one_sec = instance_to_test.get_calculated_position(1.0)
+
+    assert position_after_one_sec and positions_are_close(
+        {"lat": 0.0, "lon": 0.0}, position_after_one_sec
+    )

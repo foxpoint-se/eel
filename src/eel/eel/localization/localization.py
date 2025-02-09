@@ -11,6 +11,8 @@ from ..utils.topics import (
     IMU_STATUS,
     LOCALIZATION_STATUS,
     PRESSURE_STATUS,
+    LOCALIZATION_DRIFT_SPEED,
+    LOCALIZATION_DRIFT_BEARING
 )
 from ..utils.sim import LINEAR_VELOCITY
 
@@ -46,9 +48,22 @@ class Localization(Node):
             self.handle_pressure_status_msg,
             10,
         )
+        self.drift_speed_subscription = self.create_subscription(
+            Float32,
+            LOCALIZATION_DRIFT_SPEED,
+            self.handle_drift_speed_msg,
+            10
+        )
+        self.drift_bearing_subscription = self.create_subscription(
+            Float32,
+            LOCALIZATION_DRIFT_BEARING,
+            self.handle_drift_bearing_msg,
+            10
+        )
         self.status_publisher = self.create_publisher(
             Coordinate, LOCALIZATION_STATUS, 10
         )
+
         self.localizer = Localizer()
         self.loop = self.create_timer(1.0 / self.update_frequency_hz, self.do_work)
         self.get_logger().info(f"Localization node started. {LINEAR_VELOCITY} m/s")
@@ -66,6 +81,12 @@ class Localization(Node):
 
     def handle_pressure_status_msg(self, msg: PressureStatus) -> None:
         self.localizer.update_depth(msg.depth)
+
+    def handle_drift_speed_msg(self, msg: Float32) -> None:
+        self.localizer.update_drift_speed_mps(msg.data)
+
+    def handle_drift_bearing_msg(self, msg: Float32) -> None:
+        self.localizer.update_drift_bearing(msg.data)
 
     def do_work(self) -> None:
         calculated_position = self.localizer.get_calculated_position(

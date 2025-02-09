@@ -47,15 +47,17 @@ class ImuNode(Node):
 
         else:
             self.sensor = ImuSimulator(self)
-            
+
         self.get_euler = self.sensor.get_euler
         self.get_calibration_status = self.sensor.get_calibration_status
         self.get_is_calibrated = self.sensor.get_is_calibrated
         self.get_imu_offsets = self.sensor.get_calibration_offsets
 
         self.updater = self.create_timer(1.0 / self.update_frequency, self.publish_imu)
-        self.imu_offsets_updater = self.create_timer(1.0 / self.publish_offsets_freq, self.publish_imu_offsets)
-        self.imu_offsets_writer = self.create_timer(1.0 / self.update_calibration_offsets_freq, self.write_calibration_offsets)
+
+        # TODO: clean up the updating stuff. we'll just go with hard-coded constructor for now.
+        # self.imu_offsets_updater = self.create_timer(1.0 / self.publish_offsets_freq, self.publish_imu_offsets)
+        # self.imu_offsets_writer = self.create_timer(1.0 / self.update_calibration_offsets_freq, self.write_calibration_offsets)
 
         self.get_logger().info(
             "{}IMU node started.".format("SIMULATE " if self.should_simulate else "")
@@ -97,7 +99,7 @@ class ImuNode(Node):
 
     def publish_imu_offsets(self):
         imu_offsets_map = self.get_imu_offsets()
-        
+
         msg = ImuOffsets()
         msg.mag = list(imu_offsets_map["mag"])
         msg.gyr = list(imu_offsets_map["gyr"])
@@ -108,7 +110,6 @@ class ImuNode(Node):
     def write_calibration_offsets(self):
         if SENSOR_CALIBRATION_OFFSETS:
             self.sensor.set_offset_values(SENSOR_CALIBRATION_OFFSETS)
-
 
 
 def main(args=None):
