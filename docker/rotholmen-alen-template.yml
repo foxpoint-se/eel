@@ -152,6 +152,17 @@ services:
       - ./cyclonedds.xml:/eel/cyclonedds.xml:r
     logging: *default-logging
 
+  led_node:
+    image: foxpoint/eel:foxy
+    command: ros2 run eel led_control
+    network_mode: ${NETWORK_MODE:-bridge}
+    privileged: true
+    environment:
+      CYCLONEDDS_URI: file:///eel/cyclonedds.xml
+    volumes:
+      - ./cyclonedds.xml:/eel/cyclonedds.xml:r
+    logging: *default-logging
+
   data_logger:
     image: foxpoint/eel:foxy
     command: ros2 run eel data_logger
