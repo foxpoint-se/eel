@@ -14,7 +14,7 @@ PULSE_COUNT_MAP = {
     NavigationMissionStatus.MISSION_AQUIRED.value: 3,
     NavigationMissionStatus.MISSION_STARTED.value: 4,
     NavigationMissionStatus.MISSION_CANCELLED.value: 1,
-    NavigationMissionStatus.MISSION_FINISHED.value: 6
+    NavigationMissionStatus.MISSION_FINISHED.value: 6,
 }
 
 PULSE_TIME_MAP = {
@@ -22,8 +22,7 @@ PULSE_TIME_MAP = {
     NavigationMissionStatus.MISSION_AQUIRED.value: 0.25,
     NavigationMissionStatus.MISSION_STARTED.value: 0.1,
     NavigationMissionStatus.MISSION_CANCELLED.value: 1.5,
-    NavigationMissionStatus.MISSION_FINISHED.value: 0.25
-
+    NavigationMissionStatus.MISSION_FINISHED.value: 0.25,
 }
 
 
@@ -38,7 +37,7 @@ class LED(Node):
         )
 
         self.poller = self.create_timer(3.0, self.pulse_led)
-        self.navigation_status = NavigationMissionStatus.WAITING_FOR_MISSION
+        self.navigation_status = NavigationMissionStatus.WAITING_FOR_MISSION.value
 
         self.get_logger().info("Started LED node")
 
@@ -49,8 +48,9 @@ class LED(Node):
         nof_pulses = PULSE_COUNT_MAP.get(self.navigation_status)
         pulse_length = PULSE_TIME_MAP.get(self.navigation_status)
 
-        self.led_control.sequence(nof_pulses, pulse_length)
-    
+        if nof_pulses is not None and pulse_length is not None:
+            self.led_control.sequence(nof_pulses, pulse_length)
+
 
 def main(args=None):
     rclpy.init(args=args)
