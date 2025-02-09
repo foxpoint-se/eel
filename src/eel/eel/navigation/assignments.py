@@ -70,6 +70,8 @@ def has_passed_waypoint(prev_wp, cur_wp, vehicle_pos):
     return t > 1
 
 
+# TODO: the start_pos should optimally be the start of the route, rather than current position.
+# If there is one, that is. for the first segment, the start_pos has to be current position.
 class WaypointAndDepth(Assignment):
     def __init__(
         self,
@@ -90,6 +92,7 @@ class WaypointAndDepth(Assignment):
         self._prev_wp = (start_pos["lat"], start_pos["lon"])
         self._curr_wp = (target_pos["lat"], target_pos["lon"])
 
+    # TODO: the logic with compensating for cross track error needs to be done for diving assignments as well.
     def step(
         self,
         current_position: LatLon,
@@ -109,6 +112,7 @@ class WaypointAndDepth(Assignment):
 
         bearing_to_target = get_relative_bearing(current_position, self.target_pos)
 
+        # TODO: clean up commented code and stuff here
         # offset_angle = abs(bearing_to_target - self._initial_bearing_to_target) % 360
         # offset_angle = 360 - offset_angle if offset_angle > 180 else offset_angle
 
