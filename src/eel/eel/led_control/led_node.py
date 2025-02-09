@@ -41,7 +41,7 @@ class LED(Node):
 
         self.get_logger().info("Started LED node")
 
-    def update_mission_status(self, msg):
+    def update_mission_status(self, msg: NavigationStatus):
         self.navigation_status = msg.mission_status
 
     def pulse_led(self):
