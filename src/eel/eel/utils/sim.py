@@ -7,7 +7,9 @@
 # LINEAR_VELOCITY = 0.89
 # LINEAR_VELOCITY = 0.98
 # LINEAR_VELOCITY = 0.92
-LINEAR_VELOCITY = 0.9
+
+# NOTE: we measured 0.858 mps in gröndal 2 march 2025
+LINEAR_VELOCITY = 0.858
 
 # UNIT: Degrees per second.
 # Angular velocity depends on speed, since otherwise simulation wouldn't turn
