@@ -202,10 +202,11 @@ class NavigationActionClient(Node):
 
         leakage_detected = msg.data
 
-        if (
-            any([battery_level_low, leakage_detected, mission_time_exceeded])
-            and self.goals_in_progress
-        ):
+        # if (
+        #     any([battery_level_low, leakage_detected, mission_time_exceeded])
+        #     and self.goals_in_progress
+        # ):
+        if any([battery_level_low, mission_time_exceeded]) and self.goals_in_progress:
             self.logger.info(
                 f"Battery low: {battery_level_low}\tMission time exceeded: {mission_time_exceeded}\t Leakage detected: {leakage_detected}"
             )
