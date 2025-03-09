@@ -203,7 +203,8 @@ class SurfaceAssignment(Assignment):
         self._initial_bearing_to_target = get_relative_bearing(start_pos, target_pos)
 
     def start(self) -> None:
-        self.on_set_depth(0.0)
+        # NOTE: 0.0 is surface, but we want to force it even more upwards
+        self.on_set_depth(-0.3)
         self.on_set_motor(1.0)
         self.last_update_at = time()
 
