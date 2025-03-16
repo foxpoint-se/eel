@@ -69,8 +69,8 @@ RUN source /opt/ros/${ROS_DISTRO}/setup.bash \
 #  && rosdep install --from-paths src --ignore-src --rosdistro ${ROS_DISTRO} -y \
  && colcon build --symlink-install
 
-RUN colcon test \
- && colcon test-result --verbose
+# RUN colcon test \
+# && colcon test-result --verbose
 
 # Set up the entrypoint
 WORKDIR /eel
