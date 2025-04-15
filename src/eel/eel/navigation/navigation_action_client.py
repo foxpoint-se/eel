@@ -23,9 +23,13 @@ from ..utils.topics import (
     NAVIGATION_CMD,
     NAVIGATION_STATUS,
     NAVIGATION_LOAD_MISSION,
+    GNSS_STATUS,
 )
 from ..utils.constants import NavigationMissionStatus
 from .common import get_2d_distance_from_coords
+
+GNSS_TIMEOUT_S = 300  # 5 minutes
+MISSION_TIMEOUT_S = 3600  # 1 hour
 
 
 def create_waypoint_goal(assignment: NavigationAssignment) -> Navigate.Goal:
@@ -107,7 +111,15 @@ class NavigationActionClient(Node):
         )
 
         self.leakage_status_subscriber = self.create_subscription(
-            Bool, LEAKAGE_STATUS, self.check_mission_abort_status, 10
+            Bool, LEAKAGE_STATUS, self.handle_leakage_status, 10
+        )
+
+        self.aborter = self.create_timer(
+            1.0 / 2, self.check_mission_abort_status
+        )
+
+        self.gnss_status_subscriber = self.create_subscription(
+            Coordinate, GNSS_STATUS, self.handle_gnss_status, 10
         )
 
         self.nav_publisher = self.create_publisher(
@@ -117,6 +129,8 @@ class NavigationActionClient(Node):
         self.updater = self.create_timer(1.0, self.publish_status)
 
         self.last_seen_battery_level = 100.0
+        self.last_seen_leakage = False
+
 
         self.goals: Deque[Navigate.Goal] = deque()
         self.goal_handles = []
@@ -126,6 +140,7 @@ class NavigationActionClient(Node):
         self.auto_mode = False
         self.meters_to_next_target: float = 0.0
         self.mission_total_meters: float = 0.0
+        self.last_gnss_update_time: float = time()
 
         self.logger.info("Navigation client started")
 
@@ -158,7 +173,7 @@ class NavigationActionClient(Node):
         """Handler for nav cmd messages, either automode or manual as bool."""
         new_auto_mode = msg.data
 
-        self.logger.info(f"Navigation mode command recieved:  {self.auto_mode}")
+        self.logger.info(f"Navigation mode command recieved:  {new_auto_mode}")
 
         if new_auto_mode == True and self.goals_in_progress:
             self.logger.info(
@@ -185,7 +200,10 @@ class NavigationActionClient(Node):
         """Updates the last seen battery level variable."""
         self.last_seen_battery_level = msg.voltage_percent
 
-    def check_mission_abort_status(self, msg):
+    def handle_leakage_status(self, msg: Bool) -> None:
+        self.last_seen_leakage = msg.data
+
+    def check_mission_abort_status(self) -> None:
         """Smelly function that does two things, first check incoming leakage status message,
         then checks battery level and mission time. These are all sources for mission aborts,
         if any of them is in a trigger state then cancel current mission."""
@@ -193,23 +211,30 @@ class NavigationActionClient(Node):
         battery_level_low = self.last_seen_battery_level < battery_level_threshold
 
         if self.mission_start_time:
-            maximum_mission_time_s = 2700
             mission_time_exceeded = (
-                int(time() - self.mission_start_time) > maximum_mission_time_s
+                int(time() - self.mission_start_time) > MISSION_TIMEOUT_S
             )
         else:
             mission_time_exceeded = False
 
-        leakage_detected = msg.data
+        leakage_detected = self.last_seen_leakage
+
+        gnss_timeout = (time() - self.last_gnss_update_time) > GNSS_TIMEOUT_S
 
         # TODO: add leakage detected to this check
-        if any([battery_level_low, mission_time_exceeded]) and self.goals_in_progress:
+        if any([battery_level_low, mission_time_exceeded, gnss_timeout]) and self.goals_in_progress:
             self.logger.info(
-                f"Battery low: {battery_level_low}\tMission time exceeded: {mission_time_exceeded}\t Leakage detected: {leakage_detected}"
+                f"Battery low: {battery_level_low}\t"
+                f"Mission time exceeded: {mission_time_exceeded}\t"
+                f"GNSS timeout: {gnss_timeout}"
             )
             self.logger.info("Aborting mission")
             self.auto_mode = False
             self.cancel_goals_in_progress()
+
+    def handle_gnss_status(self, msg: Coordinate) -> None:
+        """Updates the current GNSS position."""
+        self.last_gnss_update_time = time()
 
     def start_mission(self):
         """Method for starting the goal processing, used for starting the iteration."""
