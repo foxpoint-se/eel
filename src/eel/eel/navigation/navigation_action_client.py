@@ -16,6 +16,7 @@ from eel_interfaces.msg import (
     Coordinate,
     BatteryStatus,
     NavigationAssignment,
+    PressureStatus,
 )
 from ..utils.topics import (
     BATTERY_STATUS,
@@ -24,12 +25,15 @@ from ..utils.topics import (
     NAVIGATION_STATUS,
     NAVIGATION_LOAD_MISSION,
     GNSS_STATUS,
+    PRESSURE_STATUS,
 )
 from ..utils.constants import NavigationMissionStatus
 from .common import get_2d_distance_from_coords
 
 GNSS_TIMEOUT_S = 300  # 5 minutes
 MISSION_TIMEOUT_S = 3600  # 1 hour
+MAX_DEPTH_METERS = 3.0
+COUNT_MAX_DEPTHS = 3
 
 
 def create_waypoint_goal(assignment: NavigationAssignment) -> Navigate.Goal:
@@ -114,6 +118,10 @@ class NavigationActionClient(Node):
             Bool, LEAKAGE_STATUS, self.handle_leakage_status, 10
         )
 
+        self.pressure_status_subscriber = self.create_subscription(
+            PressureStatus, PRESSURE_STATUS, self.handle_pressure_status, 10
+        )
+
         self.aborter = self.create_timer(
             1.0 / 2, self.check_mission_abort_status
         )
@@ -141,6 +149,8 @@ class NavigationActionClient(Node):
         self.meters_to_next_target: float = 0.0
         self.mission_total_meters: float = 0.0
         self.last_gnss_update_time: float = time()
+        self.is_too_deep = False
+        self.depth_history = deque(maxlen=COUNT_MAX_DEPTHS)
 
         self.logger.info("Navigation client started")
 
@@ -222,11 +232,12 @@ class NavigationActionClient(Node):
         gnss_timeout = (time() - self.last_gnss_update_time) > GNSS_TIMEOUT_S
 
         # TODO: add leakage detected to this check
-        if any([battery_level_low, mission_time_exceeded, gnss_timeout]) and self.goals_in_progress:
+        if any([battery_level_low, mission_time_exceeded, gnss_timeout, self.is_too_deep]) and self.goals_in_progress:
             self.logger.info(
                 f"Battery low: {battery_level_low}\t"
                 f"Mission time exceeded: {mission_time_exceeded}\t"
-                f"GNSS timeout: {gnss_timeout}"
+                f"GNSS timeout: {gnss_timeout}\t"
+                f"Is too deep: {self.is_too_deep} {self.depth_history}"
             )
             self.logger.info("Aborting mission")
             self.auto_mode = False
@@ -235,6 +246,13 @@ class NavigationActionClient(Node):
     def handle_gnss_status(self, msg: Coordinate) -> None:
         """Updates the current GNSS position."""
         self.last_gnss_update_time = time()
+
+    def handle_pressure_status(self, msg: PressureStatus) -> None:
+        self.depth_history.append(msg.depth)
+        over_limit_count = sum(d > MAX_DEPTH_METERS for d in self.depth_history)
+
+        self.is_too_deep = (over_limit_count == COUNT_MAX_DEPTHS)
+        
 
     def start_mission(self):
         """Method for starting the goal processing, used for starting the iteration."""
