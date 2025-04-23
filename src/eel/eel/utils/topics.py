@@ -1,7 +1,11 @@
 # Rudder
 RUDDER_STATUS = "rudder/status"
 RUDDER_X_CMD = "rudder/cmd_x"
+RUDDER_X_SET_OFFSET = "rudder/set/offset_x"
+RUDDER_X_OFFSET = "rudder/offset_x"
 RUDDER_Y_CMD = "rudder/cmd_y"
+RUDDER_Y_SET_OFFSET = "ruddder/set/offset_y"
+RUDDER_Y_OFFSET = "rudder/offset_y"
 
 # Motor
 MOTOR_CMD = "motor/cmd"
