@@ -51,8 +51,10 @@ class RudderServo:
             corrected_value = self.cap_max
         if corrected_value < self.cap_min:
             corrected_value = self.cap_min
+
         if self.flip_direction:
-            corrected_value = -value
+            corrected_value = -corrected_value
+
         self.servo.value = corrected_value
 
     # This method will not contain any checks against max/min cap, this should be 
