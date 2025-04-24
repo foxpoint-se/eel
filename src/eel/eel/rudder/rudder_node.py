@@ -121,7 +121,7 @@ class Rudder(Node):
         offset_value_to_low = msg.data < self.xy_rudder.get_x_rudder_cap_min_value()
         offset_value_to_high = msg.data > self.xy_rudder.get_x_rudder_cap_max_value()
 
-        if any[offset_value_to_high, offset_value_to_low]:
+        if any([offset_value_to_high, offset_value_to_low]):
             self.logger.warning(f"Requested x offset value {msg.data} is outside of boundries")
             return
 
@@ -141,12 +141,12 @@ class Rudder(Node):
         offset_value_to_low = msg.data < self.xy_rudder.get_y_rudder_cap_min_value()
         offset_value_to_high = msg.data > self.xy_rudder.get_y_rudder_cap_max_value()
 
-        if any[offset_value_to_high, offset_value_to_low]:
+        if any([offset_value_to_high, offset_value_to_low]):
             self.logger.warning(f"Requested y offset value {msg.data} is outside of boundries")
             return
 
         self.logger.info(f"Rudder y offset value set to {msg.data}")
-        self.xy_rudder.set_x_rudder_offset_value(msg.data)
+        self.xy_rudder.set_y_rudder_offset_value(msg.data)
     
         self.publish_rudder_offset_value(Rudders.RUDDER_Y)
 
