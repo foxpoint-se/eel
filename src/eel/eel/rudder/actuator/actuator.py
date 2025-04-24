@@ -33,8 +33,12 @@ default_y_options: ServoOptions = {
 
 def get_xy_rudder(options: ActuatorOptions) -> XYRudder:
     if options["simulate"]:
-        return XYRudderSim()
+        return XYRudderSim(
+            x_options=default_x_options,
+            y_options=default_y_options,)
+    
     options = cast(ActuatorOptions, options)
+    
     return XYRudderWithServos(
         x_options=default_x_options,
         y_options=default_y_options,
