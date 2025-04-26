@@ -25,6 +25,30 @@ class XYRudderWithServos(XYRudder):
         self.x_servo.set_value(value=value["x"])
         self.y_servo.set_value(value=value["y"])
 
+    def set_x_rudder_offset_value(self, value: float) -> None:
+        self.x_servo.set_offset_value(value)
+    
+    def get_x_rudder_offset_value(self):
+        return self.x_servo.get_offset_value()
+
+    def get_x_rudder_cap_min_value(self):
+        return self.x_servo.get_cap_min_value()
+    
+    def get_x_rudder_cap_max_value(self):
+        return self.x_servo.get_cap_max_value()
+    
+    def set_y_rudder_offset_value(self, value: float) -> None:
+        self.y_servo.set_offset_value(value)
+
+    def get_y_rudder_offset_value(self):
+        return self.y_servo.get_offset_value()
+
+    def get_y_rudder_cap_min_value(self):
+        return self.y_servo.get_cap_min_value()
+    
+    def get_y_rudder_cap_max_value(self):
+        return self.y_servo.get_cap_max_value()    
+
     def shutdown(self) -> None:
         self.x_servo.detach()
         self.y_servo.detach()
