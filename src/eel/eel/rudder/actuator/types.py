@@ -13,3 +13,4 @@ class ServoOptions(TypedDict):
     flip_direction: bool
     cap_min: float
     cap_max: float
+    offset: float

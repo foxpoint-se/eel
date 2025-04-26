@@ -1,3 +1,4 @@
+from typing import Union
 from gpiozero import Servo
 from gpiozero.pins.pigpio import PiGPIOFactory
 from time import sleep
@@ -7,7 +8,7 @@ from .types import ServoOptions
 logger = get_logger(__name__)
 
 
-def create_pigpio_factory(host: str, retries: int, sleep_time: int) -> PiGPIOFactory:
+def create_pigpio_factory(host: str, retries: int, sleep_time: int) -> Union[PiGPIOFactory, None]:
     attempts = 0
     factory = None
     while attempts < retries and factory is None:
