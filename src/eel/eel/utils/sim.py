@@ -2,14 +2,10 @@
 # We can alter this one, to speed up simulation.
 # NOTE: When increasing the speed, you will probably have to increase the update
 # frequency in e. g. GNSS and IMU, so that it can react faster.
-# LINEAR_VELOCITY = 1.0
-# LINEAR_VELOCITY = 0.84
-# LINEAR_VELOCITY = 0.89
-# LINEAR_VELOCITY = 0.98
-# LINEAR_VELOCITY = 0.92
-
 # NOTE: we measured 0.858 mps in gröndal 2 march 2025
-LINEAR_VELOCITY = 0.858
+# NOTE: we measured 0.96 mps outside of rotholmen 18 april 2025. But since it travelled in a squiggly pattern,
+# rather than "as the crow flies", we're rounding it to 1.0
+LINEAR_VELOCITY = 1.0
 
 # UNIT: Degrees per second.
 # Angular velocity depends on speed, since otherwise simulation wouldn't turn
