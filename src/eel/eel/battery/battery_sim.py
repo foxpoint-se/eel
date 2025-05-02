@@ -4,7 +4,7 @@ from .battery_utils import calculate_voltage_percent
 
 BATTERY_MAX_VOLTAGE = 16.8
 DEGENERATION_TIME_S = 30
-DEGEN_RATE_PERCENT = 0.01
+DEGEN_RATE_PERCENT = 0.00
 
 
 class BatterySimulator:

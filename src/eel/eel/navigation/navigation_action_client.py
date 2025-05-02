@@ -68,6 +68,8 @@ def create_goals(assignments: Sequence[NavigationAssignment]) -> Deque[Navigate.
             next = assignments[index + 1]
             result.append(create_surface_goal(next.coordinate))
 
+    print("goals", result)
+
     return result
 
 
