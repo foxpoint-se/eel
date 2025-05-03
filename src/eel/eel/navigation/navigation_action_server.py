@@ -118,15 +118,15 @@ class NavigationActionServer(Node):
         distance_to_target = get_2d_distance(
             pos1=LatLon(lat=self.current_position.lat, lon=self.current_position.lon),
             pos2=LatLon(
-                lat=goal_request.next_coordinate.lat,
-                lon=goal_request.next_coordinate.lon,
+                lat=goal_request.goal.lat,
+                lon=goal_request.goal.lon,
             ),
         )
 
         # Simple sanity check that the target is not to far away, could be removed
         if distance_to_target < TARGET_DISTANCE_LIMIT:
             self.logger.info(
-                f"Accepted new target, lat: {goal_request.next_coordinate.lat} lon: {goal_request.next_coordinate.lon}"
+                f"Accepted new target, lat: {goal_request.goal.lat} lon: {goal_request.goal.lon}"
             )
             self.logger.info(f"Distance to new target: {distance_to_target}m")
 
@@ -153,12 +153,12 @@ class NavigationActionServer(Node):
         if goal_request.type == Navigate.Goal.TYPE_WAYPOINT:
             return WaypointAndDepth(
                 target_pos=LatLon(
-                    lat=goal_request.next_coordinate.lat,
-                    lon=goal_request.next_coordinate.lon,
+                    lat=goal_request.goal.lat,
+                    lon=goal_request.goal.lon,
                 ),
                 start_pos=LatLon(
-                    lat=self.current_position.lat,
-                    lon=self.current_position.lon,
+                    lat=goal_request.start.lat,
+                    lon=goal_request.start.lon,
                 ),
                 depth=(
                     0.0
@@ -172,12 +172,12 @@ class NavigationActionServer(Node):
         elif goal_request.type == Navigate.Goal.TYPE_SURFACE_SYNC:
             return SurfaceAssignment(
                 target_pos=LatLon(
-                    lat=goal_request.next_coordinate.lat,
-                    lon=goal_request.next_coordinate.lon,
+                    lat=goal_request.goal.lat,
+                    lon=goal_request.goal.lon,
                 ),
                 start_pos=LatLon(
-                    lat=self.current_position.lat,
-                    lon=self.current_position.lon,
+                    lat=goal_request.start.lat,
+                    lon=goal_request.start.lon,
                 ),
                 depth=0.0,
                 on_set_motor=self.publish_motor_cmd,
@@ -200,7 +200,7 @@ class NavigationActionServer(Node):
         goal_request: Navigate.Goal = goal_handle.request
         self.assignment = self.create_assignment(goal_request)
 
-        next_coordinate = goal_request.next_coordinate
+        next_coordinate = goal_request.goal
         # TODO: print distance to target here.
         self.logger.info(
             f"Executing new goal, target set to {next_coordinate.lat=} {next_coordinate.lon=}, {self.distance_to_target=}"

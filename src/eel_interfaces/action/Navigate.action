@@ -1,7 +1,8 @@
 uint8 TYPE_WAYPOINT=0
 uint8 TYPE_SURFACE_SYNC=1
 uint8 type
-Coordinate next_coordinate
+Coordinate start
+Coordinate goal
 float32[] next_coordinate_depth
 float32[] optional_sync_time
 ---

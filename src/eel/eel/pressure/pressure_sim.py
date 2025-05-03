@@ -113,7 +113,8 @@ class PressureSensorSimulator(PressureSource):
             NEUTRAL_LEVEL,
             NEUTRAL_TOLERANCE,
         )
-        tank_velocity =  0.0 #get_velocity(TERMINAL_VELOCITY_MPS, average_bouyancy)
+        # NOTE: setting to negative here, so it will float up when motor not running
+        tank_velocity =  -0.05 #get_velocity(TERMINAL_VELOCITY_MPS, average_bouyancy)
         pitch_speed_velocity = get_pitch_speed_velocity(TERMINAL_VELOCITY_MPS, self._current_pitch) * self._current_motor_speed
         velocity = tank_velocity + pitch_speed_velocity
 
