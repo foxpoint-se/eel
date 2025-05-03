@@ -209,7 +209,7 @@ class SurfaceAssignment(Assignment):
         else:
             self.seconds_at_surface = 0.0
 
-        if self.seconds_at_surface >= 6.0:
+        if self.seconds_at_surface >= 15.0:
             print("HAS SYNCED FOR X SECONDS. DONE.")
             self.is_done = True
             return {"distance_to_target": distance_to_target}
