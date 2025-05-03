@@ -44,6 +44,13 @@ def create_waypoint_goal(assignment: NavigationAssignment, start: Coordinate) ->
     result.type = Navigate.Goal.TYPE_WAYPOINT
     result.optional_sync_time = []
     result.next_coordinate_depth = [assignment.target_depth]
+
+    next_depth = assignment.target_depth
+    # NOTE: if setting depth 0.0 in gui, we will set it to -0.3, for a bit more juice.
+    if -0.01 < assignment.target_depth < 0.01:
+        next_depth = -0.3
+
+    result.next_coordinate_depth = [next_depth]
     return result
 
 
