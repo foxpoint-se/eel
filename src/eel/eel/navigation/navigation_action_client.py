@@ -1,6 +1,6 @@
 from collections import deque
 from time import time
-from typing import Deque, List, Sequence, cast
+from typing import Deque, List, Sequence, Union, cast
 
 import rclpy
 from action_msgs.msg import GoalStatus
@@ -26,6 +26,7 @@ from ..utils.topics import (
     NAVIGATION_LOAD_MISSION,
     GNSS_STATUS,
     PRESSURE_STATUS,
+    LOCALIZATION_STATUS,
 )
 from ..utils.constants import NavigationMissionStatus
 from .common import get_2d_distance_from_coords
@@ -36,18 +37,20 @@ MAX_DEPTH_METERS = 3.0
 COUNT_MAX_DEPTHS = 3
 
 
-def create_waypoint_goal(assignment: NavigationAssignment) -> Navigate.Goal:
+def create_waypoint_goal(assignment: NavigationAssignment, start: Coordinate) -> Navigate.Goal:
     result = Navigate.Goal()
-    result.next_coordinate = assignment.coordinate
+    result.start = start
+    result.goal = assignment.coordinate
     result.type = Navigate.Goal.TYPE_WAYPOINT
     result.optional_sync_time = []
     result.next_coordinate_depth = [assignment.target_depth]
     return result
 
 
-def create_surface_goal(next_coordinate: Coordinate) -> Navigate.Goal:
+def create_surface_goal(next_coordinate: Coordinate, start: Coordinate) -> Navigate.Goal:
     result = Navigate.Goal()
-    result.next_coordinate = next_coordinate
+    result.start = start
+    result.goal = next_coordinate
     result.type = Navigate.Goal.TYPE_SURFACE_SYNC
     # TODO: I don't think this is used in server?
     result.optional_sync_time = [6.0]
@@ -59,14 +62,22 @@ def create_surface_goal(next_coordinate: Coordinate) -> Navigate.Goal:
 MINIMUM_SYNC_DISTANCE_METERS = 15.0
 
 
-def create_goals(assignments: Sequence[NavigationAssignment]) -> Deque[Navigate.Goal]:
+def create_goals(assignments: Sequence[NavigationAssignment], current_position: Coordinate) -> Deque[Navigate.Goal]:
     result: Deque[Navigate.Goal] = deque()
     for index, elem in enumerate(assignments):
-        result.append(create_waypoint_goal(elem))
+
+        has_prev = index > 0
+        if has_prev:
+            prev = assignments[index - 1]
+            start = prev.coordinate
+        else:
+            start = current_position
+
+        result.append(create_waypoint_goal(elem, start))
         has_next = index < (len(assignments) - 1)
         if elem.sync_after is True and has_next:
             next = assignments[index + 1]
-            result.append(create_surface_goal(next.coordinate))
+            result.append(create_surface_goal(next.coordinate, elem.coordinate))
 
     print("goals", result)
 
@@ -81,7 +92,7 @@ def extract_waypoints_from_goals(goals: Deque[Navigate.Goal]) -> List[Coordinate
     waypoints: List[Coordinate] = []
     for goal in goals:
         if is_waypoint_goal(goal):
-            waypoints.append(goal.next_coordinate)
+            waypoints.append(goal.goal)
     return waypoints
 
 
@@ -132,6 +143,10 @@ class NavigationActionClient(Node):
             Coordinate, GNSS_STATUS, self.handle_gnss_status, 10
         )
 
+        self.localization_subscriber = self.create_subscription(
+            Coordinate, LOCALIZATION_STATUS, self.handle_localization_update, 10
+        )
+
         self.nav_publisher = self.create_publisher(
             NavigationStatus, NAVIGATION_STATUS, 10
         )
@@ -140,6 +155,8 @@ class NavigationActionClient(Node):
 
         self.last_seen_battery_level = 100.0
         self.last_seen_leakage = False
+
+        self.current_position: Union[Coordinate, None] = None
 
 
         self.goals: Deque[Navigate.Goal] = deque()
@@ -173,7 +190,11 @@ class NavigationActionClient(Node):
         if len(coordinates) == 0:
             self.goals.clear()
         else:
-            self.goals = create_goals(coordinates)
+            if self.current_position is None:
+                self.logger.info("Cannot create goals without current position.")
+                return
+            
+            self.goals = create_goals(coordinates, self.current_position)
 
         self.mission_status = NavigationMissionStatus.MISSION_AQUIRED
         self.mission_total_meters = calculate_mission_distance_meters(self.goals)
@@ -214,6 +235,9 @@ class NavigationActionClient(Node):
 
     def handle_leakage_status(self, msg: Bool) -> None:
         self.last_seen_leakage = msg.data
+
+    def handle_localization_update(self, msg: Coordinate) -> None:
+        self.current_position = msg
 
     def check_mission_abort_status(self) -> None:
         """Smelly function that does two things, first check incoming leakage status message,
