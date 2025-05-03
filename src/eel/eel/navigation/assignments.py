@@ -190,7 +190,7 @@ class SurfaceAssignment(Assignment):
 
     def start(self) -> None:
         # NOTE: 0.0 is surface, but we want to force it even more upwards
-        self.on_set_depth(-0.3)
+        self.on_set_depth(-0.4)
         self.on_set_motor(1.0)
         self.last_update_at = time()
 
@@ -209,7 +209,7 @@ class SurfaceAssignment(Assignment):
         else:
             self.seconds_at_surface = 0.0
 
-        if self.seconds_at_surface >= 15.0:
+        if self.seconds_at_surface >= 25.0:
             print("HAS SYNCED FOR X SECONDS. DONE.")
             self.is_done = True
             return {"distance_to_target": distance_to_target}
