@@ -6,7 +6,7 @@ import json
 
 from awscrt import mqtt, io
 from awsiot import mqtt_connection_builder
-from std_msgs.msg import Float32, Bool
+from std_msgs.msg import Float32, Bool, String
 from eel_interfaces.msg import (
     ImuStatus,
     ImuOffsets,
@@ -42,6 +42,7 @@ from ..utils.topics import (
     MODEM_STATUS,
     ROUTE_TRACING_UPDATES,
     NAVIGATION_LOAD_MISSION,
+    NAVIGATION_LOAD_NAMED_MISSION,
     GNSS_STATUS,
 )
 from ..utils.throttle import throttle
@@ -62,6 +63,9 @@ class DepthControlCmdMqtt(TypedDict):
     pitch_target: float
     depth_pid_type: str
     pitch_pid_type: str
+
+class StringMqtt(TypedDict):
+    data: str
 
 
 class ImuStatusMqtt(TypedDict):
@@ -269,6 +273,10 @@ class MqttBridge(Node):
                 self.handle_incoming_mission,
             ),
             (
+                f"{self.robot_name}/{NAVIGATION_LOAD_NAMED_MISSION}",
+                self.handle_incoming_named_mission,
+            ),
+            (
                 f"{self.robot_name}/{GNSS_STATUS}",
                 self.handle_incoming_gnss_status,
             ),
@@ -302,6 +310,9 @@ class MqttBridge(Node):
         )
         self.mission_publisher = self.create_publisher(
             NavigationMission, NAVIGATION_LOAD_MISSION, 10
+        )
+        self.named_mission_publisher = self.create_publisher(
+            String, NAVIGATION_LOAD_NAMED_MISSION, 10
         )
         self.gnss_status_publisher = self.create_publisher(Coordinate, GNSS_STATUS, 10)
 
@@ -467,6 +478,20 @@ class MqttBridge(Node):
             ros_assignments.append(ros_assignment)
         msg.assignments = ros_assignments
         self.mission_publisher.publish(msg)
+
+    def handle_incoming_named_mission(
+        self,
+        topic: str,
+        payload: bytes,
+        dup: bool,
+        qos: mqtt.QoS,
+        retain: bool,
+        **kwargs,
+    ) -> None:
+        converted = cast(StringMqtt, json.loads(payload))
+        msg = String()
+        msg.data = converted["data"]
+        self.named_mission_publisher.publish(msg)
 
     def handle_incoming_gnss_status(
         self,
