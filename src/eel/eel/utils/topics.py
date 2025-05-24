@@ -26,6 +26,7 @@ IMU_OFFSETS = "imu/offsets"
 NAVIGATION_STATUS = "nav/status"
 NAVIGATION_CMD = "nav/cmd"
 NAVIGATION_LOAD_MISSION = "nav/load_mission"
+NAVIGATION_LOAD_NAMED_MISSION = "nav/load_named_mission"
 
 # Tanks
 FRONT_TANK_CMD = "tank_front/cmd"

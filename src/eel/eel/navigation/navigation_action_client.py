@@ -4,7 +4,7 @@ from typing import Deque, List, Sequence, Union, cast
 
 import rclpy
 from action_msgs.msg import GoalStatus
-from std_msgs.msg import Bool
+from std_msgs.msg import Bool, String
 from rclpy.action import ActionClient
 from rclpy.node import Node
 
@@ -24,6 +24,7 @@ from ..utils.topics import (
     NAVIGATION_CMD,
     NAVIGATION_STATUS,
     NAVIGATION_LOAD_MISSION,
+    NAVIGATION_LOAD_NAMED_MISSION,
     GNSS_STATUS,
     PRESSURE_STATUS,
     LOCALIZATION_STATUS,
@@ -35,6 +36,26 @@ GNSS_TIMEOUT_S = 300  # 5 minutes
 MISSION_TIMEOUT_S = 3600  # 1 hour
 MAX_DEPTH_METERS = 3.0
 COUNT_MAX_DEPTHS = 3
+
+def create_rotholmen_runt_2025_mission() -> NavigationMission:
+    mission = NavigationMission()
+    assignments: List[NavigationAssignment] = [
+        NavigationAssignment(coordinate=Coordinate(lat=59.309024798716145, lon=17.97766066452895), target_depth=0.0, sync_after=False),
+        NavigationAssignment(coordinate=Coordinate(lat=59.30938074193075, lon=17.976039505952492), target_depth=0.0, sync_after=False),
+        NavigationAssignment(coordinate=Coordinate(lat=59.31003238216224, lon=17.974268041282897), target_depth=0.0, sync_after=False),
+        NavigationAssignment(coordinate=Coordinate(lat=59.31124253803556, lon=17.973237370929635), target_depth=1.8, sync_after=True),
+        NavigationAssignment(coordinate=Coordinate(lat=59.31260596522936, lon=17.972947494892782), target_depth=1.8, sync_after=True),
+        NavigationAssignment(coordinate=Coordinate(lat=59.313246592863365, lon=17.97532018393514), target_depth=1.8, sync_after=True),
+        NavigationAssignment(coordinate=Coordinate(lat=59.31326301905425, lon=17.977467413837743), target_depth=1.8, sync_after=True),
+        NavigationAssignment(coordinate=Coordinate(lat=59.312304811316324, lon=17.979410656899567), target_depth=1.8, sync_after=True),
+        NavigationAssignment(coordinate=Coordinate(lat=59.31118778078151, lon=17.977972012864825), target_depth=1.8, sync_after=True),
+        NavigationAssignment(coordinate=Coordinate(lat=59.31004240514067, lon=17.97663803259078), target_depth=1.8, sync_after=False),
+        NavigationAssignment(coordinate=Coordinate(lat=59.30951945130858, lon=17.975909267643953), target_depth=0.0, sync_after=False),
+        NavigationAssignment(coordinate=Coordinate(lat=59.309320505648635, lon=17.979238878507378), target_depth=0.0, sync_after=False),
+        NavigationAssignment(coordinate=Coordinate(lat=59.308889, lon=17.979588), target_depth=0.0, sync_after=False),
+    ]    
+    mission.assignments = assignments
+    return mission
 
 
 def create_waypoint_goal(assignment: NavigationAssignment, start: Coordinate) -> Navigate.Goal:
@@ -125,6 +146,10 @@ class NavigationActionClient(Node):
         self.update_goals_subscriber = self.create_subscription(
             NavigationMission, NAVIGATION_LOAD_MISSION, self.set_mission, 10
         )
+        
+        self.named_mission_subscriber = self.create_subscription(
+            String, NAVIGATION_LOAD_NAMED_MISSION, self.load_named_mission, 10
+        )
 
         self.navigation_cmd_subscriber = self.create_subscription(
             Bool, NAVIGATION_CMD, self.handle_nav_cmd, 10
@@ -208,6 +233,13 @@ class NavigationActionClient(Node):
         self.logger.info(
             f"Set mission with {len(self.goals)} goals over {self.mission_total_meters} meters."
         )
+
+    def load_named_mission(self, msg: String) -> None:
+        if msg.data == "rotholmen_runt_2025":
+            mission = create_rotholmen_runt_2025_mission()
+            self.set_mission(mission)
+        else:
+            self.logger.info(f"Unknown mission name {msg.data}")
 
     def handle_nav_cmd(self, msg: Bool) -> None:
         """Handler for nav cmd messages, either automode or manual as bool."""
