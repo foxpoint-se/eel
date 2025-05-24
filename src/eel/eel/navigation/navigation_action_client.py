@@ -49,7 +49,7 @@ def create_rotholmen_runt_2025_mission() -> NavigationMission:
         NavigationAssignment(coordinate=Coordinate(lat=59.31326301905425, lon=17.977467413837743), target_depth=1.8, sync_after=True),
         NavigationAssignment(coordinate=Coordinate(lat=59.312304811316324, lon=17.979410656899567), target_depth=1.8, sync_after=True),
         NavigationAssignment(coordinate=Coordinate(lat=59.31118778078151, lon=17.977972012864825), target_depth=1.8, sync_after=True),
-        NavigationAssignment(coordinate=Coordinate(lat=59.31004240514067, lon=17.97663803259078), target_depth=1.8, sync_after=True),
+        NavigationAssignment(coordinate=Coordinate(lat=59.31004240514067, lon=17.97663803259078), target_depth=1.8, sync_after=False),
         NavigationAssignment(coordinate=Coordinate(lat=59.30951945130858, lon=17.975909267643953), target_depth=0.0, sync_after=False),
         NavigationAssignment(coordinate=Coordinate(lat=59.309320505648635, lon=17.979238878507378), target_depth=0.0, sync_after=False),
         NavigationAssignment(coordinate=Coordinate(lat=59.308889, lon=17.979588), target_depth=0.0, sync_after=False),
