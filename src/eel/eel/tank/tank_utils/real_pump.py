@@ -29,10 +29,10 @@ class RealPump:
     def _set_emptying(self):
         GPIO.output(self.direction_pin, EMPTY_GPIO_LEVEL)
 
-    def _start_motor(self):
+    def _run_motor(self, pwm_value):
         # GPIO.output(self.motor_pin, RUN_GPIO_LEVEL)
         # self.pwm_output.start(80)
-        self.pwm_output.start(60)
+        self.pwm_output.start(pwm_value)
 
     def _stop_motor(self):
         # GPIO.output(self.motor_pin, STOP_GPIO_LEVEL)
@@ -41,10 +41,18 @@ class RealPump:
     def stop(self):
         self._stop_motor()
 
-    def fill(self):
-        self._set_filling_up()
-        self._start_motor()
+    def run_motor(self, value):
+        pwm_value = value * 80.0
+        if pwm_value > 0:
+            self._set_filling_up()
+        else:
+            self._set_emptying()
+        self._run_motor(abs(pwm_value))
 
-    def empty(self):
-        self._set_emptying()
-        self._start_motor()
+    # def fill(self, pwm_value):
+    #     self._set_filling_up()
+    #     self._run_motor(pwm_value)
+
+    # def empty(self, pwm_value):
+    #     self._set_emptying()
+    #     self._run_motor(pwm_value)
