@@ -176,6 +176,9 @@ class TankNode(Node):
         self.sample_size = 10
         self.level_samples = [0.0 for _ in range(self.sample_size)]
 
+        self.clamp_value = 0.0
+        self.clamp_max_value = 1.0
+
         self.running_average = RunningAverage(10)
 
         # float Kp = 0.2;
@@ -293,12 +296,15 @@ class TankNode(Node):
         if level_error < 0.01:
             self.tank.stop()
             self.tank_motor_pid.reset_cumulative_error()
+            self.clamp_value = 0.0
         else:
+            if self.clamp_value <= self.clamp_max_value:
+                self.clamp_value += 0.05
             pid_value = self.tank_motor_pid.compute(level_average)
             if abs(pid_value) > 1.0:
                 self.tank_motor_pid.reset_cumulative_error()
 
-            next_value = clamp(pid_value, -1.0, 1.0)
+            next_value = clamp(pid_value, -self.clamp_value, self.clamp_value)
 
             # Debounce log: only log once every 10 cycles
             self._next_value_log_counter += 1
