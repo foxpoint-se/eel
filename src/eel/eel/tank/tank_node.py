@@ -174,7 +174,7 @@ class TankNode(Node):
         
         self.sample_index = 0
         self.sample_size = 10
-        self.level_samples = [0 for _ in range(self.sample_size)]
+        self.level_samples = [0.0 for _ in range(self.sample_size)]
 
         self.tank_motor_pid = PidController(0.0, kP=0.05, kI=0.0, kD=0.1)
 
@@ -223,10 +223,6 @@ class TankNode(Node):
             )
         )
 
-    # def start_checking_against_target(self, target):
-    #     self.target_level = target
-    #     self.tank_motor_pid.target = target
-    #     self.is_autocorrecting = True
 
     def stop_checking_against_target(self):
         self.target_level = None
@@ -239,19 +235,11 @@ class TankNode(Node):
 
 
         if not is_within_accepted_target_boundaries(current_level, target_level):
-            # self.start_checking_against_target(target_level)
-            # self.start_motor_towards_target(current_level, target_level)
             self.target_status = "adjusting"
             self.target_level = target_level
             
             self.get_logger().info(f"Setting set point {self.target_level}")
             self.tank_motor_pid.update_set_point(self.target_level)
-
-    # def start_motor_towards_target(self, current_level, target_level):
-    #     if current_level > target_level:
-    #         self.tank.empty()
-    #     else:
-    #         self.tank.fill()
 
     def publish_status(self, current_level: Optional[float]) -> None:
         if current_level is not None:
@@ -279,58 +267,14 @@ class TankNode(Node):
                 self.target_level is not None
                 and self.current_level
             ):
-                # self.check_against_target(current_level, self.target_level)
-
                 next_value = self.tank_motor_pid.compute(level_average)
 
                 clamped_next_value = clamp(next_value, -1.0, 1.0)
-
-                # self.get_logger().info(f"{next_value=} {self.current_level=} {self.level_samples=} {level_average=}")
                 
                 self.tank.run_motor(clamped_next_value)
 
         self.publish_status(self.current_level)
 
-    # def check_against_target(self, current_level: float, target_level: float) -> None:
-    #     if is_within_accepted_target_boundaries(current_level, target_level):
-    #         self.tank.stop()
-    #         self.tank_motor_pid.reset_cumulative_error()
-    #         self.stop_checking_against_target()
-    #         self.target_status = "target_reached"
-
-    #     if is_at_floor(current_level) and self.tank.is_emptying:
-    #         self.tank.stop()
-    #         self.stop_checking_against_target()
-    #         self.target_status = "floor_reached"
-
-    #     if is_at_ceiling(current_level) and self.tank.is_filling:
-    #         self.tank.stop()
-    #         self.stop_checking_against_target()
-    #         self.target_status = "ceiling_reached"
-
-    #     level_avrage = sum(self.level_samples) / self.sample_size
-    #     motor_value = self.tank_motor_pid.compute(self.target_level, level_avrage)
-
-    #     if self.tank.is_filling and is_above_target(current_level, target_level):
-    #         self.tank.empty(motor_value)
-
-    #     if self.tank.is_emptying and is_below_target(current_level, target_level):
-    #         self.tank.fill(motor_value)
-
-    # def get_level(self) -> Union[float, None]:
-    #     try:
-    #         now = time()
-    #         tank_level = self.tank.get_level()
-    #         current_velocity = get_level_velocity(
-    #             tank_level, self.previous_level, now, self.previous_level_at
-    #         )
-    #         self.current_velocity = current_velocity
-
-    #         self.previous_level_at = now
-    #         self.previous_level = tank_level
-    #         return tank_level
-    #     except (OSError, IOError) as err:
-    #         self.get_logger().error(str(err))
 
     def shutdown(self) -> None:
         self.get_logger().info("Shutting down")

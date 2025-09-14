@@ -32,3 +32,7 @@ class Tank(ABC):
     @abstractmethod
     def get_level(self) -> float:
         pass
+
+    @abstractmethod
+    def run_motor(self, value) -> None:
+        pass
