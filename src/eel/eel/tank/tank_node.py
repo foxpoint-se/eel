@@ -265,7 +265,13 @@ class TankNode(Node):
         # NOTE: can we even do this here? since we're gonna call this often,
         # so the cumulative error is gonna be reset all the time.
         self.tank_motor_pid.reset_cumulative_error()
+        
+        reset_ramp = abs(self.target_level - self.tank_motor_pid.set_point) > 0.05
+        if reset_ramp:
+            self.clamp_value = 0.0
+
         self.tank_motor_pid.update_set_point(self.target_level)
+
 
     def publish_status(self, current_level: Optional[float]) -> None:
         if current_level is not None:
@@ -296,7 +302,6 @@ class TankNode(Node):
         if level_error < 0.01:
             self.tank.stop()
             self.tank_motor_pid.reset_cumulative_error()
-            self.clamp_value = 0.0
         else:
             if self.clamp_value <= self.clamp_max_value:
                 self.clamp_value += 0.05
