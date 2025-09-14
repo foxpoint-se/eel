@@ -176,7 +176,27 @@ class TankNode(Node):
         self.sample_size = 10
         self.level_samples = [0.0 for _ in range(self.sample_size)]
 
-        self.tank_motor_pid = PidController(0.0, kP=0.05, kI=0.0, kD=0.1)
+        self.running_average = RunningAverage(10)
+
+        # float Kp = 0.2;
+        # float Ki = 0.05;
+        # float Kd = 0.1;
+
+        # GUNNAR
+        # self.tank_motor_pid = PidController(0.0, kP=2.0, kI=0.1, kD=0.75)
+        # self.tank_motor_pid = PidController(0.0, kP=4.0, kI=0.2, kD=1.2)
+        self.tank_motor_pid = PidController(0.0, kP=8.0, kI=0.5, kD=2.5)
+        
+        # DAVID
+        # self.tank_motor_pid = PidController(0.0, kP=1.0, kI=0.2, kD=0.75)
+        # self.tank_motor_pid = PidController(0.0, kP=0.0, kI=0.3, kD=1.2)
+        # self.tank_motor_pid = PidController(0.0, kP=0.0, kI=0.35, kD=2.5)
+        
+        # ADAM
+        # self.tank_motor_pid = PidController(0.0, kP=4.0, kI=0.0, kD=1.2)
+        # self.tank_motor_pid = PidController(0.0, kP=8.0, kI=0.0, kD=2.0)
+
+        self._next_value_log_counter = 0  # For debouncing next_value log
 
         cmd_topic = str(
             self.get_parameter(CMD_TOPIC_PARAM).get_parameter_value().string_value
@@ -230,16 +250,19 @@ class TankNode(Node):
 
     def handle_tank_cmd(self, msg: Float32):
         requested_target_level = msg.data
-        current_level = self.tank.get_level()
+        # current_level = self.tank.get_level()
         target_level = clamp(requested_target_level, LEVEL_FLOOR, LEVEL_CEILING)
 
+        # if not is_within_accepted_target_boundaries(current_level, target_level):
+        self.target_status = "adjusting"
+        self.target_level = target_level
+        
+        self.get_logger().info(f"Setting set point {self.target_level}")
 
-        if not is_within_accepted_target_boundaries(current_level, target_level):
-            self.target_status = "adjusting"
-            self.target_level = target_level
-            
-            self.get_logger().info(f"Setting set point {self.target_level}")
-            self.tank_motor_pid.update_set_point(self.target_level)
+        # NOTE: can we even do this here? since we're gonna call this often,
+        # so the cumulative error is gonna be reset all the time.
+        self.tank_motor_pid.reset_cumulative_error()
+        self.tank_motor_pid.update_set_point(self.target_level)
 
     def publish_status(self, current_level: Optional[float]) -> None:
         if current_level is not None:
@@ -255,25 +278,36 @@ class TankNode(Node):
     def target_loop(self) -> None:
         self.current_level = self.tank.get_level()
 
-        if self.target_level and abs(self.current_level - self.target_level) < 0.01:
+        self.running_average.add_sample(self.current_level)
+
+        level_average = self.running_average.get_average()
+
+        # TODO: maybe publish both average and momentary level
+        self.publish_status(self.current_level)
+
+        if self.target_level is None:
+            return
+
+        level_error = abs(level_average - self.target_level)
+
+        if level_error < 0.01:
             self.tank.stop()
             self.tank_motor_pid.reset_cumulative_error()
         else:
-            self.level_samples[self.sample_index] = self.current_level
-            self.sample_index = (self.sample_index + 1) % self.sample_size
-            level_average = sum(self.level_samples) / self.sample_size
+            pid_value = self.tank_motor_pid.compute(level_average)
+            if abs(pid_value) > 1.0:
+                self.tank_motor_pid.reset_cumulative_error()
 
-            if (
-                self.target_level is not None
-                and self.current_level
-            ):
-                next_value = self.tank_motor_pid.compute(level_average)
+            next_value = clamp(pid_value, -1.0, 1.0)
 
-                clamped_next_value = clamp(next_value, -1.0, 1.0)
-                
-                self.tank.run_motor(clamped_next_value)
+            # Debounce log: only log once every 10 cycles
+            self._next_value_log_counter += 1
+            if self._next_value_log_counter >= 10:
+                self.get_logger().info(f"{next_value=} {pid_value=}")
+                self._next_value_log_counter = 0
 
-        self.publish_status(self.current_level)
+            
+            self.tank.run_motor(next_value)
 
 
     def shutdown(self) -> None:
