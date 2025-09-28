@@ -41,7 +41,7 @@ class RealDistanceSensor:
         )
 
     def __get_raw_value(self) -> float:
-        print("raw", self.mcp.value)
+        # print("raw", self.mcp.value)
         return self.mcp.value
 
     def __get_pretty_value(self) -> float:
@@ -67,14 +67,14 @@ if __name__ == "__main__":
     import time
     
     # rear
-    # floor = 0.71
-    # ceiling = 0.29
-    # channel = 1
+    floor = 0.71
+    ceiling = 0.29
+    channel = 1
     
     # front
-    floor = 0.647
-    ceiling = 0.18
-    channel = 0
+    # floor = 0.647
+    # ceiling = 0.18
+    # channel = 0
 
     rear_sensor = RealDistanceSensor(floor, ceiling, channel)
     
