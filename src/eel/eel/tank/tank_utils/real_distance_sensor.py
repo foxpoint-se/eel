@@ -67,14 +67,14 @@ if __name__ == "__main__":
     import time
     
     # rear
-    floor = 0.325
-    ceiling = 0.005
-    channel = 1
+    # floor = 0.71
+    # ceiling = 0.29
+    # channel = 1
     
     # front
-    #floor = 0.66
-    #ceiling = 0.16
-    #channel = 0
+    floor = 0.647
+    ceiling = 0.18
+    channel = 0
 
     rear_sensor = RealDistanceSensor(floor, ceiling, channel)
     
