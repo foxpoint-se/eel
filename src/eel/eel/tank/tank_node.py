@@ -260,7 +260,7 @@ class TankNode(Node):
         self.target_status = "adjusting"
         self.target_level = target_level
         
-        self.get_logger().info(f"Setting set point {self.target_level}")
+        # self.get_logger().info(f"Setting set point {self.target_level}")
 
         # NOTE: can we even do this here? since we're gonna call this often,
         # so the cumulative error is gonna be reset all the time.
@@ -312,10 +312,10 @@ class TankNode(Node):
             next_value = clamp(pid_value, -self.clamp_value, self.clamp_value)
 
             # Debounce log: only log once every 10 cycles
-            self._next_value_log_counter += 1
-            if self._next_value_log_counter >= 10:
-                self.get_logger().info(f"{next_value=} {pid_value=}")
-                self._next_value_log_counter = 0
+            # self._next_value_log_counter += 1
+            # if self._next_value_log_counter >= 10:
+            #     self.get_logger().info(f"{next_value=} {pid_value=}")
+            #     self._next_value_log_counter = 0
 
             
             self.tank.run_motor(next_value)

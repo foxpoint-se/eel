@@ -200,7 +200,7 @@ class DepthControlNode(Node):
         # )
         depth_Kp = 0.25
         depth_Ki = 0.0
-        depth_Kd = 0.0
+        depth_Kd = 0.05
 
         self.logger.info(
             "init depth pid with Kp {} Ki {} Kd {}".format(depth_Kp, depth_Ki, depth_Kd)
@@ -339,9 +339,19 @@ class DepthControlNode(Node):
             )
             # next_front_tank_level = depth_controller_output
 
+            # measured neutral values using conservative ranges
+            # front: 0.57
+            # rear: 0.47
+
+            # measured neutral values using "normal" ranges
+            # front: 0.53
+            # rear: 0.45
+
             next_front_tank_level = 0.67 * next_front_tank_level
 
-            next_front_tank_level = next_front_tank_level + 0.45
+            # next_front_tank_level = next_front_tank_level + 0.45
+            next_front_tank_level = next_front_tank_level + 0.53
+
 
             next_rear_tank_level = (0.2 * pitch_rear_tank) + (
                 0.8 * depth_controller_output
@@ -350,7 +360,8 @@ class DepthControlNode(Node):
 
             next_rear_tank_level = 1.33 * next_rear_tank_level
 
-            next_rear_tank_level = next_rear_tank_level + 0.69
+            # next_rear_tank_level = next_rear_tank_level + 0.69
+            next_rear_tank_level = next_rear_tank_level + 0.45
 
             # self.log_pid_error(self.pitch_target - self.current_pitch)
 
