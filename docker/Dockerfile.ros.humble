@@ -27,5 +27,6 @@ RUN source /opt/ros/${ROS_DISTRO}/setup.bash && \
 RUN source /opt/ros/${ROS_DISTRO}/setup.bash && \
     colcon test && colcon test-result --verbose
 
-ENTRYPOINT ["/ros_entrypoint.sh"]
+COPY ./docker/entrypoint.sh /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
 CMD ["bash"] 
