@@ -20,7 +20,7 @@ from ..utils.constants import (
 )
 from ..utils.utils import clamp
 from .tank_utils.create_tank import create_tank
-from ..utils.pid_controller import PidController 
+from ..utils.pid_controller import PidController
 
 TANK_FILL_TIME_S = 22
 # change depending on how big of an error we accept
@@ -120,11 +120,6 @@ class RunningAverage:
     def get_average(self):
         return sum(self.samples) / self.size
 
-# Example usage:
-# avg = RunningAverage(5)
-# for val in [1, 2, 3, 4, 5, 6]:
-#     avg.add_sample(val)
-#     print(avg.get_average())
 
 class TankNode(Node):
     def __init__(self):
@@ -171,7 +166,7 @@ class TankNode(Node):
         self.current_velocity: float = float()
         self.previous_level: Optional[float] = None
         self.previous_level_at: Optional[float] = None
-        
+
         self.sample_index = 0
         self.sample_size = 10
         self.level_samples = [0.0 for _ in range(self.sample_size)]
@@ -189,12 +184,12 @@ class TankNode(Node):
         # self.tank_motor_pid = PidController(0.0, kP=2.0, kI=0.1, kD=0.75)
         # self.tank_motor_pid = PidController(0.0, kP=4.0, kI=0.2, kD=1.2)
         self.tank_motor_pid = PidController(0.0, kP=8.0, kI=0.5, kD=2.5)
-        
+
         # DAVID
         # self.tank_motor_pid = PidController(0.0, kP=1.0, kI=0.2, kD=0.75)
         # self.tank_motor_pid = PidController(0.0, kP=0.0, kI=0.3, kD=1.2)
         # self.tank_motor_pid = PidController(0.0, kP=0.0, kI=0.35, kD=2.5)
-        
+
         # ADAM
         # self.tank_motor_pid = PidController(0.0, kP=4.0, kI=0.0, kD=1.2)
         # self.tank_motor_pid = PidController(0.0, kP=8.0, kI=0.0, kD=2.0)
@@ -246,32 +241,28 @@ class TankNode(Node):
             )
         )
 
-
     def stop_checking_against_target(self):
         self.target_level = None
         self.is_autocorrecting = False
 
     def handle_tank_cmd(self, msg: Float32):
         requested_target_level = msg.data
-        # current_level = self.tank.get_level()
         target_level = clamp(requested_target_level, LEVEL_FLOOR, LEVEL_CEILING)
 
-        # if not is_within_accepted_target_boundaries(current_level, target_level):
         self.target_status = "adjusting"
         self.target_level = target_level
-        
+
         self.get_logger().info(f"Setting set point {self.target_level}")
 
         # NOTE: can we even do this here? since we're gonna call this often,
         # so the cumulative error is gonna be reset all the time.
         self.tank_motor_pid.reset_cumulative_error()
-        
+
         reset_ramp = abs(self.target_level - self.tank_motor_pid.set_point) > 0.05
         if reset_ramp:
             self.clamp_value = 0.0
 
         self.tank_motor_pid.update_set_point(self.target_level)
-
 
     def publish_status(self, current_level: Optional[float]) -> None:
         if current_level is not None:
@@ -317,9 +308,7 @@ class TankNode(Node):
                 self.get_logger().info(f"{next_value=} {pid_value=}")
                 self._next_value_log_counter = 0
 
-            
             self.tank.run_motor(next_value)
-
 
     def shutdown(self) -> None:
         self.get_logger().info("Shutting down")
