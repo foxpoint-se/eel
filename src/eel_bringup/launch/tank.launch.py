@@ -107,13 +107,22 @@ for key, value in current_config.items():
 def generate_launch_description():
     ld = LaunchDescription()
 
-    front_tank_node = Node(
+    # Determine node name based on tank parameter
+    tank_value = None
+    for arg in sys.argv:
+        if arg.startswith(f"{TANK_PARAM}:="):
+            tank_value = str(arg.split(":=")[1])
+            break
+    
+    node_name = f"{tank_value}_tank" if tank_value else "tank"
+
+    tank_node = Node(
         package="eel",
         executable="tank",
-        name="front_tank",
+        name=node_name,
         parameters=launch_parameters,
     )
 
-    ld.add_action(front_tank_node)
+    ld.add_action(tank_node)
 
     return ld
