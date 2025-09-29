@@ -1,0 +1,30 @@
+name: Docker build & test Eel (multi-distro)
+
+on:
+  push:
+    branches: [feat/jazzy-support]
+  pull_request:
+    branches: [feat/jazzy-support]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        ros_distro: [humble, jazzy]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build for ${{ matrix.ros_distro }}
+        uses: docker/build-push-action@v5
+        with:
+          file: docker/Dockerfile.ros.${{ matrix.ros_distro }}
+          platforms: linux/amd64,linux/arm64
+          build-args: ROS_DISTRO=${{ matrix.ros_distro }}
+          context: .
+          push: false
+          tags: myimage:${{ matrix.ros_distro }}
