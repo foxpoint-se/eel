@@ -44,33 +44,6 @@ install-i2c:		## install i2c stuff
 spidev-permissions:		## setup spidev permissions
 	sudo ./scripts/spidev/spidev-permissions.sh
 
-start:		## start eel
-	ros2 launch eel_bringup eel.launch.py
-
-sim-depth:		## start depth simulation
-	ros2 launch eel_bringup sim_depth.launch.py
-
-sim-nav:		## start navigation simulation
-	ros2 launch eel_bringup sim_navigation.launch.py
-
-start-tanks:		## start tanks launch file
-	ros2 launch eel_bringup tanks.launch.py
-
-start-pid:		## start pid launch file
-	ros2 launch eel_bringup pid.launch.py
-
-start-gunthix:		## start gunthix launch file
-	ros2 launch eel_bringup gunthix.launch.py
-
-start-sim-drive:	## start sim_drive launch file
-	ros2 launch eel_bringup sim_drive.launch.py
-
-start-pid-rudder:   ## start pid_rudder launch file
-	ros2 launch eel_bringup pid_rudder.launch.py
-
-build-sym:		## build with symlink
-	colcon build --symlink-install
-
 install-depth-sensor:		## install stuff needed for depth senson
 	( \
 		wget https://github.com/bluerobotics/ms5837-python/archive/refs/heads/master.zip -O depth-lib.zip; \
