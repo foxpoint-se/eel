@@ -2,9 +2,9 @@ name: Docker build & test Eel
 
 on:
   push:
-    branches: [main]
+    branches: [noop]
   pull_request:
-    branches: [main]
+    branches: [noop]
 
 jobs:
   build:
