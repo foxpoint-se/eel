@@ -18,6 +18,15 @@ if [ "$2" == "--multiarch" ]; then
   MULTIARCH=true
 fi
 
+if [ "$ROS_DISTRO" = "humble" ]; then
+  DOCKERFILE="docker/Dockerfile.ros.humble"
+elif [ "$ROS_DISTRO" = "jazzy" ]; then
+  DOCKERFILE="docker/Dockerfile.ros.jazzy"
+else
+  echo "Unsupported ROS distro: $ROS_DISTRO"
+  exit 1
+fi
+
 # Ensure buildx builder exists
 if ! docker buildx inspect multiarch-builder > /dev/null 2>&1; then
   docker buildx create --name multiarch-builder --use
@@ -30,7 +39,7 @@ if [ "$MULTIARCH" = true ]; then
   docker buildx build \
     --platform linux/amd64,linux/arm64 \
     --build-arg ROS_DISTRO=${ROS_DISTRO} \
-    -f docker/Dockerfile.ros \
+    -f ${DOCKERFILE} \
     -t ${IMAGE_NAME} \
     --push \
     .
@@ -50,7 +59,7 @@ else
   docker buildx build \
     --platform $PLATFORM \
     --build-arg ROS_DISTRO=${ROS_DISTRO} \
-    -f docker/Dockerfile.ros \
+    -f ${DOCKERFILE} \
     -t ${IMAGE_NAME} \
     --load \
     .
