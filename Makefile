@@ -11,7 +11,8 @@ clean:		## Clean workspace
 	rm -rf build install log
 
 install-py:
-	python3 -m pip install -U --user -e src/eel
+	python3 -m pip install -U --user src/eel
+	rm -rf src/eel/*.egg-info
 
 install-rosdep:
 	rosdep install --from-paths src --ignore-src -r -y

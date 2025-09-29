@@ -41,8 +41,8 @@ COPY ./src ./src
 RUN source /opt/ros/${ROS_DISTRO}/setup.bash && \
     rosdep install --from-paths src --ignore-src -r -y
 
-# Install eel in editable mode with --break-system-packages
-RUN python3 -m pip install --break-system-packages --no-cache-dir -e src/eel
+# Install py deps with --break-system-packages, to not having to use venv
+RUN python3 -m pip install --break-system-packages --no-cache-dir src/eel
 
 RUN source /opt/ros/${ROS_DISTRO}/setup.bash && \
     colcon build --symlink-install
