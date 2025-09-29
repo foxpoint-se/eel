@@ -10,20 +10,29 @@ help:
 clean: 		## clean workspace
 	rm -rf .venv
 
+# mkdir build install log
 ros-clean:		## clean ROS build
 	rm -rf build install log
-	mkdir build install log
 
-install-py:		## setup venv and install py dependencies
-	( \
-		python3 -m venv .venv; \
-		touch .venv/COLCON_IGNORE; \
-       	source .venv/bin/activate; \
-       	pip install wheel; \
-       	python -m pip install -r requirements.txt; \
-    )
+install-py:
+	python3 -m pip install -U --user -e src/eel
 
-install: install-py		## install everything (not really, but should be)
+install-ros:
+	rosdep install --from-paths src --ignore-src -r -y
+
+install-depth-sensor:
+	wget -nc https://github.com/bluerobotics/ms5837-python/archive/refs/heads/master.zip -O depth-lib.zip
+	unzip -o depth-lib.zip
+	python3 -m pip install -U --user ./ms5837-python-master/
+	rm -rf ms5837-python-master depth-lib.zip
+
+install-voltage-sensor:
+	wget -nc https://github.com/e71828/pi_ina226/archive/refs/heads/main.zip -O voltage-lib.zip
+	unzip -o voltage-lib.zip
+	python3 -m pip install -U --user ./pi_ina226-main/
+	rm -rf pi_ina226-main voltage-lib.zip
+
+install-all: install-py install-ros install-depth-sensor install-voltage-sensor
 
 start-pigpio:		## start pigpio
 	sudo pigpiod
@@ -44,23 +53,6 @@ install-i2c:		## install i2c stuff
 spidev-permissions:		## setup spidev permissions
 	sudo ./scripts/spidev/spidev-permissions.sh
 
-install-depth-sensor:		## install stuff needed for depth senson
-	( \
-		wget https://github.com/bluerobotics/ms5837-python/archive/refs/heads/master.zip -O depth-lib.zip; \
-		unzip depth-lib.zip; \
-		touch ms5837-python-master/COLCON_IGNORE; \
-		source .venv/bin/activate; \
-		pip install ms5837-python-master/; \
-	)
-
-install-pigpiod:		## Steps on how to install pigpiod software and service
-	@( \
-		echo "Run these commands:"; \
-		echo "cd ./scripts/pigpiod"; \
-		echo "sudo ./install_pigpiod_software.sh"; \
-		echo "sudo ./install_pigpiod_service.sh"; \
-	)
-
 install-modem:		## Steps on how to install modem both software and service file for auto connecting
 	@( \
 		echo "Run these commands:"; \
@@ -70,15 +62,6 @@ install-modem:		## Steps on how to install modem both software and service file 
 		echo "Wait for reboot, then run"; \
 		echo "cd ./scripts/modem"; \
 		echo "sudo ./install_modem_service.sh"; \
-	)
-
-install-voltage-sensor:		## install stuff needed for depth senson
-	( \
-		wget https://github.com/e71828/pi_ina226/archive/refs/heads/main.zip -O voltage-lib.zip; \
-		unzip voltage-lib.zip; \
-		touch pi_ina226-main/COLCON_IGNORE; \
-		source .venv/bin/activate; \
-		pip install pi_ina226-main/; \
 	)
 
 detect-i2c:		## detect i2c
@@ -91,4 +74,5 @@ test-py:		## run tests specific to eel only
 # That's why we're only running pytest locally. However, colcon test
 # works in Docker environment, since the packages are installed globally
 # in the container
-test: test-py		## run all tests
+test:
+	colcon test && colcon test-result --verbose
