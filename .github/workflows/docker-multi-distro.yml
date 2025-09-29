@@ -27,4 +27,4 @@ jobs:
           build-args: ROS_DISTRO=${{ matrix.ros_distro }}
           context: .
           push: false
-          tags: myimage:${{ matrix.ros_distro }}
+          tags: foxpoint/eel:${{ matrix.ros_distro }}
