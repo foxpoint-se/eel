@@ -50,3 +50,6 @@ class SimTank(Tank):
             self.current_level = cap_value(next_level, 0.0, 1.0)
 
         self.last_updated_at = time()
+
+    def run_motor(self, value) -> None:
+        return super().run_motor(value)

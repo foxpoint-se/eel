@@ -15,6 +15,9 @@ class PidController:
     def update_set_point(self, value):
         self.set_point = value
  
+    def reset_cumulative_error(self):
+        self.cumulative_error = 0
+
     def compute(self, system_current_value):
         now = time()
 

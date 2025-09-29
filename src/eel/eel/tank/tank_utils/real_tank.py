@@ -27,13 +27,8 @@ class RealTank(Tank):
     def get_level(self) -> float:
         return self.distance_sensor.get_level()
 
-    def empty(self) -> None:
-        super().empty()
-        self.pump.empty()
-
-    def fill(self) -> None:
-        super().fill()
-        self.pump.fill()
+    def run_motor(self, value) -> None:
+        self.pump.run_motor(value)
 
     def stop(self) -> None:
         super().stop()
