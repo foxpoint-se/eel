@@ -28,6 +28,14 @@ else
   return 1 2>/dev/null || exit 1
 fi
 
+echo "Sourcing virtual env"
+if [ -d "venv" ]; then
+  source venv/bin/activate
+else
+  echo "No virtual env present. Have you run 'make install'?"
+  exit 1
+fi
+
 # Source workspace
 echo "Sourcing local installation $(pwd)/install/setup.$FILE_EXT"
 if [ -f "$(pwd)/install/setup.$FILE_EXT" ]; then

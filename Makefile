@@ -10,26 +10,37 @@ help:
 clean:		## Clean workspace
 	rm -rf build install log
 
-install-py:
-	python3 -m pip install -U --user src/eel
-	rm -rf src/eel/*.egg-info
+.PHONY: build
+build:		## Colcon build but with python venv
+	python3 -m colcon build --symlink-install
+
+VENV_DIR := venv
+.PHONY: venv
+venv:
+	@if [ ! -d $(VENV_DIR) ]; then \
+		python3 -m venv $(VENV_DIR) --system-site-packages; \
+		touch $(VENV_DIR)/COLCON_IGNORE; \
+	fi
+
+install-py: venv
+	source $(VENV_DIR)/bin/activate; python3 -m pip install -U src/eel
 
 install-rosdep:
 	rosdep install --from-paths src --ignore-src -r -y
 
-install-depth-sensor:
+install-depth-sensor: venv
 	wget -nc https://github.com/bluerobotics/ms5837-python/archive/refs/heads/master.zip -O depth-lib.zip
 	unzip -o depth-lib.zip
-	python3 -m pip install -U --user ./ms5837-python-master/
+	source $(VENV_DIR)/bin/activate; python3 -m pip install -U ./ms5837-python-master/
 	rm -rf ms5837-python-master depth-lib.zip
 
-install-voltage-sensor:
+install-voltage-sensor: venv
 	wget -nc https://github.com/e71828/pi_ina226/archive/refs/heads/main.zip -O voltage-lib.zip
 	unzip -o voltage-lib.zip
-	python3 -m pip install -U --user ./pi_ina226-main/
+	source $(VENV_DIR)/bin/activate; python3 -m pip install -U ./pi_ina226-main/
 	rm -rf pi_ina226-main voltage-lib.zip
 
-install-all: install-py install-rosdep install-depth-sensor install-voltage-sensor		## Install all dependencies
+install: install-py install-rosdep install-depth-sensor install-voltage-sensor		## Install all dependencies
 
 start-pigpio:		## start pigpio
 	sudo pigpiod
@@ -65,4 +76,4 @@ detect-i2c:		## detect i2c
 	sudo i2cdetect -y 1
 
 test:		## Run colcon tests
-	colcon test; colcon test-result --verbose
+	python3 -m colcon test; python3 -m colcon test-result --verbose

@@ -13,9 +13,9 @@ Get the code, install deps, build, run tests and run a node:
 ```bash
 git clone <this repo>
 cd path/to/project
-make install-all
+make install
 source source_me.sh
-colcon build --symlink-install
+make build
 make test
 ros2 run eel imu --ros-args -p simulate:=true
 ```
