@@ -1,5 +1,5 @@
 # ROS distribution to use
-ARG ROS_DISTRO=foxy
+ARG ROS_DISTRO=jazzy
 
 
 ######################

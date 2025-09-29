@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - Ubuntu 20.04
-- ROS2 Foxy
+- ROS2 Jazzy
 - Python 3
 - Colcon (`sudo apt install python3-colcon-common-extensions`)
 
@@ -59,6 +59,7 @@ make start
 ```
 
 ## Enable SPI access on Ubuntu
+
 Create /etc/udev/rules.d/90-gpio-spi.rules with:
 
 ```
@@ -76,7 +77,6 @@ sudo usermod -a -G spi ubuntu
 Restart
 
 sudo shutdown -r now
-
 
 ## I2C addresses
 

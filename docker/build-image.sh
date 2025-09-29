@@ -1,6 +1,6 @@
 #!/bin/bash
 
-allowed_ros_distros=("foxy" "humble")
+allowed_ros_distros=("humble" "jazzy")
 
 if [ "$#" -ne 1 ]; then
     echo "Usage: $0 <ros-distro>"
