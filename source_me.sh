@@ -34,10 +34,5 @@ if [ -f "$(pwd)/install/setup.$FILE_EXT" ]; then
   source "$(pwd)/install/setup.$FILE_EXT"
 fi
 
-# Colcon argcomplete (optional)
-echo "Sourcing colcon argcomplete"
-if [ -f /usr/share/colcon_argcomplete/hook/colcon-argcomplete.$FILE_EXT ]; then
-  source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.$FILE_EXT
-fi
 
 echo "Environment ready!"
