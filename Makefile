@@ -7,17 +7,13 @@ help:
 
 .DEFAULT_GOAL := help
 
-clean: 		## clean workspace
-	rm -rf .venv
-
-# mkdir build install log
-ros-clean:		## clean ROS build
+clean:		## Clean workspace
 	rm -rf build install log
 
 install-py:
 	python3 -m pip install -U --user -e src/eel
 
-install-ros:
+install-rosdep:
 	rosdep install --from-paths src --ignore-src -r -y
 
 install-depth-sensor:
@@ -32,7 +28,7 @@ install-voltage-sensor:
 	python3 -m pip install -U --user ./pi_ina226-main/
 	rm -rf pi_ina226-main voltage-lib.zip
 
-install-all: install-py install-ros install-depth-sensor install-voltage-sensor
+install-all: install-py install-rosdep install-depth-sensor install-voltage-sensor		## Install all dependencies
 
 start-pigpio:		## start pigpio
 	sudo pigpiod
@@ -67,12 +63,5 @@ install-modem:		## Steps on how to install modem both software and service file 
 detect-i2c:		## detect i2c
 	sudo i2cdetect -y 1
 
-test-py:		## run tests specific to eel only
-	source source_me.sh && pytest src/eel/test/eel
-
-# NOTE: can't get colcon test to work with virtual environment??
-# That's why we're only running pytest locally. However, colcon test
-# works in Docker environment, since the packages are installed globally
-# in the container
-test:
-	colcon test && colcon test-result --verbose
+test:		## Run colcon tests
+	colcon test; colcon test-result --verbose

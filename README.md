@@ -2,61 +2,27 @@
 
 ## Prerequisites
 
-- Ubuntu 20.04
-- ROS2 Jazzy
-- Python 3
-- Colcon (`sudo apt install python3-colcon-common-extensions`)
+- Either:
+  - Ubuntu 24.04 with ROS2 Jazzy
+  - OR: Ubuntu 22.04 with ROS2 Humble
 
 ## Getting started
 
-Get the code, build ROS and install python dependencies:
+Get the code, install deps, build, run tests and run a node:
 
-```
+```bash
 git clone <this repo>
 cd path/to/project
-make install-py
+make install-all
 source source_me.sh
-make build-sym
+colcon build --symlink-install
+make test
+ros2 run eel imu --ros-args -p simulate:=true
 ```
 
-This will be enough when running in simulation mode (without actual hardware). But when running in production mode (with actual hardware), you will have to install a few other things as well:
+This will be enough when running in simulation mode (without actual hardware). But when running in production mode (with actual hardware), you will have to install a few other things as well.
 
-```
-make install-depth-sensor
-make install-pigpio
-```
-
-### Start in simulation mode
-
-Terminal 1 (only required for navigation simulation):
-
-```
-make virtual-serial
-```
-
-Terminal 2:
-
-You can either start depth simulation or navigation simulation.
-
-```
-source source_me.sh
-make sim-nav
-```
-
-OR:
-
-```
-source source_me.sh
-make sim-depth
-```
-
-### Start in production mode
-
-```
-make start-pigpio
-source source_me.sh
-make start
-```
+Check the `Makefile` for reference.
 
 ## Enable SPI access on Ubuntu
 
