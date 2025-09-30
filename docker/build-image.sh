@@ -22,6 +22,8 @@ if [ "$ROS_DISTRO" = "humble" ]; then
   DOCKERFILE="./Dockerfile.ros.humble"
 elif [ "$ROS_DISTRO" = "jazzy" ]; then
   DOCKERFILE="./Dockerfile.ros.jazzy"
+elif [ "$ROS_DISTRO" = "foxy" ]; then
+  DOCKERFILE="./Dockerfile.ros.foxy"
 else
   echo "Unsupported ROS distro: $ROS_DISTRO"
   exit 1
