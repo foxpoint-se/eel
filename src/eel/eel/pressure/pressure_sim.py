@@ -73,13 +73,9 @@ class PressureSensorSimulator(PressureSource):
             TankStatus, REAR_TANK_STATUS, self._handle_rear_tank_msg, 10
         )
 
-        parent_node.create_subscription(
-            ImuStatus, IMU_STATUS, self._handle_imu_msg, 10
-        )
+        parent_node.create_subscription(ImuStatus, IMU_STATUS, self._handle_imu_msg, 10)
 
-        parent_node.create_subscription(
-            Float32, MOTOR_CMD, self.handle_motor_msg, 10
-        )
+        parent_node.create_subscription(Float32, MOTOR_CMD, self.handle_motor_msg, 10)
 
         self._last_updated_at = time()
         self._current_motor_speed = 0.0
@@ -113,9 +109,15 @@ class PressureSensorSimulator(PressureSource):
             NEUTRAL_LEVEL,
             NEUTRAL_TOLERANCE,
         )
+
         # NOTE: setting to negative here, so it will float up when motor not running
-        tank_velocity =  -0.05 #get_velocity(TERMINAL_VELOCITY_MPS, average_bouyancy)
-        pitch_speed_velocity = get_pitch_speed_velocity(TERMINAL_VELOCITY_MPS, self._current_pitch) * self._current_motor_speed
+        # tank_velocity = -0.05
+
+        tank_velocity = get_velocity(TERMINAL_VELOCITY_MPS, average_bouyancy)
+        pitch_speed_velocity = (
+            get_pitch_speed_velocity(TERMINAL_VELOCITY_MPS, self._current_pitch)
+            * self._current_motor_speed
+        )
         velocity = tank_velocity + pitch_speed_velocity
 
         if velocity != 0:
