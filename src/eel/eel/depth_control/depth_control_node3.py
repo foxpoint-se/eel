@@ -35,6 +35,8 @@ from ..utils.utils import clamp
 
 FRONT_DISTANCE_FROM_CENTER = 1.0  # Front tank is 2x further from pivot
 REAR_DISTANCE_FROM_CENTER = 1.0  # Rear tank is 1x distance (reference)
+# FRONT_DISTANCE_FROM_CENTER = 0.6  # Front tank is 2x further from pivot
+# REAR_DISTANCE_FROM_CENTER = 0.4  # Rear tank is 1x distance (reference)
 
 # These should sum to 2.0 to maintain the math balance
 # Or normalize them: total_leverage = FRONT_LEVERAGE + REAR_LEVERAGE
@@ -50,20 +52,6 @@ REAR_NEUTRAL = 0.5
 average_neutral = (FRONT_NEUTRAL + REAR_NEUTRAL) / 2  # = 0.57
 differential_neutral = FRONT_NEUTRAL - REAR_NEUTRAL  # = -0.24
 
-sim_depth_controller = PidController(
-    set_point=0.0,
-    kP=0.5,
-    kI=0.0,  # 0.02,  # Kp/25 to eliminate steady-state error
-    kD=0.01,  # 0.5 * 22 / 4 = 2.75
-)
-
-sim_pitch_controller = PidController(
-    set_point=0.0,
-    kP=0.02,
-    kI=0.0,
-    kD=0.01,
-)
-
 """
 DEPTH CONTROL APPROACH OF THIS CONTROLLER:
 - average_level controls overall buoyancy (depth)
@@ -74,6 +62,37 @@ DEPTH CONTROL APPROACH OF THIS CONTROLLER:
 This separates the math cleanly but controllers still interact.
 Tuning: Start with pitch PID = 0, tune depth first, then add pitch.
 """
+
+sim_depth_controller = PidController(
+    set_point=0.0,
+    kP=1.0,
+    kI=0.0,  # 0.02,  # Kp/25 to eliminate steady-state error
+    kD=0.01,  # 0.5 * 22 / 4 = 2.75
+)
+
+sim_pitch_controller = PidController(
+    set_point=0.0,
+    # kP=0.5,
+    # kI=0.0,
+    # kD=0.01,
+    kP=1.0,
+    kI=0.0,
+    kD=0.0,
+)
+# sim_pitch_controller = PidController(
+#     set_point=0.0,
+#     kP=0.02,
+#     kI=0.0,
+#     kD=0.01,
+# )
+
+rho = 1000  # kg/m3
+g = 9.81  # m/s2
+
+rr = 0.35
+rf = 0.35
+
+TANK_VOLUME_MAX = 0.000785
 
 
 class DepthControlNode2(Node):
@@ -144,8 +163,76 @@ class DepthControlNode2(Node):
 
         # --- Step 2: Convert PID outputs → desired buoyant force & moment ---
         # These constants define how much effect 1.0 PID output means in physical terms
+
+        # set Kb so PID output 1.0 -> total buoyancy equal to one tank full:
+        Kb = rho * g * TANK_VOLUME_MAX  # ≈ 7.7 N
+        # set Km so PID output 1.0 -> pitching moment that produces one tank differential:
+        # Km = rho * g * (rf + rr) * TANK_VOLUME_MAX  # ≈ 5.4 N*m (with rf+rr=0.7)
+        Km = (
+            rho * g * (rf + rr) * TANK_VOLUME_MAX
+        )  # 10% of max moment per unit PID output
+
+        B_star = Kb * depth_output
+        M_star = Km * pitch_output
+
+        # convert B* and M* (in force units) to volumes
+        B_vol = B_star / (rho * g)  # m^3
+        M_vol = M_star / (rho * g)  # m^3 * m
+
+        den = rf + rr + 1e-12
+        delta_vf = 0.5 * (B_vol + M_vol / den)
+        delta_vr = 0.5 * (B_vol - M_vol / den)
+
+        # keep deltas achievable: scale if they would push fills outside [0,1]
+        # allowed_fraction is how much of tank we allow to move from neutral (0..1)
+        allowed_fraction = 0.45  # leaves a safety margin around 0.5 neutral
+
+        # compute fraction of full tank each delta would require
+        frac_vf = abs(delta_vf) / TANK_VOLUME_MAX
+        frac_vr = abs(delta_vr) / TANK_VOLUME_MAX
+        max_frac = max(frac_vf, frac_vr, 1e-12)
+
+        if max_frac > allowed_fraction:
+            scale = allowed_fraction / max_frac
+            delta_vf *= scale
+            delta_vr *= scale
+            # optional debug log
+            self.get_logger().info(f"Scaling deltas by {scale:.3f} to avoid saturation")
+
+        front_target = FRONT_NEUTRAL + (delta_vf / TANK_VOLUME_MAX)
+        rear_target = REAR_NEUTRAL + (delta_vr / TANK_VOLUME_MAX)
+
+        err_pitch = self.pitch_controller.set_point - self.current_pitch
+        err_depth = self.depth_controller.set_point - self.current_depth
+
+        self.get_logger().info(
+            f"eD={err_depth:.3f}m eP={math.degrees(err_pitch):.3f}deg "  # Convert back to degrees for logging
+            f"pD={depth_output:.4f} pP={pitch_output:.4f} "
+            f"curr_pitch={math.degrees(self.current_pitch):.2f}deg "
+            f"target_pitch={math.degrees(self.pitch_target):.2f}deg "
+            f"front_t={front_target:.3f} rear_t={rear_target:.3f}"
+        )
+
+        # --- Step 5: Clamp and publish ---
+        self.pub_front(clamp(front_target, 0.0, 1.0))
+        self.pub_rear(clamp(rear_target, 0.0, 1.0))
+
+    def loop_OLD(self) -> None:
+        if not (self.pitch_controller and self.depth_controller):
+            return
+
+        # --- Step 1: Compute PID outputs ---
+        depth_output = self.depth_controller.compute(
+            self.current_depth
+        )  # unitless [-1..1]
+        pitch_output = self.pitch_controller.compute(
+            self.current_pitch
+        )  # unitless [-1..1]
+
+        # --- Step 2: Convert PID outputs → desired buoyant force & moment ---
+        # These constants define how much effect 1.0 PID output means in physical terms
         Kb = 1.0  # buoyancy scaling (unitless -> tank delta)
-        Km = 0.5  # pitch moment scaling (unitless -> tank delta * distance)
+        Km = 2.0  # pitch moment scaling (unitless -> tank delta * distance)
 
         B_star = Kb * depth_output
         M_star = Km * pitch_output
@@ -166,6 +253,10 @@ class DepthControlNode2(Node):
         # --- Step 4: Compute target tank fills ---
         front_target = FRONT_NEUTRAL + delta_front
         rear_target = REAR_NEUTRAL + delta_rear
+
+        self.get_logger().info(
+            f"err={self.current_pitch:.2f}, pout={pitch_output:.3f}, M*={M_star:.3f}, dF={delta_front:.3f}, dR={delta_rear:.3f}"
+        )
 
         # --- Step 5: Clamp and publish ---
         self.pub_front(clamp(front_target, 0.0, 1.0))
