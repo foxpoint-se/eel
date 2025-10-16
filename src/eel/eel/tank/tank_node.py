@@ -264,6 +264,29 @@ class TankNode(Node):
         self.tank.stop()
 
 
+def check_existing_nodes(target_node_name: str) -> bool:
+    import subprocess
+
+    """Check if a node with the given name is already running"""
+    try:
+        result = subprocess.run(
+            ["ros2", "node", "list"], capture_output=True, text=True, timeout=3
+        )
+        if result.returncode == 0:
+            running_nodes = result.stdout.strip().split("\n")
+            # Node names in the list have leading '/'
+            full_node_name = f"/{target_node_name}"
+            return full_node_name in running_nodes
+    except (
+        subprocess.TimeoutExpired,
+        subprocess.CalledProcessError,
+        FileNotFoundError,
+    ):
+        # ros2 CLI not available or failed - assume no conflict
+        return False
+    return False
+
+
 def main(args=None):
     rclpy.init(args=args)
 
@@ -275,7 +298,17 @@ def main(args=None):
             tank_type = arg.split("tank_type:=")[1]
             break
 
-    node = TankNode(f"{tank_type}_tank")
+    from rclpy.logging import get_logger
+
+    logger = get_logger(__name__)
+
+    node_name = f"{tank_type}_tank"
+    if check_existing_nodes(node_name):
+        logger.warn(
+            f"WARNING: Node '{node_name}' appears to already be running! This can cause unexpected behaviour."
+        )
+
+    node = TankNode(node_name)
 
     try:
         rclpy.spin(node)
