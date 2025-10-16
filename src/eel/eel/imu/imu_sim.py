@@ -35,9 +35,19 @@ MOMENTUM_TOLERANCE = 0.005
 #
 # Or: F2 - 0.5 F1 = ?
 #
-def get_momentum_difference(front_tank_level, rear_tank_level):
+def get_momentum_difference_OLD(front_tank_level, rear_tank_level):
     # return front_tank_level - 0.5 * rear_tank_level
     return front_tank_level - rear_tank_level
+
+
+# Lf = 0.6  # meters from CoM
+# Lr = 0.4  # meters from CoM
+Lf = 1.0  # meters from CoM
+Lr = 1.0  # meters from CoM
+
+
+def get_momentum_difference(front_tank_level, rear_tank_level):
+    return Lf * front_tank_level - Lr * rear_tank_level
 
 
 def get_velocity(terminal_velocity, fraction_of_velocity):
