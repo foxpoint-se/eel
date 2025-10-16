@@ -24,6 +24,20 @@ from ..utils.topics import (
 )
 from ..utils.utils import clamp
 
+# Tank leverage factors (how much each tank affects pitch)
+# FRONT_LEVERAGE = 1.0
+# REAR_LEVERAGE = 0.5
+# FRONT_LEVERAGE = 0.5
+# REAR_LEVERAGE = 1.0
+# FRONT_LEVERAGE = 1.0
+# REAR_LEVERAGE = 1.0
+
+FRONT_DISTANCE_FROM_CENTER = 2.0  # Front tank is 2x further from pivot
+REAR_DISTANCE_FROM_CENTER = 1.0  # Rear tank is 1x distance (reference)
+
+# These should sum to 2.0 to maintain the math balance
+# Or normalize them: total_leverage = FRONT_LEVERAGE + REAR_LEVERAGE
+
 # What we found for the real AUV
 # FRONT_NEUTRAL = 0.45
 # REAR_NEUTRAL = 0.69
@@ -48,6 +62,17 @@ sim_pitch_controller = PidController(
     kI=0.0,
     kD=0.01,
 )
+
+"""
+DEPTH CONTROL APPROACH OF THIS CONTROLLER:
+- average_level controls overall buoyancy (depth)
+- differential controls balance point (pitch) 
+- Front tank = average + differential/2
+- Rear tank = average - differential/2
+
+This separates the math cleanly but controllers still interact.
+Tuning: Start with pitch PID = 0, tune depth first, then add pitch.
+"""
 
 
 class DepthControlNode2(Node):
@@ -112,10 +137,16 @@ class DepthControlNode2(Node):
         average_level = average_neutral + depth_output
 
         pitch_output = self.pitch_controller.compute(self.current_pitch)
+
         differential = differential_neutral + pitch_output
 
-        next_front_tank_level = average_level + differential / 2
-        next_rear_tank_level = average_level - differential / 2
+        # Calculate adjustment fractions based on distances
+        total_distance = FRONT_DISTANCE_FROM_CENTER + REAR_DISTANCE_FROM_CENTER
+        front_adjustment = differential * (REAR_DISTANCE_FROM_CENTER / total_distance)
+        rear_adjustment = differential * (-FRONT_DISTANCE_FROM_CENTER / total_distance)
+
+        next_front_tank_level = average_level + front_adjustment
+        next_rear_tank_level = average_level + rear_adjustment
 
         self.pub_front(next_front_tank_level)
         self.pub_rear(next_rear_tank_level)
