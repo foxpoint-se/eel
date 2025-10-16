@@ -4,7 +4,7 @@ install
 log
 
 # python virtual environment
-.venv
+venv
 
 # python cache
 **/*/__pycache__
@@ -32,3 +32,6 @@ voltage-lib.zip
 
 spidev-3.6.tar.gz
 spidev-3.6
+
+# Ignore Python egg-info metadata
+src/eel/*.egg-info/

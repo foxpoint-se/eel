@@ -1,23 +1,69 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -e
 
-allowed_ros_distros=("foxy" "humble")
+# Usage: ./build-image2.sh <distro> [--multiarch]
+# Example: ./build-image2.sh humble
+#          ./build-image2.sh jazzy --multiarch
 
-if [ "$#" -ne 1 ]; then
-    echo "Usage: $0 <ros-distro>"
-    exit 1
+if [ -z "$1" ]; then
+  echo "Usage: $0 <ros_distro> [--multiarch]"
+  exit 1
 fi
 
-ros_distro=$1
-if [[ ! " ${allowed_ros_distros[@]} " =~ " ${ros_distro} " ]]; then
-    echo "Error: Invalid ROS distro. Allowed values: ${allowed_ros_distros[@]}"
-    exit 1
+ROS_DISTRO="$1"
+IMAGE_NAME="foxpoint/eel:${ROS_DISTRO}"
+MULTIARCH=false
+
+if [ "$2" == "--multiarch" ]; then
+  MULTIARCH=true
 fi
 
-echo "Using ROS distro: $ros_distro"
+if [ "$ROS_DISTRO" = "humble" ]; then
+  DOCKERFILE="./Dockerfile.ros.humble"
+elif [ "$ROS_DISTRO" = "jazzy" ]; then
+  DOCKERFILE="./Dockerfile.ros.jazzy"
+elif [ "$ROS_DISTRO" = "foxy" ]; then
+  DOCKERFILE="./Dockerfile.ros.foxy"
+else
+  echo "Unsupported ROS distro: $ROS_DISTRO"
+  exit 1
+fi
 
-tag=$ros_distro
-full_command="docker build --build-arg ROS_DISTRO=$ros_distro --target base -t foxpoint/eel:$tag -f ./Dockerfile .."
-echo "Building Docker image"
-echo $full_command
+# Ensure buildx builder exists
+if ! docker buildx inspect multiarch-builder > /dev/null 2>&1; then
+  docker buildx create --name multiarch-builder --use
+else
+  docker buildx use multiarch-builder
+fi
 
-$full_command
+if [ "$MULTIARCH" = true ]; then
+  echo "Building multi-arch image for amd64 and arm64..."
+  docker buildx build \
+    --platform linux/amd64,linux/arm64 \
+    --build-arg ROS_DISTRO=${ROS_DISTRO} \
+    -f ${DOCKERFILE} \
+    -t ${IMAGE_NAME} \
+    --load \
+    ..
+  echo "\nBuilt: ${IMAGE_NAME} (multi-arch)"
+else
+  # Detect current platform
+  ARCH=$(uname -m)
+  if [ "$ARCH" = "x86_64" ]; then
+    PLATFORM="linux/amd64"
+  elif [[ "$ARCH" == "arm"* || "$ARCH" == "aarch64" ]]; then
+    PLATFORM="linux/arm64"
+  else
+    echo "Unsupported architecture: $ARCH"
+    exit 1
+  fi
+  echo "Building for current platform: $PLATFORM (local load)"
+  docker buildx build \
+    --platform $PLATFORM \
+    --build-arg ROS_DISTRO=${ROS_DISTRO} \
+    -f ${DOCKERFILE} \
+    -t ${IMAGE_NAME} \
+    --load \
+    ..
+  echo "\nBuilt and loaded locally: ${IMAGE_NAME} ($PLATFORM)"
+fi 

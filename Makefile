@@ -7,23 +7,40 @@ help:
 
 .DEFAULT_GOAL := help
 
-clean: 		## clean workspace
-	rm -rf .venv
-
-ros-clean:		## clean ROS build
+clean:		## Clean workspace
 	rm -rf build install log
-	mkdir build install log
 
-install-py:		## setup venv and install py dependencies
-	( \
-		python3 -m venv .venv; \
-		touch .venv/COLCON_IGNORE; \
-       	source .venv/bin/activate; \
-       	pip install wheel; \
-       	python -m pip install -r requirements.txt; \
-    )
+.PHONY: build
+build:		## Colcon build but with python venv
+	python3 -m colcon build --symlink-install
 
-install: install-py		## install everything (not really, but should be)
+VENV_DIR := venv
+.PHONY: venv
+venv:
+	@if [ ! -d $(VENV_DIR) ]; then \
+		python3 -m venv $(VENV_DIR) --system-site-packages; \
+		touch $(VENV_DIR)/COLCON_IGNORE; \
+	fi
+
+install-py: venv
+	source $(VENV_DIR)/bin/activate; python3 -m pip install -U src/eel
+
+install-rosdep:
+	rosdep install --from-paths src --ignore-src -r -y
+
+install-depth-sensor: venv
+	wget -nc https://github.com/bluerobotics/ms5837-python/archive/refs/heads/master.zip -O depth-lib.zip
+	unzip -o depth-lib.zip
+	source $(VENV_DIR)/bin/activate; python3 -m pip install -U ./ms5837-python-master/
+	rm -rf ms5837-python-master depth-lib.zip
+
+install-voltage-sensor: venv
+	wget -nc https://github.com/e71828/pi_ina226/archive/refs/heads/main.zip -O voltage-lib.zip
+	unzip -o voltage-lib.zip
+	source $(VENV_DIR)/bin/activate; python3 -m pip install -U ./pi_ina226-main/
+	rm -rf pi_ina226-main voltage-lib.zip
+
+install: install-py install-rosdep install-depth-sensor install-voltage-sensor		## Install all dependencies
 
 start-pigpio:		## start pigpio
 	sudo pigpiod
@@ -44,50 +61,6 @@ install-i2c:		## install i2c stuff
 spidev-permissions:		## setup spidev permissions
 	sudo ./scripts/spidev/spidev-permissions.sh
 
-start:		## start eel
-	ros2 launch eel_bringup eel.launch.py
-
-sim-depth:		## start depth simulation
-	ros2 launch eel_bringup sim_depth.launch.py
-
-sim-nav:		## start navigation simulation
-	ros2 launch eel_bringup sim_navigation.launch.py
-
-start-tanks:		## start tanks launch file
-	ros2 launch eel_bringup tanks.launch.py
-
-start-pid:		## start pid launch file
-	ros2 launch eel_bringup pid.launch.py
-
-start-gunthix:		## start gunthix launch file
-	ros2 launch eel_bringup gunthix.launch.py
-
-start-sim-drive:	## start sim_drive launch file
-	ros2 launch eel_bringup sim_drive.launch.py
-
-start-pid-rudder:   ## start pid_rudder launch file
-	ros2 launch eel_bringup pid_rudder.launch.py
-
-build-sym:		## build with symlink
-	colcon build --symlink-install
-
-install-depth-sensor:		## install stuff needed for depth senson
-	( \
-		wget https://github.com/bluerobotics/ms5837-python/archive/refs/heads/master.zip -O depth-lib.zip; \
-		unzip depth-lib.zip; \
-		touch ms5837-python-master/COLCON_IGNORE; \
-		source .venv/bin/activate; \
-		pip install ms5837-python-master/; \
-	)
-
-install-pigpiod:		## Steps on how to install pigpiod software and service
-	@( \
-		echo "Run these commands:"; \
-		echo "cd ./scripts/pigpiod"; \
-		echo "sudo ./install_pigpiod_software.sh"; \
-		echo "sudo ./install_pigpiod_service.sh"; \
-	)
-
 install-modem:		## Steps on how to install modem both software and service file for auto connecting
 	@( \
 		echo "Run these commands:"; \
@@ -99,23 +72,8 @@ install-modem:		## Steps on how to install modem both software and service file 
 		echo "sudo ./install_modem_service.sh"; \
 	)
 
-install-voltage-sensor:		## install stuff needed for depth senson
-	( \
-		wget https://github.com/e71828/pi_ina226/archive/refs/heads/main.zip -O voltage-lib.zip; \
-		unzip voltage-lib.zip; \
-		touch pi_ina226-main/COLCON_IGNORE; \
-		source .venv/bin/activate; \
-		pip install pi_ina226-main/; \
-	)
-
 detect-i2c:		## detect i2c
 	sudo i2cdetect -y 1
 
-test-py:		## run tests specific to eel only
-	source source_me.sh && pytest src/eel/test/eel
-
-# NOTE: can't get colcon test to work with virtual environment??
-# That's why we're only running pytest locally. However, colcon test
-# works in Docker environment, since the packages are installed globally
-# in the container
-test: test-py		## run all tests
+test:		## Run colcon tests
+	python3 -m colcon test; python3 -m colcon test-result --verbose
