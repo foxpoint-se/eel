@@ -166,10 +166,8 @@ class TankNode(Node):
         # self.tank_motor_pid = PidController(0.0, kP=8.0, kI=0.0, kD=2.0)
 
         self.tank_motor_pid = PidController(
-            pid_config["kP"], pid_config["kI"], pid_config["kD"]
+            0.0, pid_config["kP"], pid_config["kI"], pid_config["kD"]
         )
-
-        self._next_value_log_counter = 0  # For debouncing next_value log
 
         self.level_cmd_subscription = self.create_subscription(
             Float32, self.config["cmd_topic"], self.handle_tank_cmd, 10
