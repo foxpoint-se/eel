@@ -55,7 +55,6 @@ setup(
             "data_logger = eel.data_logger.data_logger_node:main",
             "leakage = eel.leakage.leakage_node:main",
             "led_control = eel.led_control.led_node:main",
-            "depth_control2 = eel.depth_control.depth_control_node2:main",
             "depth_control3 = eel.depth_control.depth_control_node3:main",
         ],
     },
