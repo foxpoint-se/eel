@@ -1,10 +1,12 @@
 from .tank import Tank
 
+NEUTRAL_LEVEL = 0.5
+
 
 def create_sim_tank() -> Tank:
     from .simulation import SimPump, SimSensor, SimState
 
-    state = SimState(0.0)
+    state = SimState(NEUTRAL_LEVEL)
     pump = SimPump(state)
     sensor = SimSensor(state)
     return Tank(pump, sensor)

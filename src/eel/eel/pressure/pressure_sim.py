@@ -4,12 +4,20 @@ from math import tan, radians
 from rclpy.node import Node
 from eel_interfaces.msg import TankStatus, ImuStatus
 from std_msgs.msg import Float32
-from time import time
+from time import time, monotonic
 from .pressure_source import PressureSource
 from ..utils.topics import FRONT_TANK_STATUS, REAR_TANK_STATUS, IMU_STATUS, MOTOR_CMD
 
+# near top
+RHO = 1000.0
+G = 9.81
+TANK_VOLUME_MAX = 0.00035  # m^3 -- set to your value
+VELOCITY_SCALE = 0.25  # tune later
+IYY = 5.0  # not used exactly here, optional
+
 NEUTRAL_LEVEL = 0.5
-NEUTRAL_TOLERANCE = 0.02
+# NEUTRAL_TOLERANCE = 0.02
+NEUTRAL_TOLERANCE = 0.001
 TERMINAL_VELOCITY_MPS = 0.3
 
 MAX_DEPTH = 10.0
@@ -33,7 +41,7 @@ def get_neutral_offset(tank_level, neutral_level, neutral_tolerance):
     return 0
 
 
-def get_average_bouyancy(
+def get_average_bouyancy_OLD(
     front_tank_level, rear_tank_level, neutral_level, neutral_tolerance
 ):
     front_offset = get_neutral_offset(
@@ -42,6 +50,44 @@ def get_average_bouyancy(
     rear_offset = get_neutral_offset(rear_tank_level, neutral_level, neutral_tolerance)
     offset_average = (front_offset + rear_offset) / 2
     return offset_average
+
+
+Lf = 0.40  # Match your controller
+Lr = 0.10  # Match your controller
+
+
+def get_average_bouyancy_NEWER_BUT_STILL_OLD(
+    front_tank_level, rear_tank_level, neutral_level, neutral_tolerance
+):
+    front_offset = get_neutral_offset(
+        front_tank_level, neutral_level, neutral_tolerance
+    )
+    rear_offset = get_neutral_offset(rear_tank_level, neutral_level, neutral_tolerance)
+
+    # Weight by distances - tanks closer to CoM have more buoyancy effect
+    total_weight = Lf + Lr
+    weighted_average = (front_offset * Lf + rear_offset * Lr) / total_weight
+    return weighted_average
+
+
+def get_average_bouyancy(
+    front_tank_level, rear_tank_level, neutral_level, neutral_tolerance
+) -> float:
+    # compute fill deviations from neutral
+    front_dev = front_tank_level - neutral_level
+    rear_dev = rear_tank_level - neutral_level
+
+    # optionally apply small deadband (but make it tiny)
+    if abs(front_dev) < 0.001:
+        front_dev = 0.0
+    if abs(rear_dev) < 0.001:
+        rear_dev = 0.0
+
+    # net added volume (m^3) relative to one tank max is:
+    # net_vol = (front_dev + rear_dev) * TANK_VOLUME_MAX
+    # but here we return normalized fraction so get_velocity can use it directly:
+    net_fraction = (front_dev + rear_dev) / 2.0  # average deviation fraction [-1..1]
+    return net_fraction
 
 
 def get_velocity(terminal_velocity, fraction_of_velocity):
@@ -80,8 +126,8 @@ class PressureSensorSimulator(PressureSource):
         self._last_updated_at = time()
         self._current_motor_speed = 0.0
         self._current_depth = 0.0
-        self._front_tank_level = 0.0
-        self._rear_tank_level = 0.0
+        self._front_tank_level = NEUTRAL_LEVEL
+        self._rear_tank_level = NEUTRAL_LEVEL
         self._current_pitch = 0.0
 
         self.logger = parent_node.get_logger()
@@ -102,7 +148,61 @@ class PressureSensorSimulator(PressureSource):
         self._current_motor_speed = msg.data
         self._calculate_depth()
 
-    def _calculate_depth(self):
+    def _calculate_depth_WhAT_IS_THIS(self) -> None:
+        # compute added volumes (m^3) from neutral
+        Vf = (self._front_tank_level - NEUTRAL_LEVEL) * TANK_VOLUME_MAX
+        Vr = (self._rear_tank_level - NEUTRAL_LEVEL) * TANK_VOLUME_MAX
+
+        # net buoyant force (N)
+        B_force = RHO * G * (Vf + Vr)
+
+        # convert to a vertical velocity (simple proxy): scale by VELOCITY_SCALE
+        # VELOCITY_SCALE chosen so that max B_force maps to TERMINAL_VELOCITY_MPS
+        velocity_from_tanks = (
+            TERMINAL_VELOCITY_MPS
+            * ((Vf + Vr) / (2.0 * TANK_VOLUME_MAX))
+            * VELOCITY_SCALE
+        )
+        # keep the rest (pitch effect) and combine
+        pitch_speed_velocity = (
+            tan(radians(self._current_pitch))
+            * TERMINAL_VELOCITY_MPS
+            * self._current_motor_speed
+        )
+        velocity = velocity_from_tanks + pitch_speed_velocity
+
+    def _calculate_depth(self) -> None:
+        """Update simulated depth based on buoyancy and pitch."""
+        now = monotonic()
+        dt = now - getattr(self, "_last_update_time", now)
+        self._last_update_time = now
+
+        # buoyancy deviation in [-1..1]
+        avg_buoy = get_average_bouyancy(
+            self._front_tank_level,
+            self._rear_tank_level,
+            NEUTRAL_LEVEL,
+            NEUTRAL_TOLERANCE,
+        )
+
+        # map buoyancy fraction to vertical velocity (m/s)
+        # TERMINAL_VELOCITY_MPS = e.g. 0.2
+        velocity_from_buoy = TERMINAL_VELOCITY_MPS * avg_buoy
+
+        # pitch adds a vertical component from "forward" motion
+        velocity_from_pitch = (
+            tan(radians(self._current_pitch))
+            * TERMINAL_VELOCITY_MPS
+            * self._current_motor_speed
+        )
+
+        # total vertical velocity
+        velocity = velocity_from_buoy + velocity_from_pitch
+
+        # integrate depth (down positive)
+        self._current_depth += velocity * dt
+
+    def _calculate_depth_OLD(self):
         average_bouyancy = get_average_bouyancy(
             self._front_tank_level,
             self._rear_tank_level,

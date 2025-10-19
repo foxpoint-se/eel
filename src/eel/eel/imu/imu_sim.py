@@ -14,7 +14,8 @@ from ..utils.topics import (
 
 
 TERMINAL_PITCH_ANGULAR_VELOCITY_DEGPS = 12.5
-MOMENTUM_TOLERANCE = 0.005
+# MOMENTUM_TOLERANCE = 0.005
+MOMENTUM_TOLERANCE = 0.001
 
 
 # Imagine a sea-saw with forces F1, F2 on each end, L and 2L from the centre.
@@ -42,12 +43,28 @@ def get_momentum_difference_OLD(front_tank_level, rear_tank_level):
 
 # Lf = 0.6  # meters from CoM
 # Lr = 0.4  # meters from CoM
-Lf = 1.0  # meters from CoM
-Lr = 1.0  # meters from CoM
+# Lf = 1.0  # meters from CoM
+# Lr = 1.0  # meters from CoM
+Lf = 0.40  # meters from CoM
+Lr = 0.10  # meters from CoM
+
+
+def get_momentum_difference_NEWER_BUT_STILL_OLD(front_tank_level, rear_tank_level):
+    return Lf * front_tank_level - Lr * rear_tank_level
+
+
+NEUTRAL_LEVEL = 0.5
 
 
 def get_momentum_difference(front_tank_level, rear_tank_level):
-    return Lf * front_tank_level - Lr * rear_tank_level
+    # use deviations from neutral so neutral fill produces zero moment
+    front_dev = front_tank_level - NEUTRAL_LEVEL
+    rear_dev = rear_tank_level - NEUTRAL_LEVEL
+    # raw "moment" proxy (units: m * fill_fraction)
+    raw = Lf * front_dev - Lr * rear_dev
+    # normalize by (rf+rr) so momentum_difference roughly in [-1..1]
+    momentum_norm = raw / (Lf + Lr + 1e-12)
+    return momentum_norm
 
 
 def get_velocity(terminal_velocity, fraction_of_velocity):
