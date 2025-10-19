@@ -20,7 +20,6 @@ class PidController:
         self.last_computed_at = None
         self.cumulative_error = 0.0
         self.last_error = 0.0
-        self.on_log_error = on_log_error
 
     def update_set_point(self, value):
         self.set_point = value
@@ -35,9 +34,6 @@ class PidController:
             self.last_computed_at = now
 
         error = self.set_point - system_current_value
-
-        if self.on_log_error:
-            self.on_log_error(error)
 
         p = self.kP * error
 
