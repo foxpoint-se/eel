@@ -113,6 +113,26 @@ Km = 0.1 * (
     rho * g * (rf + rr) * TANK_VOLUME_MAX
 )  # previously ~1.72 N*m -> now ~0.172 N*m
 
+Kb *= 3.0
+Km *= 2.0
+
+print(f"== Before == {Kb=} {Km=}")
+
+
+# Suggested scalings (snappy but not saturating)
+Kb = 3.0  # [N per PID unit]  (roughly 3 N unit)
+Km = 0.6  # [N*m per PID unit]
+
+# Depth controller — faster, small integrator
+sim_depth_controller = PidController(
+    set_point=0.0, kP=1.2, kI=0.02, kD=0.08, integrator_min=-0.4, integrator_max=0.4
+)
+
+# Pitch controller — stiffer, small integrator + damping
+sim_pitch_controller = PidController(
+    set_point=0.0, kP=1.0, kI=0.005, kD=0.35, integrator_min=-0.15, integrator_max=0.15
+)
+
 
 class DepthControlNode2(Node):
     def __init__(
