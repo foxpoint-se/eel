@@ -63,36 +63,55 @@ This separates the math cleanly but controllers still interact.
 Tuning: Start with pitch PID = 0, tune depth first, then add pitch.
 """
 
-sim_depth_controller = PidController(
-    set_point=0.0,
-    kP=1.0,
-    kI=0.0,  # 0.02,  # Kp/25 to eliminate steady-state error
-    kD=0.01,  # 0.5 * 22 / 4 = 2.75
-)
+# sim_depth_controller = PidController(
+#     set_point=0.0,
+#     kP=0.8,
+#     kI=0.0,  # 0.02,  # Kp/25 to eliminate steady-state error
+#     kD=0.02,  # 0.5 * 22 / 4 = 2.75
+# )
 
-sim_pitch_controller = PidController(
-    set_point=0.0,
-    # kP=0.5,
-    # kI=0.0,
-    # kD=0.01,
-    kP=1.0,
-    kI=0.0,
-    kD=0.0,
-)
 # sim_pitch_controller = PidController(
 #     set_point=0.0,
-#     kP=0.02,
-#     kI=0.0,
-#     kD=0.01,
+#     # kP=0.5,
+#     # kI=0.0,
+#     # kD=0.01,
+#     kP=1.0,
+#     kI=0.01,
+#     kD=2.0,
 # )
+
+
+# depth PID — moderate, some damping
+sim_depth_controller = PidController(set_point=0.0, kP=0.6, kI=0.0, kD=0.05)
+# sim_depth_controller = PidController(set_point=0.0, kP=2.0, kI=0.0, kD=0.5)
+
+# pitch PID — remove integral for now, reduce D (damping), lower P slightly
+sim_pitch_controller = PidController(set_point=0.0, kP=0.6, kI=0.0, kD=0.2)
+
 
 rho = 1000  # kg/m3
 g = 9.81  # m/s2
 
-rr = 0.35
-rf = 0.35
+# rr = 0.35
+# rf = 0.35
+
+rf = 0.25
+rr = 0.45
 
 TANK_VOLUME_MAX = 0.000785
+
+# more correct values below?
+rho = 1000.0
+g = 9.81
+rf = 0.40
+rr = 0.10
+TANK_VOLUME_MAX = 0.00035
+
+# conservative physical scaling (10× smaller than full-range)
+Kb = 0.1 * (rho * g * 2.0 * TANK_VOLUME_MAX)  # previously ~6.87 N -> now ~0.687 N
+Km = 0.1 * (
+    rho * g * (rf + rr) * TANK_VOLUME_MAX
+)  # previously ~1.72 N*m -> now ~0.172 N*m
 
 
 class DepthControlNode2(Node):
@@ -150,6 +169,62 @@ class DepthControlNode2(Node):
         self.rear_tank_pub.publish(msg)
 
     def loop(self) -> None:
+        if not (self.pitch_controller and self.depth_controller):
+            return
+
+        depth_output = self.depth_controller.compute(
+            self.current_depth
+        )  # unitless [-1..1]
+        pitch_output = self.pitch_controller.compute(
+            self.current_pitch
+        )  # unitless [-1..1]
+
+        # Kb = rho * g * 2 * TANK_VOLUME_MAX  # total buoyant range, ≈ 4.7 N
+        # Km = rho * g * (rf + rr) * TANK_VOLUME_MAX  # ≈ 1.65 N·m
+        # Kb = 4.7
+        # Km = 1.65
+
+        # pid outputs in SI (N and N*m)
+        B_star = Kb * depth_output  # [N]
+        M_star = Km * pitch_output  # [N*m]
+
+        # convert forces/moments -> equivalent volumes
+        B_vol = B_star / (rho * g)  # [m^3]
+        M_vol = M_star / (rho * g)  # [m^3 * m]
+
+        den = rf + rr + 1e-12
+        delta_vf = (M_vol + rr * B_vol) / den
+        delta_vr = (rf * B_vol - M_vol) / den
+
+        # scale down deltas if they require too large a fraction of a tank
+        allowed_fraction = 0.45
+        frac_vf = abs(delta_vf) / TANK_VOLUME_MAX
+        frac_vr = abs(delta_vr) / TANK_VOLUME_MAX
+        max_frac = max(frac_vf, frac_vr, 1e-12)
+        if max_frac > allowed_fraction:
+            scale = allowed_fraction / max_frac
+            delta_vf *= scale
+            delta_vr *= scale
+            self.get_logger().info(f"Scaling deltas by {scale:.3f} to avoid saturation")
+
+        front_target = FRONT_NEUTRAL + (delta_vf / TANK_VOLUME_MAX)
+        rear_target = REAR_NEUTRAL + (delta_vr / TANK_VOLUME_MAX)
+
+        # Just logging
+        err_pitch = self.pitch_controller.set_point - self.current_pitch
+        err_depth = self.depth_controller.set_point - self.current_depth
+        self.get_logger().info(
+            f"eD={err_depth:.3f}m eP={math.degrees(err_pitch):.3f}deg "  # Convert back to degrees for logging
+            f"pD={depth_output:.4f} pP={pitch_output:.4f} "
+            f"curr_pitch={math.degrees(self.current_pitch):.2f}deg "
+            f"target_pitch={math.degrees(self.pitch_target):.2f}deg "
+            f"front_t={front_target:.3f} rear_t={rear_target:.3f}"
+        )
+        # End of logging
+        self.pub_front(clamp(front_target, 0.0, 1.0))
+        self.pub_rear(clamp(rear_target, 0.0, 1.0))
+
+    def loop_NEWER_BUT_OLD(self) -> None:
         if not (self.pitch_controller and self.depth_controller):
             return
 
