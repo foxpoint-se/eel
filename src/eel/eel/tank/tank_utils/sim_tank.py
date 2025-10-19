@@ -35,6 +35,7 @@ class SimTank(Tank):
     def _update_level(self) -> None:
         now = time()
         time_delta = now - self.last_updated_at
+        print("hej", self.current_direction)
         if self.current_direction:
             if self.current_direction == "filling":
                 position_delta = calculate_position_delta(
