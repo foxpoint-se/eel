@@ -4,12 +4,12 @@ from time import time
 class PidController:
     def __init__(
         self,
-        set_point,
-        kP=0.0,
-        kI=0.0,
-        kD=0.0,
-        output_min=-float("inf"),
-        output_max=float("inf"),
+        set_point: float,
+        kP: float = 0.0,
+        kI: float = 0.0,
+        kD: float = 0.0,
+        output_min: float = -float("inf"),
+        output_max: float = float("inf"),
     ) -> None:
         self.kP = kP  # proportional gain
         self.kI = kI  # integral gain
@@ -21,13 +21,16 @@ class PidController:
         self.cumulative_error = 0.0
         self.last_error = 0.0
 
-    def update_set_point(self, value):
+    def update_set_point(self, value: float) -> None:
         self.set_point = value
- 
-    def reset_cumulative_error(self):
-        self.cumulative_error = 0
 
-    def compute(self, system_current_value):
+        # Resetting cumulative error, to avoid windup when set point changes
+        self.cumulative_error = 0.0
+
+    def reset_cumulative_error(self) -> None:
+        self.cumulative_error = 0.0
+
+    def compute(self, system_current_value: float) -> float:
         now = time()
 
         if self.last_computed_at is None:
