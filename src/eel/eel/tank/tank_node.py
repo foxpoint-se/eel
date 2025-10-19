@@ -19,8 +19,10 @@ from ..utils.constants import (
     TANK_CEILING_VALUE_PARAM,
 )
 from ..utils.utils import clamp
-from .tank_utils.create_tank import create_tank
+
+# from .tank_utils.create_tank import create_tank
 from ..utils.pid_controller import PidController
+from .tank_utils2.factory import create_hardware_tank, create_sim_tank
 
 TANK_FILL_TIME_S = 22
 # change depending on how big of an error we accept
@@ -214,14 +216,25 @@ class TankNode(Node):
         )
         self.publisher = self.create_publisher(TankStatus, status_topic, 10)
 
-        self.tank = create_tank(
-            simulate=should_simulate,
-            motor_pin=motor_pin,
-            direction_pin=direction_pin,
-            floor=floor_value,
-            ceiling=ceiling_value,
-            channel=distance_sensor_channel,
-        )
+        # self.tank = create_tank(
+        #     simulate=should_simulate,
+        #     motor_pin=motor_pin,
+        #     direction_pin=direction_pin,
+        #     floor=floor_value,
+        #     ceiling=ceiling_value,
+        #     channel=distance_sensor_channel,
+        # )
+
+        if should_simulate:
+            self.tank = create_sim_tank()
+        else:
+            self.tank = create_hardware_tank(
+                motor_pin,
+                direction_pin,
+                floor_value,
+                ceiling_value,
+                distance_sensor_channel,
+            )
 
         self.check_target_updater = self.create_timer(
             1.0 / UPDATE_FREQUENCY, self.target_loop
@@ -252,7 +265,7 @@ class TankNode(Node):
         self.target_status = "adjusting"
         self.target_level = target_level
 
-        self.get_logger().info(f"Setting set point {self.target_level}")
+        # self.get_logger().info(f"Setting set point {self.target_level}")
 
         # NOTE: can we even do this here? since we're gonna call this often,
         # so the cumulative error is gonna be reset all the time.
@@ -308,12 +321,12 @@ class TankNode(Node):
                 self.get_logger().info(f"{next_value=} {pid_value=}")
                 self._next_value_log_counter = 0
 
-            self.tank.run_motor(next_value)
+            self.tank.set_speed(next_value)
 
     def shutdown(self) -> None:
         self.get_logger().info("Shutting down")
         self.stop_checking_against_target()
-        self.tank.shutdown()
+        self.tank.stop()
 
 
 def main(args=None):
