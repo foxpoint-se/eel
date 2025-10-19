@@ -176,3 +176,75 @@ def main(args=None):
 
 if __name__ == "__main__":
     main()
+
+
+"""
+===========================================================
+ AUV BALLAST CONTROL — DEPTH & PITCH ALLOCATION OVERVIEW
+===========================================================
+
+                   ┌───────────────────────────┐
+                   │      Depth Controller     │
+                   │ (PID: setpoint vs depth)  │
+                   └────────────┬──────────────┘
+                                │ depth_output [-1..1]
+                                ▼
+                            Kb gain
+                                │
+                                ▼
+                        B* = Kb * depth_output
+                                │
+                                │     (desired buoyant force, [N])
+────────────────────────────────┼──────────────────────────────────────
+                                │
+                                │
+                                ▼
+                   ┌───────────────────────────┐
+                   │      Pitch Controller     │
+                   │ (PID: setpoint vs pitch)  │
+                   └────────────┬──────────────┘
+                                │ pitch_output [-1..1]
+                                ▼
+                            Km gain
+                                │
+                                ▼
+                        M* = Km * pitch_output
+                                │
+                                │     (desired pitching moment, [N·m])
+────────────────────────────────┼──────────────────────────────────────
+
+These two high-level control efforts (B*, M*) must be turned into
+commands for the actual hardware: two ballast tanks (front & rear).
+
+We solve the "allocation problem" — how to distribute desired buoyancy
+and pitch across the two tanks.
+
+Let:
+  ΔVf = volume change in front tank  [m³]
+  ΔVr = volume change in rear tank   [m³]
+  rf  = lever arm of front tank from CG [m]
+  rr  = lever arm of rear tank from CG [m]
+  B_vol = equivalent buoyant volume (from B*)
+  M_vol = equivalent moment volume (from M*)
+
+We have two linear equations:
+  (1) ΔVf + ΔVr = B_vol            (net buoyancy)
+  (2) rf*ΔVf - rr*ΔVr = M_vol      (pitching moment)
+
+Solving for ΔVf and ΔVr gives:
+  denominator (den) = rf + rr
+  ΔVf = (M_vol + rr * B_vol) / den
+  ΔVr = (rf * B_vol - M_vol) / den
+
+"den" (denominator) is simply (rf + rr), which comes from solving the
+2×2 system of equations above. It normalizes the distribution between
+front and rear tanks based on their lever arms (distances from the
+center of gravity).
+
+Finally:
+  - Scale volumes to avoid tank saturation
+  - Convert to fractional fill commands [0..1]
+  - Send to actuators
+
+===========================================================
+"""
