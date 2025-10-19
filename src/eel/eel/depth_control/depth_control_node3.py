@@ -1,6 +1,7 @@
 from typing import List, Optional
 import rclpy
 from rclpy.context import Context
+import math
 from rclpy.node import Node
 from rclpy.parameter import Parameter
 from ..utils.pid_controller import PidController
@@ -105,17 +106,17 @@ class DepthControlNode2(Node):
         self.current_depth = msg.depth
 
     def handle_imu_msg(self, msg: ImuStatus):
-        self.current_pitch = msg.pitch
+        self.current_pitch = math.radians(msg.pitch)
 
     def handle_cmd_msg(self, msg: DepthControlCmd) -> None:
         self.depth_target = msg.depth_target
-        self.pitch_target = msg.pitch_target
+        self.pitch_target = math.radians(msg.pitch_target)
 
         self.pitch_controller = sim_pitch_controller
         self.depth_controller = sim_depth_controller
 
-        self.depth_controller.update_set_point(msg.depth_target)
-        self.pitch_controller.update_set_point(msg.pitch_target)
+        self.depth_controller.update_set_point(self.depth_target)
+        self.pitch_controller.update_set_point(self.pitch_target)
 
     def pub_front(self, value: float) -> None:
         clamped = clamp(value, 0.0, 1.0)
