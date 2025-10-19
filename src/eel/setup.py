@@ -27,6 +27,7 @@ setup(
         "adafruit-circuitpython-mcp3xxx",
         "awsiotsdk",
         "requests",
+        "lgpio",
     ],
     zip_safe=True,
     maintainer="bulingen",
