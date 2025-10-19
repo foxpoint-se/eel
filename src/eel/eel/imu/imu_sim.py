@@ -14,7 +14,7 @@ from ..utils.topics import (
 
 
 TERMINAL_PITCH_ANGULAR_VELOCITY_DEGPS = 12.5
-MOMENTUM_TOLERANCE = 0.03
+MOMENTUM_TOLERANCE = 0.005
 
 
 # Imagine a sea-saw with forces F1, F2 on each end, L and 2L from the centre.
