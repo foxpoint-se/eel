@@ -256,12 +256,6 @@ class TankNode(Node):
 
             next_value = clamp(pid_value, -self.clamp_value, self.clamp_value)
 
-            # Debounce log: only log once every 10 cycles
-            self._next_value_log_counter += 1
-            if self._next_value_log_counter >= 10:
-                self.get_logger().info(f"{next_value=} {pid_value=}")
-                self._next_value_log_counter = 0
-
             self.tank.set_speed(next_value)
 
     def shutdown(self) -> None:
