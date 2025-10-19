@@ -14,44 +14,10 @@ from ..utils.topics import (
 
 
 TERMINAL_PITCH_ANGULAR_VELOCITY_DEGPS = 12.5
-# MOMENTUM_TOLERANCE = 0.005
 MOMENTUM_TOLERANCE = 0.001
 
-
-# Imagine a sea-saw with forces F1, F2 on each end, L and 2L from the centre.
-#
-# Rear                      Front
-#
-#      F1 < L >  < --- 2L -->  F2
-# ------------------------------
-#               ^
-#
-# For balance: F1 * L = F2 * 2L
-#
-# Simplify, divide by L: F1 = 2 F2
-#
-# Balanced when: 2 F2 - F1 = 0
-#
-# Difference in momentum: 2 F2 - F1 = ?
-#
-# Or: F2 - 0.5 F1 = ?
-#
-def get_momentum_difference_OLD(front_tank_level, rear_tank_level):
-    # return front_tank_level - 0.5 * rear_tank_level
-    return front_tank_level - rear_tank_level
-
-
-# Lf = 0.6  # meters from CoM
-# Lr = 0.4  # meters from CoM
-# Lf = 1.0  # meters from CoM
-# Lr = 1.0  # meters from CoM
 Lf = 0.40  # meters from CoM
 Lr = 0.10  # meters from CoM
-
-
-def get_momentum_difference_NEWER_BUT_STILL_OLD(front_tank_level, rear_tank_level):
-    return Lf * front_tank_level - Lr * rear_tank_level
-
 
 NEUTRAL_LEVEL = 0.5
 

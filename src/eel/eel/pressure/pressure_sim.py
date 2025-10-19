@@ -16,7 +16,6 @@ VELOCITY_SCALE = 0.25  # tune later
 IYY = 5.0  # not used exactly here, optional
 
 NEUTRAL_LEVEL = 0.5
-# NEUTRAL_TOLERANCE = 0.02
 NEUTRAL_TOLERANCE = 0.001
 TERMINAL_VELOCITY_MPS = 0.3
 
@@ -31,43 +30,8 @@ def should_raise_oserror():
     return random.random() < OS_ERROR_RATE
 
 
-def get_neutral_offset(tank_level, neutral_level, neutral_tolerance):
-    neutral_ceiling = neutral_level + neutral_tolerance
-    neutral_floor = neutral_level - neutral_tolerance
-    if tank_level < neutral_floor:
-        return tank_level - neutral_floor
-    if tank_level > neutral_ceiling:
-        return tank_level - neutral_ceiling
-    return 0
-
-
-def get_average_bouyancy_OLD(
-    front_tank_level, rear_tank_level, neutral_level, neutral_tolerance
-):
-    front_offset = get_neutral_offset(
-        front_tank_level, neutral_level, neutral_tolerance
-    )
-    rear_offset = get_neutral_offset(rear_tank_level, neutral_level, neutral_tolerance)
-    offset_average = (front_offset + rear_offset) / 2
-    return offset_average
-
-
 Lf = 0.40  # Match your controller
 Lr = 0.10  # Match your controller
-
-
-def get_average_bouyancy_NEWER_BUT_STILL_OLD(
-    front_tank_level, rear_tank_level, neutral_level, neutral_tolerance
-):
-    front_offset = get_neutral_offset(
-        front_tank_level, neutral_level, neutral_tolerance
-    )
-    rear_offset = get_neutral_offset(rear_tank_level, neutral_level, neutral_tolerance)
-
-    # Weight by distances - tanks closer to CoM have more buoyancy effect
-    total_weight = Lf + Lr
-    weighted_average = (front_offset * Lf + rear_offset * Lr) / total_weight
-    return weighted_average
 
 
 def get_average_bouyancy(
@@ -148,29 +112,6 @@ class PressureSensorSimulator(PressureSource):
         self._current_motor_speed = msg.data
         self._calculate_depth()
 
-    def _calculate_depth_WhAT_IS_THIS(self) -> None:
-        # compute added volumes (m^3) from neutral
-        Vf = (self._front_tank_level - NEUTRAL_LEVEL) * TANK_VOLUME_MAX
-        Vr = (self._rear_tank_level - NEUTRAL_LEVEL) * TANK_VOLUME_MAX
-
-        # net buoyant force (N)
-        B_force = RHO * G * (Vf + Vr)
-
-        # convert to a vertical velocity (simple proxy): scale by VELOCITY_SCALE
-        # VELOCITY_SCALE chosen so that max B_force maps to TERMINAL_VELOCITY_MPS
-        velocity_from_tanks = (
-            TERMINAL_VELOCITY_MPS
-            * ((Vf + Vr) / (2.0 * TANK_VOLUME_MAX))
-            * VELOCITY_SCALE
-        )
-        # keep the rest (pitch effect) and combine
-        pitch_speed_velocity = (
-            tan(radians(self._current_pitch))
-            * TERMINAL_VELOCITY_MPS
-            * self._current_motor_speed
-        )
-        velocity = velocity_from_tanks + pitch_speed_velocity
-
     def _calculate_depth(self) -> None:
         """Update simulated depth based on buoyancy and pitch."""
         now = monotonic()
@@ -201,34 +142,6 @@ class PressureSensorSimulator(PressureSource):
 
         # integrate depth (down positive)
         self._current_depth += velocity * dt
-
-    def _calculate_depth_OLD(self):
-        average_bouyancy = get_average_bouyancy(
-            self._front_tank_level,
-            self._rear_tank_level,
-            NEUTRAL_LEVEL,
-            NEUTRAL_TOLERANCE,
-        )
-
-        # NOTE: setting to negative here, so it will float up when motor not running
-        # tank_velocity = -0.05
-
-        tank_velocity = get_velocity(TERMINAL_VELOCITY_MPS, average_bouyancy)
-        pitch_speed_velocity = (
-            get_pitch_speed_velocity(TERMINAL_VELOCITY_MPS, self._current_pitch)
-            * self._current_motor_speed
-        )
-        velocity = tank_velocity + pitch_speed_velocity
-
-        if velocity != 0:
-            now = time()
-            time_delta = now - self._last_updated_at
-            position_delta = calculate_position_delta(velocity, time_delta)
-            new_position = self._current_depth + position_delta
-            capped_depth = cap_depth(new_position, MIN_DEPTH, MAX_DEPTH)
-            self._current_depth = capped_depth
-
-        self._last_updated_at = time()
 
     def get_current_depth(self):
         self._calculate_depth()
