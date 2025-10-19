@@ -13,9 +13,8 @@ from ..utils.constants import SIMULATE_PARAM
 from ..utils.utils import clamp
 from .tank_configs import get_tank_config
 
-# from .tank_utils.create_tank import create_tank
 from ..utils.pid_controller import PidController
-from .tank_utils2.factory import create_hardware_tank, create_sim_tank
+from .tank_utils.factory import create_hardware_tank, create_sim_tank
 
 TANK_FILL_TIME_S = 22
 # change depending on how big of an error we accept
