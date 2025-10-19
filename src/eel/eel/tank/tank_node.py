@@ -1,24 +1,17 @@
 #!/usr/bin/env python3
 import sys
-from typing import Literal, Optional, Union
+from typing import Literal, Optional
 import rclpy
 from time import time
 from rclpy.node import Node
 from rclpy.executors import ExternalShutdownException
+from rclpy.parameter import Parameter
 from std_msgs.msg import Float32
 from eel_interfaces.msg import TankStatus
 
-from ..utils.constants import (
-    SIMULATE_PARAM,
-    MOTOR_PIN_PARAM,
-    DIRECTION_PIN_PARAM,
-    DISTANCE_SENSOR_CHANNEL_PARAM,
-    CMD_TOPIC_PARAM,
-    STATUS_TOPIC_PARAM,
-    TANK_FLOOR_VALUE_PARAM,
-    TANK_CEILING_VALUE_PARAM,
-)
+from ..utils.constants import SIMULATE_PARAM
 from ..utils.utils import clamp
+from .tank_configs import get_tank_config
 
 # from .tank_utils.create_tank import create_tank
 from ..utils.pid_controller import PidController
@@ -102,11 +95,8 @@ def get_level_velocity(
 
 
 # NOTE: example usage
-# OLD
-# ros2 run eel tank --ros-args -p simulate:=False -p cmd_topic:=/tank_rear/cmd -p status_topic:=/tank_rear/status -p motor_pin:=24 -p direction_pin:=25 -p tank_floor_mm:=15 -p tank_ceiling_mm:=63 -p xshut_pin_param:=21
-# ros2 run eel tank --ros-args -p simulate:=False -p cmd_topic:=/tank_front/cmd -p status_topic:=/tank_front/status -p motor_pin:=23 -p direction_pin:=18 -p tank_floor_mm:=15 -p tank_ceiling_mm:=63 -p xshut_pin_param:=21
-# NEW
-# ros2 run eel tank --ros-args -p simulate:=False -p cmd_topic:=/tank_front/cmd -p status_topic:=/tank_front/status -p motor_pin:=23 -p direction_pin:=18 -p tank_floor_value:=4736 -p tank_ceiling_value:=18256 -p distance_sensor_channel:=1
+# ros2 run eel tank --ros-args -p simulate:=false -p tank_type:=front
+# ros2 run eel tank --ros-args -p simulate:=true -p tank_type:=rear
 
 
 class RunningAverage:
@@ -127,36 +117,14 @@ class TankNode(Node):
     def __init__(self):
         super().__init__("tank_node", parameter_overrides=[])
         self.declare_parameter(SIMULATE_PARAM, False)
-        self.declare_parameter(CMD_TOPIC_PARAM)
-        self.declare_parameter(STATUS_TOPIC_PARAM)
-        self.declare_parameter(MOTOR_PIN_PARAM, -1)
-        self.declare_parameter(DIRECTION_PIN_PARAM, -1)
-        self.declare_parameter(DISTANCE_SENSOR_CHANNEL_PARAM, -1)
-        self.declare_parameter(TANK_FLOOR_VALUE_PARAM)
-        self.declare_parameter(TANK_CEILING_VALUE_PARAM)
+        self.declare_parameter("tank_type", Parameter.Type.STRING)
+        tank_type = self.get_parameter("tank_type").get_parameter_value().string_value
+        if tank_type not in ["front", "rear"]:
+            raise ValueError(f"tank_type must be 'front' or 'rear', got: {tank_type=}")
+
+        self.config = get_tank_config(tank_type)
 
         should_simulate = bool(self.get_parameter(SIMULATE_PARAM).value)
-        motor_pin = int(
-            self.get_parameter(MOTOR_PIN_PARAM).get_parameter_value().integer_value
-        )
-        direction_pin = int(
-            self.get_parameter(DIRECTION_PIN_PARAM).get_parameter_value().integer_value
-        )
-        distance_sensor_channel = int(
-            self.get_parameter(DISTANCE_SENSOR_CHANNEL_PARAM)
-            .get_parameter_value()
-            .integer_value
-        )
-        floor_value = float(
-            self.get_parameter(TANK_FLOOR_VALUE_PARAM)
-            .get_parameter_value()
-            .double_value
-        )
-        ceiling_value = float(
-            self.get_parameter(TANK_CEILING_VALUE_PARAM)
-            .get_parameter_value()
-            .double_value
-        )
 
         self.is_autocorrecting: bool = False
         self.target_level: Optional[float] = None
@@ -185,7 +153,8 @@ class TankNode(Node):
         # GUNNAR
         # self.tank_motor_pid = PidController(0.0, kP=2.0, kI=0.1, kD=0.75)
         # self.tank_motor_pid = PidController(0.0, kP=4.0, kI=0.2, kD=1.2)
-        self.tank_motor_pid = PidController(0.0, kP=8.0, kI=0.5, kD=2.5)
+        # self.tank_motor_pid = PidController(0.0, kP=8.0, kI=0.5, kD=2.5)
+        pid_config = {"kP": 8.0, "kI": 0.5, "kD": 2.5}
 
         # DAVID
         # self.tank_motor_pid = PidController(0.0, kP=1.0, kI=0.2, kD=0.75)
@@ -196,44 +165,28 @@ class TankNode(Node):
         # self.tank_motor_pid = PidController(0.0, kP=4.0, kI=0.0, kD=1.2)
         # self.tank_motor_pid = PidController(0.0, kP=8.0, kI=0.0, kD=2.0)
 
+        self.tank_motor_pid = PidController(
+            pid_config["kP"], pid_config["kI"], pid_config["kD"]
+        )
+
         self._next_value_log_counter = 0  # For debouncing next_value log
 
-        cmd_topic = str(
-            self.get_parameter(CMD_TOPIC_PARAM).get_parameter_value().string_value
-        )
-        status_topic = str(
-            self.get_parameter(STATUS_TOPIC_PARAM).get_parameter_value().string_value
-        )
-        if not cmd_topic or not status_topic:
-            raise TypeError(
-                "Missing topic arguments ({}, {})".format(
-                    CMD_TOPIC_PARAM, STATUS_TOPIC_PARAM
-                )
-            )
-
         self.level_cmd_subscription = self.create_subscription(
-            Float32, cmd_topic, self.handle_tank_cmd, 10
+            Float32, self.config["cmd_topic"], self.handle_tank_cmd, 10
         )
-        self.publisher = self.create_publisher(TankStatus, status_topic, 10)
-
-        # self.tank = create_tank(
-        #     simulate=should_simulate,
-        #     motor_pin=motor_pin,
-        #     direction_pin=direction_pin,
-        #     floor=floor_value,
-        #     ceiling=ceiling_value,
-        #     channel=distance_sensor_channel,
-        # )
+        self.publisher = self.create_publisher(
+            TankStatus, self.config["status_topic"], 10
+        )
 
         if should_simulate:
             self.tank = create_sim_tank()
         else:
             self.tank = create_hardware_tank(
-                motor_pin,
-                direction_pin,
-                floor_value,
-                ceiling_value,
-                distance_sensor_channel,
+                self.config["motor_pin"],
+                self.config["direction_pin"],
+                self.config["tank_floor_value"],
+                self.config["tank_ceiling_value"],
+                self.config["distance_sensor_channel"],
             )
 
         self.check_target_updater = self.create_timer(
@@ -241,17 +194,7 @@ class TankNode(Node):
         )
 
         self.get_logger().info(
-            "{}Tank node started. Motor pin: {}, Direction pin: {}, Distance sensor channel: {}, Update frequency: {}, Range: {} - {} mm, CMD topic: {}, status topic: {}".format(
-                "SIMULATE " if should_simulate else "",
-                motor_pin,
-                direction_pin,
-                distance_sensor_channel,
-                UPDATE_FREQUENCY,
-                floor_value,
-                ceiling_value,
-                cmd_topic,
-                status_topic,
-            )
+            f"{should_simulate=} Tank node started with {self.config=} {UPDATE_FREQUENCY=} {pid_config=}"
         )
 
     def stop_checking_against_target(self):
