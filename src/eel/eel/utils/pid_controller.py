@@ -2,10 +2,20 @@ from time import time
 
 
 class PidController:
-    def __init__(self, set_point, kP=0.0, kI=0.0, kD=0.0, on_log_error=None) -> None:
+    def __init__(
+        self,
+        set_point,
+        kP=0.0,
+        kI=0.0,
+        kD=0.0,
+        output_min=-float("inf"),
+        output_max=float("inf"),
+    ) -> None:
         self.kP = kP  # proportional gain
         self.kI = kI  # integral gain
         self.kD = kD  # derivative gain
+        self.output_min = output_min
+        self.output_max = output_max
         self.set_point = set_point
         self.last_computed_at = None
         self.cumulative_error = 0.0
@@ -49,4 +59,7 @@ class PidController:
 
         self.last_computed_at = now
 
-        return p + i + d
+        output = p + i + d
+
+        # Clamp final output
+        return max(self.output_min, min(self.output_max, output))
