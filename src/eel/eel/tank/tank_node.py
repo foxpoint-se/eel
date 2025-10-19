@@ -114,8 +114,8 @@ class RunningAverage:
 
 
 class TankNode(Node):
-    def __init__(self):
-        super().__init__("tank_node", parameter_overrides=[])
+    def __init__(self, node_name="tank_node"):
+        super().__init__(node_name, parameter_overrides=[])
         self.declare_parameter(SIMULATE_PARAM, False)
         self.declare_parameter("tank_type", Parameter.Type.STRING)
         tank_type = self.get_parameter("tank_type").get_parameter_value().string_value
@@ -266,7 +266,16 @@ class TankNode(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = TankNode()
+
+    # Parse tank_type from args to create appropriate node name.
+    # A bit hacky, but helpful to see which tank is logged.
+    tank_type = "unknown"
+    for i, arg in enumerate(sys.argv):
+        if "tank_type:=" in arg:
+            tank_type = arg.split("tank_type:=")[1]
+            break
+
+    node = TankNode(f"{tank_type}_tank")
 
     try:
         rclpy.spin(node)
