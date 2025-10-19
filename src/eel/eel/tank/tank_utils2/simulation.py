@@ -34,11 +34,13 @@ class SimSensor(Sensor):
         now = time()
         dt = now - self.state.last_update
         if self.state.pump_speed > 0:
-            velocity = 0.05  # Fill rate
+            rate = 0.05  # Fill rate
         elif self.state.pump_speed < 0:
-            velocity = -0.03  # Empty rate
+            rate = 0.03  # Empty rate
         else:
-            velocity = 0
+            rate = 0
+
+        velocity = self.state.pump_speed * rate
 
         self.state.level += velocity * dt
         self.state.level = max(0, min(1, self.state.level))
