@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        ros_distro: [humble, jazzy, foxy]
+        ros_distro: [humble, jazzy]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -42,6 +42,6 @@ jobs:
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK_BUILD_CHANNEL }}
           status: ${{ needs.build.outputs.status == 'success' && 'success' || 'failure' }}
-          title: "Docker build & test Eel (humble, jazzy, foxy)"
+          title: "Docker build & test Eel (humble, jazzy)"
           username: GitHub Actions
           avatar_url: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
