@@ -1,64 +1,64 @@
 version: "3.9"
 services:
   imu:
-    image: foxpoint/eel:foxy
+    image: foxpoint/eel:jazzy
     command: ros2 run eel imu --ros-args -p simulate:=true
     network_mode: ${NETWORK_MODE:-bridge}
 
   motor:
-    image: foxpoint/eel:foxy
+    image: foxpoint/eel:jazzy
     command: ros2 run eel motor --ros-args -p simulate:=true
     network_mode: ${NETWORK_MODE:-bridge}
 
   rudder:
-    image: foxpoint/eel:foxy
+    image: foxpoint/eel:jazzy
     command: ros2 run eel rudder --ros-args -p simulate:=true
     network_mode: ${NETWORK_MODE:-bridge}
   
   battery:
-    image: foxpoint/eel:foxy
+    image: foxpoint/eel:jazzy
     command: ros2 run eel battery --ros-args -p simulate:=true
     network_mode: ${NETWORK_MODE:-bridge}
   
   pressure:
-    image: foxpoint/eel:foxy
+    image: foxpoint/eel:jazzy
     command: ros2 run eel pressure --ros-args -p simulate:=true
     network_mode: ${NETWORK_MODE:-bridge}
 
   front_tank:
-    image: foxpoint/eel:foxy
+    image: foxpoint/eel:jazzy
     command: ros2 launch eel_bringup tank.launch.py simulate:=true tank:=front
     network_mode: ${NETWORK_MODE:-bridge}
 
   rear_tank:
-    image: foxpoint/eel:foxy
+    image: foxpoint/eel:jazzy
     command: ros2 launch eel_bringup tank.launch.py simulate:=true tank:=rear
     network_mode: ${NETWORK_MODE:-bridge}
 
   navigation:
-    image: foxpoint/eel:foxy
+    image: foxpoint/eel:jazzy
     command: ros2 run eel navigation
     network_mode: ${NETWORK_MODE:-bridge}
 
   depth_control:
-    image: foxpoint/eel:foxy
+    image: foxpoint/eel:jazzy
     command: ros2 run eel depth_control_rudder
     network_mode: ${NETWORK_MODE:-bridge}
 
   modem:
-    image: foxpoint/eel:foxy
+    image: foxpoint/eel:jazzy
     command: ros2 run eel modem --ros-args -p simulate:=true
     network_mode: ${NETWORK_MODE:-bridge}
 
   ros_bridge:
-    image: foxpoint/eel:foxy
+    image: foxpoint/eel:jazzy
     command: ros2 launch rosbridge_server rosbridge_websocket_launch.xml
     ports:
       - "9090:9090"
     network_mode: ${NETWORK_MODE:-bridge}
 
   mqtt_bridge:
-    image: foxpoint/eel:foxy
+    image: foxpoint/eel:jazzy
     command: ros2 run eel mqtt_bridge --ros-args -p path_for_config:=/eel/local_certs_and_config/iot_config.json
     volumes:
       - ./local_certs_and_config/:/eel/local_certs_and_config/:r
