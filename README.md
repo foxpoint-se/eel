@@ -5,7 +5,6 @@
 - Either:
   - Ubuntu 24.04 with ROS2 Jazzy
   - OR: Ubuntu 22.04 with ROS2 Humble
-  - OR: Ubuntu 20.04 with ROS2 Foxy
 
 ## Getting started
 

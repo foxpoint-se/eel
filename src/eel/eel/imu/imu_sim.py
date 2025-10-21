@@ -14,30 +14,23 @@ from ..utils.topics import (
 
 
 TERMINAL_PITCH_ANGULAR_VELOCITY_DEGPS = 12.5
-MOMENTUM_TOLERANCE = 0.03
+MOMENTUM_TOLERANCE = 0.001
+
+Lf = 0.40  # meters from CoM
+Lr = 0.10  # meters from CoM
+
+NEUTRAL_LEVEL = 0.5
 
 
-# Imagine a sea-saw with forces F1, F2 on each end, L and 2L from the centre.
-#
-# Rear                      Front
-#
-#      F1 < L >  < --- 2L -->  F2
-# ------------------------------
-#               ^
-#
-# For balance: F1 * L = F2 * 2L
-#
-# Simplify, divide by L: F1 = 2 F2
-#
-# Balanced when: 2 F2 - F1 = 0
-#
-# Difference in momentum: 2 F2 - F1 = ?
-#
-# Or: F2 - 0.5 F1 = ?
-#
 def get_momentum_difference(front_tank_level, rear_tank_level):
-    return front_tank_level - 0.5 * rear_tank_level
-    # return front_tank_level - rear_tank_level
+    # use deviations from neutral so neutral fill produces zero moment
+    front_dev = front_tank_level - NEUTRAL_LEVEL
+    rear_dev = rear_tank_level - NEUTRAL_LEVEL
+    # raw "moment" proxy (units: m * fill_fraction)
+    raw = Lf * front_dev - Lr * rear_dev
+    # normalize by (rf+rr) so momentum_difference roughly in [-1..1]
+    momentum_norm = raw / (Lf + Lr + 1e-12)
+    return momentum_norm
 
 
 def get_velocity(terminal_velocity, fraction_of_velocity):
@@ -65,11 +58,7 @@ class ImuSimulator:
         self._rear_tank_level = 0.0
         self._current_pitch = 0.0
         self.last_updated_at = time()
-        self.sensor_offsets = {
-            "mag": (0, 0, 0),
-            "gyr": (0, 0, 0),
-            "acc": (0, 0, 0)
-        }
+        self.sensor_offsets = {"mag": (0, 0, 0), "gyr": (0, 0, 0), "acc": (0, 0, 0)}
 
         self.rudder_subscription = parent_node.create_subscription(
             Vector3, RUDDER_STATUS, self._handle_rudder_msg, 10
