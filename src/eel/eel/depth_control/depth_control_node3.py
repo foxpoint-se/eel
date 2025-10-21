@@ -52,12 +52,12 @@ Km = 0.6  # [N*m per PID unit]
 
 # Depth controller — faster, small integrator
 sim_depth_controller = PidController(
-    set_point=0.0, kP=1.2, kI=0.02, kD=0.08, integrator_min=-0.4, integrator_max=0.4
+    set_point=0.0, kP=0.8, kI=0.005, kD=0.3, integrator_min=-0.4, integrator_max=0.4
 )
 
 # Pitch controller — stiffer, small integrator + damping
 sim_pitch_controller = PidController(
-    set_point=0.0, kP=1.0, kI=0.005, kD=0.35, integrator_min=-0.15, integrator_max=0.15
+    set_point=0.0, kP=1.2, kI=0.001, kD=0.5, integrator_min=-0.15, integrator_max=0.15
 )
 
 
