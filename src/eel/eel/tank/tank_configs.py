@@ -54,8 +54,8 @@ front_config: TankConfig = {
     "motor_pin": FRONT_MOTOR_PIN,
     "direction_pin": FRONT_DIRECTION_PIN,
     "distance_sensor_channel": FRONT_DISTANCE_SENSOR_CHANNEL,
-    "tank_floor_value": FRONT_RANGE_CONSERVATIVE["floor"],
-    "tank_ceiling_value": FRONT_RANGE_CONSERVATIVE["ceiling"],
+    "tank_floor_value": FRONT_RANGE_MAX["floor"],
+    "tank_ceiling_value": FRONT_RANGE_MAX["ceiling"],
 }
 
 rear_config: TankConfig = {
@@ -64,8 +64,8 @@ rear_config: TankConfig = {
     "motor_pin": REAR_MOTOR_PIN,
     "direction_pin": REAR_DIRECTION_PIN,
     "distance_sensor_channel": REAR_DISTANCE_SENSOR_CHANNEL,
-    "tank_floor_value": REAR_RANGE_CONSERVATIVE["floor"],
-    "tank_ceiling_value": REAR_RANGE_CONSERVATIVE["ceiling"],
+    "tank_floor_value": REAR_RANGE_MAX["floor"],
+    "tank_ceiling_value": REAR_RANGE_MAX["ceiling"],
 }
 
 

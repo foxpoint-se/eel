@@ -48,7 +48,7 @@ class PressureNode(Node):
 
         # At the time of writing, Ålen uses /dev/ttyUSB1 (which is why it's the default)
         # and we don't really know which one Tvålen should use.
-        self.declare_parameter("serial_port", "/dev/ttyUSB1")
+        self.declare_parameter("serial_port", "/dev/ttyUSB0")
         serial_port = (
             self.get_parameter("serial_port").get_parameter_value().string_value
         )

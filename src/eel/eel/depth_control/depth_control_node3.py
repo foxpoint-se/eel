@@ -22,15 +22,23 @@ from ..utils.utils import clamp
 # FRONT_NEUTRAL = 0.45
 # REAR_NEUTRAL = 0.69
 
+# What we found as neutral values when using conservative tank ranges
+# FRONT_NEUTRAL = 0.60
+# REAR_NEUTRAL = 0.15
+
+# What we found as neutral values when using maxed-out tank ranges
+FRONT_NEUTRAL = 0.48
+REAR_NEUTRAL = 0.54
+
 # What is already hardcoded in simulation mode
-FRONT_NEUTRAL = 0.5
-REAR_NEUTRAL = 0.5
+# FRONT_NEUTRAL = 0.5
+# REAR_NEUTRAL = 0.5
 
 
 # more correct values below?
 rho = 1000.0
 g = 9.81
-rf = 0.40
+rf = 0.28
 rr = 0.10
 TANK_VOLUME_MAX = 0.00035
 
@@ -47,17 +55,39 @@ print(f"== Before == {Kb=} {Km=}")
 
 
 # Suggested scalings (snappy but not saturating)
-Kb = 3.0  # [N per PID unit]  (roughly 3 N unit)
-Km = 0.6  # [N*m per PID unit]
+Kb = 4.5  # [N per PID unit]  (roughly 3 N unit)
+Km = 0.9  # [N*m per PID unit]
+
+# These were alright in keeping the depth stable
+depth_kP = 0.8
+depth_kI = 0.005
+depth_kD = 0.3
+
+
+# Adam
+depth_kP = 1.0
+depth_kI = 0.005
+depth_kD = 0.5
+
 
 # Depth controller — faster, small integrator
 sim_depth_controller = PidController(
-    set_point=0.0, kP=0.8, kI=0.005, kD=0.3, integrator_min=-0.4, integrator_max=0.4
+    set_point=0.0, kP=depth_kP, kI=depth_kI, kD=depth_kD, integrator_min=-0.4, integrator_max=0.4
 )
+
+# These were alright. Could not really get to the target pitch, but stable enough.
+pitch_kP = 1.5
+pitch_kI = 0.01
+pitch_kD = 0.5
+
+# Adam
+pitch_kP = 2.0
+pitch_kI = 0.01
+pitch_kD = 1.0
 
 # Pitch controller — stiffer, small integrator + damping
 sim_pitch_controller = PidController(
-    set_point=0.0, kP=1.2, kI=0.001, kD=0.5, integrator_min=-0.15, integrator_max=0.15
+    set_point=0.0, kP=pitch_kP, kI=pitch_kI, kD=pitch_kD, integrator_min=-0.15, integrator_max=0.15
 )
 
 
@@ -155,13 +185,15 @@ class DepthControlNode2(Node):
         # Just logging
         err_pitch = self.pitch_controller.set_point - self.current_pitch
         err_depth = self.depth_controller.set_point - self.current_depth
-        self.get_logger().info(
-            f"eD={err_depth:.3f}m eP={math.degrees(err_pitch):.3f}deg "  # Convert back to degrees for logging
-            f"pD={depth_output:.4f} pP={pitch_output:.4f} "
-            f"curr_pitch={math.degrees(self.current_pitch):.2f}deg "
-            f"target_pitch={math.degrees(self.pitch_target):.2f}deg "
-            f"front_t={front_target:.3f} rear_t={rear_target:.3f}"
-        )
+        # self.get_logger().info(
+        #     f"eD={err_depth:.3f}m eP={math.degrees(err_pitch):.3f}deg "  # Convert back to degrees for logging
+        #     f"pD={depth_output:.4f} pP={pitch_output:.4f} "
+        #     f"curr_pitch={math.degrees(self.current_pitch):.2f}deg "
+        #     f"target_pitch={math.degrees(self.pitch_target):.2f}deg "
+        #     f"front_t={front_target:.3f} rear_t={rear_target:.3f}"
+        # )
+        integr = self.pitch_controller.cumulative_error * pitch_kI
+        print(f"integr {integr:.3f} front {front_target:.3f} rear {rear_target:.3f}")
         # End of logging
         self.pub_front(clamp(front_target, 0.0, 1.0))
         self.pub_rear(clamp(rear_target, 0.0, 1.0))
