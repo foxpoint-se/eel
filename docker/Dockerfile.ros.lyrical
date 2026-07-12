@@ -1,5 +1,5 @@
-# ROS 2 Foxy (Ubuntu 20.04) Dockerfile for eel
-ARG ROS_DISTRO=foxy
+# ROS 2 Lyrical (Ubuntu 26.04) Dockerfile for eel
+ARG ROS_DISTRO=lyrical
 FROM --platform=$BUILDPLATFORM ros:${ROS_DISTRO}
 
 # Install system dependencies
@@ -28,12 +28,12 @@ RUN mkdir -p /pi_ina226
 WORKDIR /pi_ina226
 RUN wget https://github.com/e71828/pi_ina226/archive/refs/heads/main.zip -O voltage-lib.zip
 RUN unzip voltage-lib.zip
-RUN pip install pi_ina226-main/
+RUN pip install --break-system-packages --no-cache-dir pi_ina226-main/
 WORKDIR /eel
 
 SHELL ["/bin/bash", "-c"]
 
-RUN rosdep init && rosdep update || true
+RUN rosdep update || true
 
 WORKDIR /eel
 COPY ./src ./src
@@ -42,15 +42,14 @@ RUN source /opt/ros/${ROS_DISTRO}/setup.bash && \
     rosdep install --from-paths src --ignore-src -r -y
 
 # Install py deps with --break-system-packages, to not having to use venv
-RUN python3 -m pip install --upgrade pip
-RUN python3 -m pip install --no-cache-dir src/eel
+RUN python3 -m pip install --break-system-packages --no-cache-dir src/eel
 
 RUN source /opt/ros/${ROS_DISTRO}/setup.bash && \
     colcon build --symlink-install
 
 RUN source /opt/ros/${ROS_DISTRO}/setup.bash && \
-    colcon test && colcon test-result --verbose
+    colcon test --python-testing pytest && colcon test-result --verbose
 
 COPY ./docker/entrypoint.sh /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
-CMD ["bash"] 
+CMD ["bash"]

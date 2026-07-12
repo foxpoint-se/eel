@@ -76,4 +76,4 @@ detect-i2c:		## detect i2c
 	sudo i2cdetect -y 1
 
 test:		## Run colcon tests
-	python3 -m colcon test; python3 -m colcon test-result --verbose
+	python3 -m colcon test --python-testing pytest; python3 -m colcon test-result --verbose
