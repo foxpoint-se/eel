@@ -10,7 +10,7 @@ Work from a branch off `main`; rebase `feat/tanks-pid-tuning` / other branches a
 - [x] **README full cleanup** — #130
 - [x] **Python deps declaration** — `setup.py` for pip, `package.xml` for ROS; no `requirements.txt`
 - [x] **`pyproject.toml` feasibility** — defer; ament_python stays on `setup.py` for now
-- [ ] **Pin pip dependencies** — once format is chosen, lock versions for reproducible installs
+- [x] **Pin pip dependencies** — `>=` lower bounds in `setup.py`; verify CI on humble/jazzy/lyrical
 - [ ] **`source_me.sh` docs** — explain why ROS + venv + workspace must be sourced before `ros2 run`
 - [ ] **`source_me.sh` PATH vs activate** — explore `export PATH=".venv/bin:$PATH"` instead of `source venv/bin/activate`; discuss later
 - [ ] **`make setup`** — discuss whether it should wrap `install` only, or `install` + `build` too
