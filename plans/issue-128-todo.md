@@ -6,7 +6,7 @@ Work from a branch off `main`; rebase `feat/tanks-pid-tuning` / other branches a
 
 - [x] **Branch setup** — create feature branch from `main` for this work
 - [x] **`scripts/COLCON_IGNORE`** — keep dev scripts out of colcon (was on tank branch, needs re-adding here)
-- [ ] **README: dev vs Docker** — two clear install paths in getting started (small change only)
+- [x] **README: dev vs Docker** — two clear install paths in getting started (small change only)
 - [ ] **README full cleanup** — separate issue: obsolete content, rephrase, hardware notes audit
 - [ ] **Python deps declaration** — decide lean standard: `setup.py` `install_requires` vs `pyproject.toml` vs `requirements.txt`
   - Prefer package-manifest style if fully supported by ament/colcon; not a fan of standalone `requirements.txt`

@@ -9,7 +9,9 @@
 
 ## Getting started
 
-Get the code, install deps, build, run tests and run a node:
+### Local development
+
+Requires ROS 2 installed on the host (see Prerequisites).
 
 ```bash
 git clone <this repo>
@@ -21,9 +23,24 @@ make test
 ros2 run eel imu --ros-args -p simulate:=true
 ```
 
-This will be enough when running in simulation mode (without actual hardware). But when running in production mode (with actual hardware), you will have to install a few other things as well.
+This is enough for simulation mode (no hardware). For production hardware, see the sections below and the `Makefile`.
 
-Check the `Makefile` for reference.
+### Docker
+
+Build an image locally (from the repo root):
+
+```bash
+cd docker
+./build-image.sh jazzy
+```
+
+Run a single node in simulation mode:
+
+```bash
+docker run --rm foxpoint/eel:jazzy ros2 run eel imu --ros-args -p simulate:=true
+```
+
+For full stacks (multiple nodes), see the compose templates in `docker/` (e.g. `simulation-template.yml`, `alen-template.yml`).
 
 ## Enable SPI access on Ubuntu
 
