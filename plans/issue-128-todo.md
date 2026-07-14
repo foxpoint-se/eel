@@ -21,4 +21,5 @@ Work from a branch off `main`; rebase `feat/tanks-pid-tuning` / other branches a
   - Optional: custom rosdep rules for pip-only packages
 - [ ] **uv (optional)** — nicer dev pip/venv UX only; not a ROS replacement; defer unless we want it
 - [ ] **No apt / rosdistro release** — explicitly out of scope
+- [ ] **Agent rules** — add Cursor rules (and Claude/Copilot etc. if useful): project board location, conventional commits (value-focused), and other conventions — discuss when we get here
 - [ ] **Remove this file before merge**
