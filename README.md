@@ -17,7 +17,7 @@ Requires ROS 2 installed on the host (see Prerequisites).
 git clone <this repo>
 cd path/to/project
 make install
-source source_me.sh
+source source_me.sh   # ROS + venv + built workspace — required before ros2 run
 make build
 make test
 ros2 run eel imu --ros-args -p simulate:=true

@@ -11,8 +11,8 @@ Work from a branch off `main`; rebase `feat/tanks-pid-tuning` / other branches a
 - [x] **Python deps declaration** — `setup.py` for pip, `package.xml` for ROS; no `requirements.txt`
 - [x] **`pyproject.toml` feasibility** — defer; ament_python stays on `setup.py` for now
 - [x] **Pin pip dependencies** — `>=` lower bounds in `setup.py`; verify CI on humble/jazzy/lyrical
-- [ ] **`source_me.sh` docs** — explain why ROS + venv + workspace must be sourced before `ros2 run`
-- [ ] **`source_me.sh` PATH vs activate** — explore `export PATH=".venv/bin:$PATH"` instead of `source venv/bin/activate`; discuss later
+- [x] **`source_me.sh` docs** — explain why ROS + venv + workspace must be sourced before `ros2 run`
+- [x] **`source_me.sh` PATH vs activate** — keep `activate`; (venv) prompt is a useful reminder
 - [ ] **`make setup`** — discuss whether it should wrap `install` only, or `install` + `build` too
 - [ ] **Makefile ↔ Dockerfile parity** — explore running same make targets in Docker/CI vs separate pip/rosdep steps
   - Docker may still need `--break-system-packages` / no venv; goal is no silent divergence
