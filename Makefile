@@ -7,11 +7,18 @@ help:
 
 .DEFAULT_GOAL := help
 
+.PHONY: check-sourced
+check-sourced:
+	@if [ -z "$$ROS_DISTRO" ]; then \
+		echo "ROS is not sourced. Run: source source_me.sh"; \
+		exit 1; \
+	fi
+
 clean:		## Clean workspace
 	rm -rf build install log
 
 .PHONY: build
-build:		## Colcon build but with python venv
+build: check-sourced		## Colcon build but with python venv
 	python3 -m colcon build --symlink-install
 
 VENV_DIR := venv
@@ -26,7 +33,18 @@ install-py: venv
 	source $(VENV_DIR)/bin/activate; python3 -m pip install -U src/eel
 
 install-rosdep:
+	@if [ ! -f /etc/ros/rosdep/sources.list.d/20-default.list ]; then \
+		echo "rosdep is not initialized. Run: sudo rosdep init"; \
+		exit 1; \
+	fi; \
+	export ROS_DISTRO=$${ROS_DISTRO:-$$(ls /opt/ros | sort | tail -n 1)}; \
+	rosdep update; \
 	rosdep install --from-paths src --ignore-src -r -y
+
+install: install-py install-rosdep install-depth-sensor install-voltage-sensor		## Install all dependencies
+
+.PHONY: setup
+setup: install build		## Install deps and build (run source source_me.sh before build)
 
 install-depth-sensor: venv
 	wget -nc https://github.com/bluerobotics/ms5837-python/archive/refs/heads/master.zip -O depth-lib.zip
@@ -39,8 +57,6 @@ install-voltage-sensor: venv
 	unzip -o voltage-lib.zip
 	source $(VENV_DIR)/bin/activate; python3 -m pip install -U ./pi_ina226-main/
 	rm -rf pi_ina226-main voltage-lib.zip
-
-install: install-py install-rosdep install-depth-sensor install-voltage-sensor		## Install all dependencies
 
 start-pigpio:		## start pigpio
 	sudo pigpiod
@@ -75,5 +91,5 @@ install-modem:		## Steps on how to install modem both software and service file 
 detect-i2c:		## detect i2c
 	sudo i2cdetect -y 1
 
-test:		## Run colcon tests
+test: check-sourced		## Run colcon tests
 	python3 -m colcon test --python-testing pytest; python3 -m colcon test-result --verbose

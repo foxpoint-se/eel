@@ -13,15 +13,25 @@
 
 Requires ROS 2 installed on the host (see Prerequisites).
 
+**Once per machine** (after ROS is installed):
+
+```bash
+sudo rosdep init && rosdep update
+```
+
+**Per clone** — install dependencies, source the workspace, then build:
+
 ```bash
 git clone <this repo>
 cd path/to/project
 make install
-source source_me.sh   # ROS + venv + built workspace — required before ros2 run
-make build
+source source_me.sh   # ROS + venv + built workspace — required before build/test/ros2 run
+make build            # or: make setup  (install + build, after sourcing)
 make test
 ros2 run eel imu --ros-args -p simulate:=true
 ```
+
+`make install` runs pip (via `setup.py`), rosdep (apt packages from `package.xml`), and a few pip-only sensor libs fetched by wget. `source source_me.sh` must be run in every new shell before `make build`, `make test`, or `ros2 run`.
 
 This is enough for simulation mode (no hardware). For production hardware, see the sections below and the `Makefile`.
 

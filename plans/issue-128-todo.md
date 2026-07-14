@@ -13,11 +13,11 @@ Work from a branch off `main`; rebase `feat/tanks-pid-tuning` / other branches a
 - [x] **Pin pip dependencies** — `>=` lower bounds in `setup.py`; verify CI on humble/jazzy/lyrical
 - [x] **`source_me.sh` docs** — explain why ROS + venv + workspace must be sourced before `ros2 run`
 - [x] **`source_me.sh` PATH vs activate** — keep `activate`; (venv) prompt is a useful reminder
-- [ ] **`make setup`** — discuss whether it should wrap `install` only, or `install` + `build` too
+- [x] **`make setup`** — `install` + `build`; `build`/`test` fail if ROS not sourced
 - [ ] **Makefile ↔ Dockerfile parity** — explore running same make targets in Docker/CI vs separate pip/rosdep steps
   - Docker may still need `--break-system-packages` / no venv; goal is no silent divergence
 - [ ] **wget deps (ms5837, pi_ina226)** — discuss moving to proper pip/git deps or a dedicated install script
-- [ ] **rosdep** — document how it fits: `package.xml` → apt; what rosdep can't cover and how we handle that
+- [x] **rosdep** — document how it fits: `package.xml` → apt; what rosdep can't cover and how we handle that
   - Optional: custom rosdep rules for pip-only packages
 - [ ] **uv (optional)** — nicer dev pip/venv UX only; not a ROS replacement; defer unless we want it
 - [ ] **No apt / rosdistro release** — explicitly out of scope
