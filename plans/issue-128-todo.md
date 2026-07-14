@@ -8,11 +8,11 @@ Work from a branch off `main`; rebase `feat/tanks-pid-tuning` / other branches a
 - [x] **`scripts/COLCON_IGNORE`** — keep dev scripts out of colcon (was on tank branch, needs re-adding here)
 - [x] **README: dev vs Docker** — two clear install paths in getting started (small change only)
 - [x] **README full cleanup** — #130
-- [ ] **Python deps declaration** — decide lean standard: `setup.py` `install_requires` vs `pyproject.toml` vs `requirements.txt`
-  - Prefer package-manifest style if fully supported by ament/colcon; not a fan of standalone `requirements.txt`
-- [ ] **`pyproject.toml` feasibility** — check ROS2/ament_python constraints; compare with nanomodem (`pyproject.toml` + hatchling, no ROS)
+- [x] **Python deps declaration** — `setup.py` for pip, `package.xml` for ROS; no `requirements.txt`
+- [x] **`pyproject.toml` feasibility** — defer; ament_python stays on `setup.py` for now
 - [ ] **Pin pip dependencies** — once format is chosen, lock versions for reproducible installs
 - [ ] **`source_me.sh` docs** — explain why ROS + venv + workspace must be sourced before `ros2 run`
+- [ ] **`source_me.sh` PATH vs activate** — explore `export PATH=".venv/bin:$PATH"` instead of `source venv/bin/activate`; discuss later
 - [ ] **`make setup`** — discuss whether it should wrap `install` only, or `install` + `build` too
 - [ ] **Makefile ↔ Dockerfile parity** — explore running same make targets in Docker/CI vs separate pip/rosdep steps
   - Docker may still need `--break-system-packages` / no venv; goal is no silent divergence
