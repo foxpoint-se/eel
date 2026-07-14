@@ -26,7 +26,7 @@ git clone <this repo>
 cd path/to/project
 make install
 source source_me.sh   # ROS + venv + built workspace — required before build/test/ros2 run
-make build            # or: make setup  (install + build, after sourcing)
+make build            # refresh deps + build: source first, then make setup
 make test
 ros2 run eel imu --ros-args -p simulate:=true
 ```

@@ -10,7 +10,9 @@ help:
 .PHONY: check-sourced
 check-sourced:
 	@if [ -z "$$ROS_DISTRO" ]; then \
-		echo "ROS is not sourced. Run: source source_me.sh"; \
+		echo "ROS is not sourced."; \
+		echo "  First time:  make install && source source_me.sh && make build"; \
+		echo "  After that:  source source_me.sh  (then make build / make test / ros2 run)"; \
 		exit 1; \
 	fi
 
@@ -44,7 +46,9 @@ install-rosdep:
 install: install-py install-rosdep install-depth-sensor install-voltage-sensor		## Install all dependencies
 
 .PHONY: setup
-setup: install build		## Install deps and build (run source source_me.sh before build)
+setup: check-sourced		## Install deps and build (source source_me.sh first)
+	$(MAKE) install
+	$(MAKE) build
 
 install-depth-sensor: venv
 	wget -nc https://github.com/bluerobotics/ms5837-python/archive/refs/heads/master.zip -O depth-lib.zip
