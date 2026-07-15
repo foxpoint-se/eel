@@ -9,21 +9,49 @@
 
 ## Getting started
 
-Get the code, install deps, build, run tests and run a node:
+### Local development
+
+Requires ROS 2 installed on the host (see Prerequisites).
+
+**Once per machine** (after ROS is installed):
+
+```bash
+[ -f /etc/ros/rosdep/sources.list.d/20-default.list ] || sudo rosdep init
+rosdep update
+```
+
+**Per clone** — install dependencies, source the workspace, then build:
 
 ```bash
 git clone <this repo>
 cd path/to/project
 make install
-source source_me.sh
+source source_me.sh   # ROS + venv (+ install/ after the first build)
 make build
 make test
 ros2 run eel imu --ros-args -p simulate:=true
 ```
 
-This will be enough when running in simulation mode (without actual hardware). But when running in production mode (with actual hardware), you will have to install a few other things as well.
+`make install` runs pip (via `setup.py`), rosdep (apt packages from `package.xml`), `pi_ina226` from a pinned git commit (battery hardware), and `ms5837` via wget (only used by `scripts/run_depth.py`; see #132). After install, `source source_me.sh` in every new shell before `make build`, `make test`, or `ros2 run`. Later, `make setup` (still after sourcing) re-runs install + build.
 
-Check the `Makefile` for reference.
+This is enough for simulation mode (no hardware). For production hardware, see the sections below and the `Makefile`.
+
+### Docker
+
+Build an image locally (from the repo root):
+
+```bash
+cd docker
+./build-image.sh jazzy
+```
+
+Run a single node in simulation mode:
+
+```bash
+docker run --rm foxpoint/eel:jazzy ros2 run eel imu --ros-args -p simulate:=true
+```
+
+For full stacks (multiple nodes), see the compose templates in `docker/` (e.g. `simulation-template.yml`, `alen-template.yml`).
 
 ## Enable SPI access on Ubuntu
 

@@ -1,5 +1,15 @@
 #!/bin/bash
 
+# Prepare the shell for local eel development. Run from the repo root:
+#   source source_me.sh
+#
+# ros2 run needs three layers:
+#   1. ROS (/opt/ros/$ROS_DISTRO) — rclpy, messages, ros2 CLI
+#   2. venv — pip packages from setup.py (adafruit, aws sdk, gpio, …)
+#   3. install/ — this workspace after `make build` (eel nodes, eel_interfaces)
+#
+# Skip this and you may get "package not found" or ModuleNotFoundError.
+
 # detect if using zsh or bash, for sourcing correct files.
 if [ -n "$ZSH_VERSION" ]; then
    FILE_EXT="zsh"
