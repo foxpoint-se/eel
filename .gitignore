@@ -22,10 +22,6 @@ ros_bags
 pigpio-master
 master.zip
 
-# depth stuff (legacy wget install for scripts/run_depth.py; see #132)
-depth-lib*
-ms5837-python-master
-
 spidev-3.6.tar.gz
 spidev-3.6
 
