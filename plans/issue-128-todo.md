@@ -18,7 +18,7 @@ Work from a branch off `main`; rebase `feat/tanks-pid-tuning` / other branches a
 - [x] **wget deps (ms5837, pi_ina226)** — `pi_ina226` via `pip install git+…`; `ms5837` left to #132 (script-only)
 - [x] **rosdep** — document how it fits: `package.xml` → apt; what rosdep can't cover and how we handle that
   - Optional: custom rosdep rules for pip-only packages
-- [ ] **uv (optional)** — nicer dev pip/venv UX only; not a ROS replacement; defer unless we want it
+- [x] **uv (optional)** — deferred; nicety for pip/venv only, doesn't improve ROS sourcing/run path
 - [ ] **No apt / rosdistro release** — explicitly out of scope
 - [ ] **Agent rules** — add Cursor rules (and Claude/Copilot etc. if useful): project board location, conventional commits (value-focused), and other conventions — discuss when we get here
 - [ ] **Remove this file before merge**
