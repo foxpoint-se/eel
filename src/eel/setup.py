@@ -12,7 +12,7 @@ setup(
         ("share/" + package_name, ["package.xml"]),
     ],
     install_requires=[
-        "setuptools>=65",
+        "setuptools",
         "pynmea2>=1.19.0",
         "pyserial>=3.5",
         "geopy>=2.4.0,<3",
