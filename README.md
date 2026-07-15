@@ -31,7 +31,7 @@ make test
 ros2 run eel imu --ros-args -p simulate:=true
 ```
 
-`make install` runs pip (via `setup.py`), rosdep (apt packages from `package.xml`), `pi_ina226` from a pinned git commit (battery hardware), and optionally `ms5837` via wget for a standalone depth script. After install, `source source_me.sh` in every new shell before `make build`, `make test`, or `ros2 run`. Later, `make setup` (still after sourcing) re-runs install + build.
+`make install` runs pip (via `setup.py`), rosdep (apt packages from `package.xml`), `pi_ina226` from a pinned git commit (battery hardware), and `ms5837` via wget (only used by `scripts/run_depth.py`; see #132). After install, `source source_me.sh` in every new shell before `make build`, `make test`, or `ros2 run`. Later, `make setup` (still after sourcing) re-runs install + build.
 
 This is enough for simulation mode (no hardware). For production hardware, see the sections below and the `Makefile`.
 
