@@ -15,7 +15,7 @@ Work from a branch off `main`; rebase `feat/tanks-pid-tuning` / other branches a
 - [x] **`source_me.sh` PATH vs activate** — keep `activate`; (venv) prompt is a useful reminder
 - [x] **`make setup`** — `install` + `build` after sourcing; `setup`/`build`/`test` fail fast if ROS not sourced
 - [x] **Makefile ↔ Dockerfile parity** — decided: keep separate (venv local vs system pip in Docker); shared via `setup.py` / `package.xml`
-- [ ] **wget deps (ms5837, pi_ina226)** — discuss moving to proper pip/git deps or a dedicated install script
+- [x] **wget deps (ms5837, pi_ina226)** — `pi_ina226` via `pip install git+…`; `ms5837` left to #132 (script-only)
 - [x] **rosdep** — document how it fits: `package.xml` → apt; what rosdep can't cover and how we handle that
   - Optional: custom rosdep rules for pip-only packages
 - [ ] **uv (optional)** — nicer dev pip/venv UX only; not a ROS replacement; defer unless we want it

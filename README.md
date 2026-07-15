@@ -31,7 +31,7 @@ make test
 ros2 run eel imu --ros-args -p simulate:=true
 ```
 
-`make install` runs pip (via `setup.py`), rosdep (apt packages from `package.xml`), and a few pip-only sensor libs fetched by wget. `source source_me.sh` must be run in every new shell before `make build`, `make test`, or `ros2 run`.
+`make install` runs pip (via `setup.py`), rosdep (apt packages from `package.xml`), `pi_ina226` from git (battery hardware), and optionally `ms5837` via wget for a standalone depth script. `source source_me.sh` must be run in every new shell before `make build`, `make test`, or `ros2 run`.
 
 This is enough for simulation mode (no hardware). For production hardware, see the sections below and the `Makefile`.
 

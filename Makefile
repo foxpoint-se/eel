@@ -57,10 +57,7 @@ install-depth-sensor: venv
 	rm -rf ms5837-python-master depth-lib.zip
 
 install-voltage-sensor: venv
-	wget -nc https://github.com/e71828/pi_ina226/archive/refs/heads/main.zip -O voltage-lib.zip
-	unzip -o voltage-lib.zip
-	source $(VENV_DIR)/bin/activate; python3 -m pip install -U ./pi_ina226-main/
-	rm -rf pi_ina226-main voltage-lib.zip
+	source $(VENV_DIR)/bin/activate; python3 -m pip install -U "git+https://github.com/e71828/pi_ina226.git"
 
 start-pigpio:		## start pigpio
 	sudo pigpiod

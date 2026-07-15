@@ -23,20 +23,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-${ROS_DISTRO}-rosbag2-storage-mcap && \
     rm -rf /var/lib/apt/lists/*
 
-# Install voltage sensor dependency (pi_ina226)
-RUN mkdir -p /pi_ina226
-WORKDIR /pi_ina226
-RUN wget https://github.com/e71828/pi_ina226/archive/refs/heads/main.zip -O voltage-lib.zip
-RUN unzip voltage-lib.zip
-RUN pip install pi_ina226-main/
-WORKDIR /eel
-
 SHELL ["/bin/bash", "-c"]
 
 RUN rosdep init && rosdep update || true
 
 WORKDIR /eel
 COPY ./src ./src
+
+# Install voltage sensor dependency (pi_ina226; not on PyPI)
+RUN python3 -m pip install --no-cache-dir \
+    "git+https://github.com/e71828/pi_ina226.git"
 
 RUN source /opt/ros/${ROS_DISTRO}/setup.bash && \
     rosdep install --from-paths src --ignore-src -r -y
