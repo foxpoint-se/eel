@@ -62,18 +62,12 @@ install-rosdep:
 	rosdep update; \
 	rosdep install --from-paths src --ignore-src -r -y
 
-install: install-py install-rosdep install-depth-sensor install-voltage-sensor		## Install all dependencies
+install: install-py install-rosdep install-voltage-sensor		## Install all dependencies
 
 .PHONY: setup
 setup: check-sourced		## Install deps and build (source source_me.sh first)
 	$(MAKE) install
 	$(MAKE) build
-
-install-depth-sensor: venv
-	wget -nc https://github.com/bluerobotics/ms5837-python/archive/refs/heads/master.zip -O depth-lib.zip
-	unzip -o depth-lib.zip
-	source $(VENV_DIR)/bin/activate; python3 -m pip install -U ./ms5837-python-master/
-	rm -rf ms5837-python-master depth-lib.zip
 
 install-voltage-sensor: venv
 	source $(VENV_DIR)/bin/activate; python3 -m pip install -U "$(PI_INA226_GIT)"
