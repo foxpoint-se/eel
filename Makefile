@@ -7,12 +7,19 @@ help:
 
 .DEFAULT_GOAL := help
 
+# Pin pi_ina226 (not on PyPI) so local + Docker installs stay reproducible.
+PI_INA226_GIT := git+https://github.com/e71828/pi_ina226.git@ccbaa21c1439f0c9728ef838162f4a18638e21dc
+
 .PHONY: check-sourced
 check-sourced:
-	@if [ -z "$$ROS_DISTRO" ]; then \
-		echo "ROS is not sourced."; \
+	@if [ -z "$$ROS_DISTRO" ] || ! command -v ros2 >/dev/null 2>&1; then \
+		echo "ROS is not sourced (need ROS_DISTRO and ros2 on PATH)."; \
 		echo "  First time:  make install && source source_me.sh && make build"; \
 		echo "  After that:  source source_me.sh  (then make build / make test / ros2 run)"; \
+		exit 1; \
+	fi; \
+	if [ -z "$$VIRTUAL_ENV" ]; then \
+		echo "Python venv is not active. Run: source source_me.sh"; \
 		exit 1; \
 	fi
 
@@ -57,7 +64,7 @@ install-depth-sensor: venv
 	rm -rf ms5837-python-master depth-lib.zip
 
 install-voltage-sensor: venv
-	source $(VENV_DIR)/bin/activate; python3 -m pip install -U "git+https://github.com/e71828/pi_ina226.git"
+	source $(VENV_DIR)/bin/activate; python3 -m pip install -U "$(PI_INA226_GIT)"
 
 start-pigpio:		## start pigpio
 	sudo pigpiod

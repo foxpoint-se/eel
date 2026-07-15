@@ -25,13 +25,13 @@ sudo rosdep init && rosdep update
 git clone <this repo>
 cd path/to/project
 make install
-source source_me.sh   # ROS + venv + built workspace — required before build/test/ros2 run
-make build            # refresh deps + build: source first, then make setup
+source source_me.sh   # ROS + venv (+ install/ after the first build)
+make build
 make test
 ros2 run eel imu --ros-args -p simulate:=true
 ```
 
-`make install` runs pip (via `setup.py`), rosdep (apt packages from `package.xml`), `pi_ina226` from git (battery hardware), and optionally `ms5837` via wget for a standalone depth script. `source source_me.sh` must be run in every new shell before `make build`, `make test`, or `ros2 run`.
+`make install` runs pip (via `setup.py`), rosdep (apt packages from `package.xml`), `pi_ina226` from a pinned git commit (battery hardware), and optionally `ms5837` via wget for a standalone depth script. After install, `source source_me.sh` in every new shell before `make build`, `make test`, or `ros2 run`. Later, `make setup` (still after sourcing) re-runs install + build.
 
 This is enough for simulation mode (no hardware). For production hardware, see the sections below and the `Makefile`.
 

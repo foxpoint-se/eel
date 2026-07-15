@@ -30,9 +30,9 @@ RUN rosdep update || true
 WORKDIR /eel
 COPY ./src ./src
 
-# Install voltage sensor dependency (pi_ina226; not on PyPI)
+# Install voltage sensor dependency (pi_ina226; not on PyPI — pin commit)
 RUN python3 -m pip install --break-system-packages --no-cache-dir \
-    "git+https://github.com/e71828/pi_ina226.git"
+    "git+https://github.com/e71828/pi_ina226.git@ccbaa21c1439f0c9728ef838162f4a18638e21dc"
 
 RUN source /opt/ros/${ROS_DISTRO}/setup.bash && \
     rosdep install --from-paths src --ignore-src -r -y
