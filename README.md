@@ -16,7 +16,8 @@ Requires ROS 2 installed on the host (see Prerequisites).
 **Once per machine** (after ROS is installed):
 
 ```bash
-sudo rosdep init && rosdep update
+[ -f /etc/ros/rosdep/sources.list.d/20-default.list ] || sudo rosdep init
+rosdep update
 ```
 
 **Per clone** — install dependencies, source the workspace, then build:
