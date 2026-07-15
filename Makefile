@@ -46,7 +46,19 @@ install-rosdep:
 		echo "rosdep is not initialized. Run: sudo rosdep init"; \
 		exit 1; \
 	fi; \
-	export ROS_DISTRO=$${ROS_DISTRO:-$$(ls /opt/ros | sort | tail -n 1)}; \
+	if [ -z "$$ROS_DISTRO" ]; then \
+		distros=$$(ls -1 /opt/ros 2>/dev/null); \
+		count=$$(echo "$$distros" | grep -c . || true); \
+		if [ "$$count" -eq 1 ]; then \
+			export ROS_DISTRO=$$distros; \
+			echo "Using only installed ROS distro: $$ROS_DISTRO"; \
+		else \
+			echo "ROS_DISTRO is not set and multiple (or no) /opt/ros distros found:"; \
+			echo "$$distros" | sed 's/^/  /'; \
+			echo "Export ROS_DISTRO (or source /opt/ros/<distro>/setup.bash) and retry."; \
+			exit 1; \
+		fi; \
+	fi; \
 	rosdep update; \
 	rosdep install --from-paths src --ignore-src -r -y
 
