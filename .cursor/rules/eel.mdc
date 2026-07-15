@@ -1,0 +1,28 @@
+---
+description: Minimal eel project conventions for agents
+alwaysApply: true
+---
+
+# Eel conventions
+
+## Project board
+
+Backlog: https://github.com/orgs/foxpoint-se/projects/1  
+When creating a GitHub issue, add it to that board.
+
+## Commits
+
+Use conventional commits. Messages focus on **why / value / purpose**, not a file changelog.  
+Bad: `update README`, `remove unused file`.  
+Good: what improved, or why the change was needed.
+
+## Scope
+
+Stay on the asked task. Don’t expand the PR or invent unrelated work.  
+Don’t create or rewrite markdown/docs unless asked.
+
+## Code style
+
+Prefer short, clearly named functions — the call chain should read as the story.  
+Don’t bury non-trivial logic in long bodies; extract into helpers, modules, or classes.  
+Match the style of nearby code.
