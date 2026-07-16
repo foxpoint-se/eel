@@ -6,7 +6,7 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
-user="${SUDO_USER:-$USER}"
+user="${SUDO_USER:-${USER:-}}"
 if [ -z "$user" ] || [ "$user" = "root" ]; then
   echo "Could not determine target user. Run: sudo make spidev-permissions"
   exit 1

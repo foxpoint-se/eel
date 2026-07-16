@@ -79,7 +79,7 @@ stop-pigpio:		## stop pigpio
 	sudo killall pigpiod
 
 install-i2c:		## install i2c stuff
-	@user="$${SUDO_USER:-$$USER}"; \
+	@user="$${SUDO_USER:-$${USER:-}}"; \
 	if [ -z "$$user" ] || [ "$$user" = "root" ]; then \
 		echo "Could not determine target user. Run: sudo make install-i2c"; \
 		exit 1; \

@@ -105,10 +105,14 @@ Needs `pigpiod` for servos. If you see connection errors to `localhost:8888`, ru
 
 ### Modem (cellular)
 
-The Pi needs internet at sea; use the Sixfab/Quectel 4G path. Install software + auto-connect service:
+The Pi needs internet at sea; use the Sixfab/Quectel 4G path. `make install-modem` only prints the steps — run them yourself:
 
 ```bash
-make install-modem
+cd scripts/modem
+sudo ./install_modem_software.sh
+# reboot, then:
+cd scripts/modem
+sudo ./install_modem_service.sh
 ```
 
 Vendor guide: [Sixfab QMI setup](https://docs.sixfab.com/page/qmi-interface-internet-connection-setup-using-sixfab-shield-hat).  
