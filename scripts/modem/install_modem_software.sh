@@ -13,4 +13,4 @@ chmod +x qmi_install.sh
 
 ./qmi_install.sh
 
-ln /opt/qmi_files/quectel-CM/quectel-CM /urs/bin
+ln -sf /opt/qmi_files/quectel-CM/quectel-CM /usr/bin/quectel-CM

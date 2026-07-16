@@ -1,23 +1,34 @@
 #!/bin/bash
+set -euo pipefail
 
-user=ubuntu
+if [ "$EUID" -ne 0 ]; then
+  echo "Please run as root (e.g. sudo make spidev-permissions)"
+  exit 1
+fi
+
+user="${SUDO_USER:-${USER:-}}"
+if [ -z "$user" ] || [ "$user" = "root" ]; then
+  echo "Could not determine target user. Run: sudo make spidev-permissions"
+  exit 1
+fi
+
 spi_rules_file_path=/etc/udev/rules.d/90-gpio-spi.rules
 
-line1="KERNEL==\"spidev0.0\", OWNER=\"root\", GROUP=\"spi\""
-line2="KERNEL==\"spidev0.1\", OWNER=\"root\", GROUP=\"spi\""
+line1='KERNEL=="spidev0.0", OWNER="root", GROUP="spi"'
+line2='KERNEL=="spidev0.1", OWNER="root", GROUP="spi"'
 
-echo $line1 > $spi_rules_file_path
-echo $line2 >> $spi_rules_file_path
+echo "$line1" > "$spi_rules_file_path"
+echo "$line2" >> "$spi_rules_file_path"
 
 echo "Wrote file $spi_rules_file_path"
-cat $spi_rules_file_path
+cat "$spi_rules_file_path"
 
 groupadd -f --system spi
-usermod -a -G spi $user
+usermod -a -G spi "$user"
 
 echo "Created group spi and added user $user"
 echo "All groups:"
-groups $user
+groups "$user"
 echo
 echo "Remember to reboot!"
 echo

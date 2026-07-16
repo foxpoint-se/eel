@@ -21,6 +21,11 @@ Good: what improved, or why the change was needed.
 Stay on the asked task. Don’t expand the PR or invent unrelated work.  
 Don’t create or rewrite markdown/docs unless asked.
 
+## Notes / long-form findings
+
+Prefer **`docs/` in this repo** for searchable write-ups and archived how-tos (keeps agents aware).  
+The sibling **promotion** repo can publish those later (optional sync); linking existing promotion articles is fine. Don’t grow the eel README with field notes.
+
 ## Code style
 
 Prefer short, clearly named functions — the call chain should read as the story.  

@@ -79,13 +79,15 @@ stop-pigpio:		## stop pigpio
 	sudo killall pigpiod
 
 install-i2c:		## install i2c stuff
-	( \
-		sudo apt update; \
-		sudo apt upgrade -y; \
-		sudo apt install -y i2c-tools; \
-		sudo usermod -a -G i2c ubuntu; \
-		echo "now restart your rpi"; \
-	)
+	@user="$${SUDO_USER:-$${USER:-}}"; \
+	if [ -z "$$user" ] || [ "$$user" = "root" ]; then \
+		echo "Could not determine target user. Run: sudo make install-i2c"; \
+		exit 1; \
+	fi; \
+	sudo apt update; \
+	sudo apt install -y i2c-tools; \
+	sudo usermod -a -G i2c "$$user"; \
+	echo "Added $$user to group i2c. Reboot the Pi."
 
 .PHONY: spidev-permissions
 spidev-permissions:		## setup spidev permissions
