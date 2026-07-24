@@ -4,7 +4,7 @@ RUDDER_X_CMD = "rudder/cmd_x"
 RUDDER_X_SET_OFFSET = "rudder/offset_x/cmd"
 RUDDER_X_OFFSET = "rudder/offset_x/status"
 RUDDER_Y_CMD = "rudder/cmd_y"
-RUDDER_Y_SET_OFFSET = "ruddder/offset_y/cmd"
+RUDDER_Y_SET_OFFSET = "rudder/offset_y/cmd"
 RUDDER_Y_OFFSET = "rudder/offset_y/status"
 
 # Motor
