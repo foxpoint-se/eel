@@ -39,7 +39,7 @@ venv:
 	fi
 
 install-py: venv
-	source $(VENV_DIR)/bin/activate; python3 -m pip install -U src/eel
+	source $(VENV_DIR)/bin/activate; python3 -m pip install -U "src/eel[dev]"
 
 install-rosdep:
 	@if [ ! -f /etc/ros/rosdep/sources.list.d/20-default.list ]; then \
@@ -71,6 +71,10 @@ setup: check-sourced		## Install deps and build (source source_me.sh first)
 
 install-voltage-sensor: venv
 	source $(VENV_DIR)/bin/activate; python3 -m pip install -U "$(PI_INA226_GIT)"
+
+.PHONY: typecheck
+typecheck: check-sourced		## Run mypy (see files list in pyproject.toml)
+	python3 -m mypy
 
 start-pigpio:		## start pigpio
 	sudo pigpiod
@@ -107,5 +111,5 @@ install-modem:		## Steps on how to install modem both software and service file 
 detect-i2c:		## detect i2c
 	sudo i2cdetect -y 1
 
-test: check-sourced		## Run colcon tests
+test: check-sourced typecheck		## Run typecheck and colcon tests
 	python3 -m colcon test --python-testing pytest; python3 -m colcon test-result --verbose

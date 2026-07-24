@@ -28,6 +28,9 @@ setup(
         "awsiotsdk>=1.30.0,<2",
         "requests>=2.28,<3",
     ],
+    extras_require={
+        "dev": ["mypy>=1.0.0"],
+    },
     zip_safe=True,
     maintainer="bulingen",
     maintainer_email="adamlecorney@gmail.com",
