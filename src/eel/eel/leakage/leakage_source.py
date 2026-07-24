@@ -3,5 +3,5 @@ from abc import abstractmethod
 
 class LeakageSource:
     @abstractmethod
-    def read_sensor(self):
+    def read_sensor(self) -> bool:
         pass
