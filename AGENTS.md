@@ -5,6 +5,8 @@
 Backlog: https://github.com/orgs/foxpoint-se/projects/1  
 When creating a GitHub issue, add it to that board.
 
+Also set **Priority** (org issue field), **Type** (Bug / Feature / Task), and **label(s)**. Inspect what already exists in the repo (labels, types, board fields) and pick what fits — don’t invent a parallel scheme.
+
 ## Commits
 
 Use conventional commits. Write messages for **why / value / purpose**, not a file changelog.  
