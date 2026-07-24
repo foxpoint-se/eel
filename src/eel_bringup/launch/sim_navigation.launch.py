@@ -19,8 +19,8 @@ def generate_launch_description():
 
     navigation_node = Node(
         package="eel",
-        executable="navigation",
-        name="navigation_node",
+        executable="navigate",
+        name="navigate",
         parameters=[{SIMULATE_PARAM: True}],
     )
 
