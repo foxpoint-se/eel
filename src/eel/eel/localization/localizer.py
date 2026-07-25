@@ -28,10 +28,10 @@ class Localizer:
     def update_heading(self, new_heading: float) -> None:
         self._current_heading = new_heading
 
-    def update_drift_speed_mps(self, new_drift_speed) -> None:
+    def update_drift_speed_mps(self, new_drift_speed: float) -> None:
         self._drift_speed = new_drift_speed
 
-    def update_drift_bearing(self, new_drift_bearing) -> None:
+    def update_drift_bearing(self, new_drift_bearing: float) -> None:
         self._drift_bearing = new_drift_bearing
 
     def update_known_position(self, new_position: LatLon) -> None:

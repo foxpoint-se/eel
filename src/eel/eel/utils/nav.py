@@ -3,7 +3,9 @@ import math
 EARTH_RADIUS = 6371000
 
 
-def get_distance_in_meters(lat_1, lon_1, lat_2, lon_2):
+def get_distance_in_meters(
+    lat_1: float, lon_1: float, lat_2: float, lon_2: float
+) -> float:
     """Given two positions as longitude and latitude calculates the distance between the two positions in meters.
 
     :param lat_1: Latitude for first position in signed decimal format
@@ -29,7 +31,9 @@ def get_distance_in_meters(lat_1, lon_1, lat_2, lon_2):
     return distance
 
 
-def get_relative_bearing_in_degrees(lat_1, lon_1, lat_2, lon_2):
+def get_relative_bearing_in_degrees(
+    lat_1: float, lon_1: float, lat_2: float, lon_2: float
+) -> float:
     """Given two positions as longitude and latitude calculates the bearing between the two positions in meters.
 
     :param lat_1: Latitude for first position in signed decimal format

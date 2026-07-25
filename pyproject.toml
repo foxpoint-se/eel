@@ -14,5 +14,9 @@ files = [
     "src/eel/eel/leakage/leakage_sim.py",
     "src/eel/eel/modem/modem_simulator.py",
     "src/eel/eel/pressure/pressure_sensor.py",
+    "src/eel/eel/localization/localizer.py",
+    "src/eel/eel/leakage/leakage_sensor.py",
+    "src/eel/eel/motor/motor_sim.py",
+    "src/eel/eel/utils/nav.py",
     "src/eel/eel/tank/tank_utils/tank_base.py",
 ]
