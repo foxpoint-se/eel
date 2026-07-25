@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from typing import Optional
+
 import rclpy
 from rclpy.node import Node
 from ..utils.pid_controller import PidController
@@ -23,7 +25,7 @@ UPDATE_FREQUENCY = 5
 
 
 class DepthControlNode(Node):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("depth_control_node")
         self.logger = self.get_logger()
         self.logger.info("Depth control node started!!")
@@ -54,7 +56,7 @@ class DepthControlNode(Node):
 
         self.updater = self.create_timer(1.0 / UPDATE_FREQUENCY, self.compute_and_send)
 
-    def compute_and_send(self):
+    def compute_and_send(self) -> None:
         angle_pid_output = self.compute_new_target_angle()
         # self.logger.info(f"Current inner pid output = {angle_pid_output} degrees")
 
@@ -67,22 +69,22 @@ class DepthControlNode(Node):
 
         self.publish_status()
 
-    def publish_status(self):
+    def publish_status(self) -> None:
         status_msg = DepthControlStatus()
         status_msg.depth_target = self.depth_target
         self.status_publisher.publish(status_msg)
 
-    def handle_imu_msg(self, msg):
+    def handle_imu_msg(self, msg: ImuStatus) -> None:
         self.current_pitch = msg.pitch
 
-    def handle_pressure_msg(self, msg):
+    def handle_pressure_msg(self, msg: PressureStatus) -> None:
         self.current_depth = msg.depth
 
-    def handle_cmd_msg(self, msg):
+    def handle_cmd_msg(self, msg: DepthControlCmd) -> None:
         self.depth_target = msg.depth_target
         self.inner_pid_target_angle.update_set_point(msg.depth_target)
 
-    def compute_new_target_angle(self):
+    def compute_new_target_angle(self) -> float:
         pid_angle_output = self.inner_pid_target_angle.compute(self.current_depth)
 
         if abs(pid_angle_output) > self.max_dive_angle:
@@ -94,7 +96,7 @@ class DepthControlNode(Node):
 
         return -1 * pid_angle_output
 
-    def compute_new_rudder_output(self, new_target_angle):
+    def compute_new_rudder_output(self, new_target_angle: float) -> float:
         self.out_pid_rudder_output.update_set_point(new_target_angle)
         rudder_output = self.out_pid_rudder_output.compute(self.current_pitch)
 
@@ -108,7 +110,7 @@ class DepthControlNode(Node):
         return rudder_output
 
 
-def main(args=None):
+def main(args: Optional[list[str]] = None) -> None:
     rclpy.init(args=args)
     node = DepthControlNode()
     rclpy.spin(node)

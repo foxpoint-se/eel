@@ -1,4 +1,5 @@
-from rclpy.node import Node
+from typing import TYPE_CHECKING
+
 from time import time
 from std_msgs.msg import Float32
 from geometry_msgs.msg import Vector3
@@ -11,6 +12,9 @@ from ..utils.topics import (
     FRONT_TANK_STATUS,
     REAR_TANK_STATUS,
 )
+
+if TYPE_CHECKING:
+    from .imu_node import ImuNode
 
 
 TERMINAL_PITCH_ANGULAR_VELOCITY_DEGPS = 12.5
@@ -35,16 +39,16 @@ MOMENTUM_TOLERANCE = 0.03
 #
 # Or: F2 - 0.5 F1 = ?
 #
-def get_momentum_difference(front_tank_level, rear_tank_level):
+def get_momentum_difference(front_tank_level: float, rear_tank_level: float) -> float:
     return front_tank_level - 0.5 * rear_tank_level
     # return front_tank_level - rear_tank_level
 
 
-def get_velocity(terminal_velocity, fraction_of_velocity):
+def get_velocity(terminal_velocity: float, fraction_of_velocity: float) -> float:
     return terminal_velocity * fraction_of_velocity
 
 
-def cap_pitch(pitch):
+def cap_pitch(pitch: float) -> float:
     if pitch > 45.0:
         return 45.0
     elif pitch < -45.0:
@@ -52,23 +56,23 @@ def cap_pitch(pitch):
     return pitch
 
 
-def calculate_angle_delta(angular_velocity, time_in_s):
+def calculate_angle_delta(angular_velocity: float, time_in_s: float) -> float:
     return angular_velocity * time_in_s
 
 
 class ImuSimulator:
-    def __init__(self, parent_node: Node) -> None:
+    def __init__(self, parent_node: "ImuNode") -> None:
         self.current_rudder_status = Vector3()
         self.current_heading = float(0)
-        self.speed = 0
+        self.speed = 0.0
         self._front_tank_level = 0.0
         self._rear_tank_level = 0.0
         self._current_pitch = 0.0
         self.last_updated_at = time()
-        self.sensor_offsets = {
+        self.sensor_offsets: CalibrationOffsets = {
             "mag": (0, 0, 0),
             "gyr": (0, 0, 0),
-            "acc": (0, 0, 0)
+            "acc": (0, 0, 0),
         }
 
         self.rudder_subscription = parent_node.create_subscription(
@@ -89,18 +93,18 @@ class ImuSimulator:
             1.0 / (parent_node.update_frequency * 2), self._loop
         )
 
-    def _handle_rudder_msg(self, msg: Vector3):
+    def _handle_rudder_msg(self, msg: Vector3) -> None:
         self.current_rudder_status = msg
 
-    def _handle_motor_msg(self, msg):
+    def _handle_motor_msg(self, msg: Float32) -> None:
         self.speed = msg.data
 
-    def _loop(self):
+    def _loop(self) -> None:
         self._update_heading()
         self._update_pitch()
         self.last_updated_at = time()
 
-    def _update_pitch(self):
+    def _update_pitch(self) -> None:
         now = time()
         time_delta = now - self.last_updated_at
         momentum_difference = get_momentum_difference(
@@ -126,7 +130,7 @@ class ImuSimulator:
         capped_pitch = cap_pitch(new_pitch)
         self._current_pitch = capped_pitch
 
-    def _update_heading(self):
+    def _update_heading(self) -> None:
         if self.speed > 0:
             now = time()
             time_delta = now - self.last_updated_at
@@ -134,13 +138,13 @@ class ImuSimulator:
             to_add = self.current_rudder_status.x * angle_delta
             self.current_heading = (self.current_heading + to_add) % 360
 
-    def _handle_front_tank_msg(self, msg):
+    def _handle_front_tank_msg(self, msg: TankStatus) -> None:
         self._front_tank_level = msg.current_level
 
-    def _handle_rear_tank_msg(self, msg):
+    def _handle_rear_tank_msg(self, msg: TankStatus) -> None:
         self._rear_tank_level = msg.current_level
 
-    def get_calibration_status(self):
+    def get_calibration_status(self) -> tuple[int, int, int, int]:
         sys = 3
         gyro = 3
         accel = 3
@@ -148,14 +152,14 @@ class ImuSimulator:
 
         return sys, gyro, accel, mag
 
-    def get_euler(self):
+    def get_euler(self) -> tuple[float, float, float]:
         return self.current_heading, 0.0, self._current_pitch
 
-    def get_is_calibrated(self):
+    def get_is_calibrated(self) -> bool:
         return True
 
     def get_calibration_offsets(self) -> CalibrationOffsets:
         return self.sensor_offsets
 
-    def set_offset_values(self, offset_mapping: CalibrationOffsets):
+    def set_offset_values(self, offset_mapping: CalibrationOffsets) -> None:
         self.sensor_offsets.update(offset_mapping)
