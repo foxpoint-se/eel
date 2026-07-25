@@ -1,15 +1,18 @@
 from collections import deque
 from time import time
-from typing import Deque, List, Sequence, Union, cast
+from typing import Deque, List, Optional, Protocol, Sequence
 
 import rclpy
 from action_msgs.msg import GoalStatus
 from std_msgs.msg import Bool, String
 from rclpy.action import ActionClient
+from rclpy.action.client import ClientGoalHandle
 from rclpy.node import Node
+from rclpy.task import Future
+from rclpy.type_support import GetResultServiceResponse
 
 from eel_interfaces.action import Navigate
-from eel_interfaces.action._navigate import Navigate_FeedbackMessage
+from eel_interfaces.action._navigate import _Navigate_Impl
 from eel_interfaces.msg import (
     NavigationStatus,
     NavigationMission,
@@ -31,6 +34,16 @@ from ..utils.topics import (
 )
 from ..utils.constants import NavigationMissionStatus
 from .common import get_2d_distance_from_coords
+
+NavigateGoalHandle = ClientGoalHandle[
+    Navigate.Goal, Navigate.Result, Navigate.Feedback, _Navigate_Impl
+]
+SendGoalFuture = Future[NavigateGoalHandle]
+GetResultFuture = Future[GetResultServiceResponse[Navigate.Result]]
+
+
+class NavigateFeedbackMessage(Protocol):
+    feedback: Navigate.Feedback
 
 GNSS_TIMEOUT_S = 300  # 5 minutes
 MISSION_TIMEOUT_S = 3600  # 1 hour
@@ -138,7 +151,7 @@ def calculate_mission_distance_meters(goals: Deque[Navigate.Goal]) -> float:
 
 class NavigationActionClient(Node):
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("navigation_action_client", parameter_overrides=[])
         self.logger = self.get_logger()
         self._action_client = ActionClient(self, Navigate, "navigate")
@@ -188,20 +201,20 @@ class NavigationActionClient(Node):
         self.last_seen_battery_level = 100.0
         self.last_seen_leakage = False
 
-        self.current_position: Union[Coordinate, None] = None
+        self.current_position: Coordinate | None = None
 
 
         self.goals: Deque[Navigate.Goal] = deque()
-        self.goal_handles = []
+        self.goal_handles: list[NavigateGoalHandle] = []
         self.mission_status = NavigationMissionStatus.WAITING_FOR_MISSION
-        self.mission_start_time = None
+        self.mission_start_time: float | None = None
         self.goals_in_progress = False
         self.auto_mode = False
         self.meters_to_next_target: float = 0.0
         self.mission_total_meters: float = 0.0
         self.last_gnss_update_time: float = time()
         self.is_too_deep = False
-        self.depth_history = deque(maxlen=COUNT_MAX_DEPTHS)
+        self.depth_history: deque[float] = deque(maxlen=COUNT_MAX_DEPTHS)
 
         self.logger.info("Navigation client started")
 
@@ -217,7 +230,7 @@ class NavigationActionClient(Node):
 
     def set_mission(self, msg: NavigationMission) -> None:
         """Takes a list of coordinates and converts them to a list of navigation goals."""
-        coordinates = cast(List[NavigationAssignment], msg.assignments)
+        coordinates: Sequence[NavigationAssignment] = msg.assignments
 
         if len(coordinates) == 0:
             self.goals.clear()
@@ -319,14 +332,14 @@ class NavigationActionClient(Node):
         self.is_too_deep = (over_limit_count == COUNT_MAX_DEPTHS)
         
 
-    def start_mission(self):
+    def start_mission(self) -> None:
         """Method for starting the goal processing, used for starting the iteration."""
         self.send_goal(self.goals[0])
         self.goals_in_progress = True
         self.mission_start_time = time()
         self.mission_status = NavigationMissionStatus.MISSION_STARTED
 
-    def cancel_goals_in_progress(self):
+    def cancel_goals_in_progress(self) -> None:
         """Method to cancel all the ongoing actions"""
         for handel in self.goal_handles:
             handel.cancel_goal_async()
@@ -336,9 +349,11 @@ class NavigationActionClient(Node):
         self.mission_start_time = None
         self.mission_status = NavigationMissionStatus.MISSION_CANCELLED
 
-    def goal_response_callback(self, future):
+    def goal_response_callback(self, future: SendGoalFuture) -> None:
         """Call back for when client has sent a goal to the server, will be accepted / rejected"""
         goal_handle = future.result()
+        if goal_handle is None:
+            return
 
         if not goal_handle.accepted:
             self.logger.warning("Goal server is unable to process goal")
@@ -350,12 +365,15 @@ class NavigationActionClient(Node):
         self._get_result_future = goal_handle.get_result_async()
         self._get_result_future.add_done_callback(self.get_result_callback)
 
-    def get_result_callback(self, future):
+    def get_result_callback(self, future: GetResultFuture) -> None:
         """Call back method for when the action server reports that is has finished a goal."""
-        status = future.result().status
+        result_response = future.result()
+        if result_response is None:
+            return
+        status = result_response.status
 
         if status == GoalStatus.STATUS_SUCCEEDED:
-            result = future.result().result
+            result = result_response.result
             self.logger.info(f"Goal finished successfully")
 
             self.goals.popleft()
@@ -374,11 +392,11 @@ class NavigationActionClient(Node):
             self.logger.info(f"Goal was cancelled")
             self.mission_status = NavigationMissionStatus.MISSION_CANCELLED
 
-    def feedback_callback(self, feedback: Navigate_FeedbackMessage):
+    def feedback_callback(self, feedback: NavigateFeedbackMessage) -> None:
         """Feed back message from action server sent once per second when action server gets a gps position."""
         self.meters_to_next_target = feedback.feedback.distance_to_target
 
-    def send_goal(self, goal_msg):
+    def send_goal(self, goal_msg: Navigate.Goal) -> SendGoalFuture:
         """Method for sending a goal to the action server, returns a goal handle from the server."""
         self.logger.debug(f"Waiting for action server...")
         self._action_client.wait_for_server()
@@ -394,7 +412,7 @@ class NavigationActionClient(Node):
         return self._send_goal_future
 
 
-def main(args=None):
+def main(args: Optional[list[str]] = None) -> None:
     rclpy.init(args=args)
     action_client = NavigationActionClient()
     rclpy.spin(action_client)

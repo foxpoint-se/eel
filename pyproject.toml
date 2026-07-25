@@ -29,5 +29,9 @@ files = [
     "src/eel/eel/battery/battery_node.py",
     "src/eel/eel/dive/dive_action_server.py",
     "src/eel/eel/dive/dive_action_client.py",
+    "src/eel/eel/navigation/common.py",
+    "src/eel/eel/navigation/assignments.py",
+    "src/eel/eel/navigation/navigation_action_client.py",
+    "src/eel/eel/navigation/navigation_action_server.py",
     "src/eel/eel/tank/tank_utils/tank_base.py",
 ]
