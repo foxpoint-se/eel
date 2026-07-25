@@ -19,11 +19,13 @@ MIN_DEPTH = 0.0
 OS_ERROR_RATE = 0.0
 
 
-def should_raise_oserror():
+def should_raise_oserror() -> bool:
     return random.random() < OS_ERROR_RATE
 
 
-def get_neutral_offset(tank_level, neutral_level, neutral_tolerance):
+def get_neutral_offset(
+    tank_level: float, neutral_level: float, neutral_tolerance: float
+) -> float:
     neutral_ceiling = neutral_level + neutral_tolerance
     neutral_floor = neutral_level - neutral_tolerance
     if tank_level < neutral_floor:
@@ -34,8 +36,11 @@ def get_neutral_offset(tank_level, neutral_level, neutral_tolerance):
 
 
 def get_average_bouyancy(
-    front_tank_level, rear_tank_level, neutral_level, neutral_tolerance
-):
+    front_tank_level: float,
+    rear_tank_level: float,
+    neutral_level: float,
+    neutral_tolerance: float,
+) -> float:
     front_offset = get_neutral_offset(
         front_tank_level, neutral_level, neutral_tolerance
     )
@@ -44,23 +49,23 @@ def get_average_bouyancy(
     return offset_average
 
 
-def get_velocity(terminal_velocity, fraction_of_velocity):
+def get_velocity(terminal_velocity: float, fraction_of_velocity: float) -> float:
     return terminal_velocity * fraction_of_velocity
 
 
-def get_pitch_speed_velocity(terminal_velocity, pitch):
+def get_pitch_speed_velocity(terminal_velocity: float, pitch: float) -> float:
     return tan(radians(pitch)) * terminal_velocity
 
 
-def calculate_position_delta(velocity_in_mps, time_in_s):
+def calculate_position_delta(velocity_in_mps: float, time_in_s: float) -> float:
     return velocity_in_mps * time_in_s
 
 
-def cap_depth(depth, min, max):
-    if depth < min:
-        return min
-    if depth > max:
-        return max
+def cap_depth(depth: float, min_depth: float, max_depth: float) -> float:
+    if depth < min_depth:
+        return min_depth
+    if depth > max_depth:
+        return max_depth
     return depth
 
 
@@ -90,23 +95,23 @@ class PressureSensorSimulator(PressureSource):
 
         self.logger = parent_node.get_logger()
 
-    def _handle_front_tank_msg(self, msg):
+    def _handle_front_tank_msg(self, msg: TankStatus) -> None:
         self._front_tank_level = msg.current_level
         self._calculate_depth()
 
-    def _handle_rear_tank_msg(self, msg):
+    def _handle_rear_tank_msg(self, msg: TankStatus) -> None:
         self._rear_tank_level = msg.current_level
         self._calculate_depth()
 
-    def _handle_imu_msg(self, msg):
+    def _handle_imu_msg(self, msg: ImuStatus) -> None:
         self._current_pitch = msg.pitch
         self._calculate_depth()
 
-    def handle_motor_msg(self, msg):
+    def handle_motor_msg(self, msg: Float32) -> None:
         self._current_motor_speed = msg.data
         self._calculate_depth()
 
-    def _calculate_depth(self):
+    def _calculate_depth(self) -> None:
         average_bouyancy = get_average_bouyancy(
             self._front_tank_level,
             self._rear_tank_level,
@@ -114,8 +119,11 @@ class PressureSensorSimulator(PressureSource):
             NEUTRAL_TOLERANCE,
         )
         # NOTE: setting to negative here, so it will float up when motor not running
-        tank_velocity =  -0.05 #get_velocity(TERMINAL_VELOCITY_MPS, average_bouyancy)
-        pitch_speed_velocity = get_pitch_speed_velocity(TERMINAL_VELOCITY_MPS, self._current_pitch) * self._current_motor_speed
+        tank_velocity = -0.05  # get_velocity(TERMINAL_VELOCITY_MPS, average_bouyancy)
+        pitch_speed_velocity = (
+            get_pitch_speed_velocity(TERMINAL_VELOCITY_MPS, self._current_pitch)
+            * self._current_motor_speed
+        )
         velocity = tank_velocity + pitch_speed_velocity
 
         if velocity != 0:
@@ -128,7 +136,7 @@ class PressureSensorSimulator(PressureSource):
 
         self._last_updated_at = time()
 
-    def get_current_depth(self):
+    def get_current_depth(self) -> float:
         self._calculate_depth()
 
         if should_raise_oserror():

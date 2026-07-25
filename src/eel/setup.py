@@ -29,7 +29,7 @@ setup(
         "requests>=2.28,<3",
     ],
     extras_require={
-        "dev": ["mypy>=1.0.0", "types-pyserial>=3.5.0"],
+        "dev": ["mypy>=1.0.0", "types-pyserial>=3.5.0", "types-requests"],
     },
     zip_safe=True,
     maintainer="bulingen",

@@ -22,13 +22,13 @@ class MotorControl:
         self.pwm_max = 100
         self.motor_ctl_level = (self.motor_max_voltage / self.input_voltage) * self.pwm_max
 
-    def forward(self, signal):
+    def forward(self, signal: float) -> None:
         GPIO.output(DEFAULT_DIR_PIN, FORWARD_LEVEL)
         pwm_output.start(signal * self.motor_ctl_level)
 
-    def backward(self, signal):
+    def backward(self, signal: float) -> None:
         GPIO.output(DEFAULT_DIR_PIN, BACKWARD_LEVEL)
         pwm_output.start(signal * self.motor_ctl_level)
 
-    def stop(self):
+    def stop(self) -> None:
         pwm_output.stop()
