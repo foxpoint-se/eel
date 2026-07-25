@@ -3,7 +3,9 @@
 from gpiozero import MCP3208
 
 
-def translate_from_range_to_range(value, from_min, from_max, to_min, to_max):
+def translate_from_range_to_range(
+    value: float, from_min: float, from_max: float, to_min: float, to_max: float
+) -> float:
     # Figure out how 'wide' each range is
     left_span = from_max - from_min
     right_span = to_max - to_min
@@ -15,7 +17,7 @@ def translate_from_range_to_range(value, from_min, from_max, to_min, to_max):
     return to_min + (value_scaled * right_span)
 
 
-def cap_value(value, floor, ceiling):
+def cap_value(value: float, floor: float, ceiling: float) -> float:
     if value > max([ceiling, floor]):
         return max([ceiling, floor])
     elif value < min([ceiling, floor]):
@@ -42,7 +44,7 @@ class RealDistanceSensor:
 
     def __get_raw_value(self) -> float:
         # print("raw", self.mcp.value)
-        return self.mcp.value
+        return float(self.mcp.value)
 
     def __get_pretty_value(self) -> float:
         raw = self.__get_raw_value()
@@ -60,24 +62,25 @@ class RealDistanceSensor:
     def get_level(self) -> float:
         return self.__get_pretty_value()
 
+
 # "distance_sensor_channel": 1,
 # "tank_floor_value": 0.325,
 # "tank_ceiling_value": 0.005,
 if __name__ == "__main__":
     import time
-    
+
     # rear
     floor = 0.71
     ceiling = 0.29
     channel = 1
-    
+
     # front
     # floor = 0.647
     # ceiling = 0.18
     # channel = 0
 
     rear_sensor = RealDistanceSensor(floor, ceiling, channel)
-    
+
     while True:
         val = rear_sensor.get_level()
         time.sleep(1)

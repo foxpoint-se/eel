@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 from time import time
 from datetime import datetime, timezone
-from typing import List, Union
+from typing import List, Optional
 
 import rclpy
 from rclpy.node import Node
 from eel_interfaces.msg import (
     Coordinate,
     PressureStatus,
-    Coordinate,
     TracedRoute,
     SubmergedCoordinate,
     ModemStatus,
@@ -19,7 +18,7 @@ from ..utils.topics import (
     PRESSURE_STATUS,
     ROUTE_TRACING_UPDATES,
 )
-from .data_recorder import PathRecorder, Segment
+from .data_recorder import PathRecorder
 from .common import Segment, TimedCoord3d, Coord3d
 
 
@@ -49,7 +48,7 @@ def to_traced_route(segment: Segment) -> TracedRoute:
 
 
 class DataLogger(Node):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("data_logger_node", parameter_overrides=[])
         self.logger = self.get_logger()
         self.create_subscription(
@@ -58,7 +57,7 @@ class DataLogger(Node):
         self.create_subscription(
             Coordinate, LOCALIZATION_STATUS, self.handle_location_msg, 10
         )
-        self.current_modem_status: Union[ModemStatus, None] = None
+        self.current_modem_status: ModemStatus | None = None
         self.create_subscription(
             ModemStatus, MODEM_STATUS, self.on_connectivity_msg, 10
         )
@@ -73,8 +72,8 @@ class DataLogger(Node):
             on_new_segment=self.handle_new_segment,
         )
         self.has_connection: bool = False
-        self.current_coord: Union[Coordinate, None] = None
-        self.current_depth: Union[float, None] = None
+        self.current_coord: Coordinate | None = None
+        self.current_depth: float | None = None
         self.stored: List[TracedRoute] = []
 
         self.logger.info("Data logger node started")
@@ -115,7 +114,7 @@ class DataLogger(Node):
         self.current_coord = msg
 
 
-def main(args=None):
+def main(args: Optional[list[str]] = None) -> None:
     rclpy.init(args=args)
     data_logger_node = DataLogger()
     rclpy.spin(data_logger_node)

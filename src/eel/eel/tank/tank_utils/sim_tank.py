@@ -5,11 +5,11 @@ from .tank_base import Tank
 ros_logger = logging.get_logger(__name__)
 
 
-def calculate_position_delta(linear_velocity, time_delta):
+def calculate_position_delta(linear_velocity: float, time_delta: float) -> float:
     return linear_velocity * time_delta
 
 
-def cap_value(value, floor, ceiling):
+def cap_value(value: float, floor: float, ceiling: float) -> float:
     if value > ceiling:
         return ceiling
     elif value < floor:
@@ -51,5 +51,10 @@ class SimTank(Tank):
 
         self.last_updated_at = time()
 
-    def run_motor(self, value) -> None:
-        return super().run_motor(value)
+    def run_motor(self, value: float) -> None:
+        if value == 0:
+            self.stop()
+        elif value > 0:
+            self.fill()
+        else:
+            self.empty()

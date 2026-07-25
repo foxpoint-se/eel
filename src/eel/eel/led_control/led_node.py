@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from typing import Optional
+
 import rclpy
 from rclpy.node import Node
 
@@ -27,7 +29,7 @@ PULSE_TIME_MAP = {
 
 
 class LED(Node):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("LED_node")
 
         self.led_control = LEDControl()
@@ -41,10 +43,10 @@ class LED(Node):
 
         self.get_logger().info("Started LED node")
 
-    def update_mission_status(self, msg: NavigationStatus):
+    def update_mission_status(self, msg: NavigationStatus) -> None:
         self.navigation_status = msg.mission_status
 
-    def pulse_led(self):
+    def pulse_led(self) -> None:
         nof_pulses = PULSE_COUNT_MAP.get(self.navigation_status)
         pulse_length = PULSE_TIME_MAP.get(self.navigation_status)
 
@@ -52,7 +54,7 @@ class LED(Node):
             self.led_control.sequence(nof_pulses, pulse_length)
 
 
-def main(args=None):
+def main(args: Optional[list[str]] = None) -> None:
     rclpy.init(args=args)
     node = LED()
     rclpy.spin(node)

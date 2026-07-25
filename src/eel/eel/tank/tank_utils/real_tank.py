@@ -27,7 +27,7 @@ class RealTank(Tank):
     def get_level(self) -> float:
         return self.distance_sensor.get_level()
 
-    def run_motor(self, value) -> None:
+    def run_motor(self, value: float) -> None:
         self.pump.run_motor(value)
 
     def stop(self) -> None:

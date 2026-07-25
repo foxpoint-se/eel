@@ -7,6 +7,8 @@ from std_msgs.msg import Float32
 import math
 import sys
 import signal
+from types import FrameType
+from typing import Optional
 from enum import Enum
 from eel_interfaces.msg import ImuStatus
 
@@ -41,7 +43,7 @@ def rotate_vector(vector: Vector2d, rotation_degrees: float) -> Vector2d:
 
 
 class Rudder(Node):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("rudder_node")
 
         self.declare_parameter(SIMULATE_PARAM, False)
@@ -90,11 +92,11 @@ class Rudder(Node):
         self.publish_rudder_offset_value(Rudders.RUDDER_X)
         self.publish_rudder_offset_value(Rudders.RUDDER_Y)
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         self.logger.info("Rudder node shutting down...")
         self.xy_rudder.shutdown()
 
-    def _handle_imu_msg(self, msg: ImuStatus):
+    def _handle_imu_msg(self, msg: ImuStatus) -> None:
         self.current_roll = msg.roll
         self.merge_and_handle_commands()
 
@@ -102,7 +104,7 @@ class Rudder(Node):
         self.current_x_cmd = msg.data
         self.merge_and_handle_commands()
 
-    def publish_rudder_offset_value(self, rudder_type) -> None:
+    def publish_rudder_offset_value(self, rudder_type: Rudders) -> None:
         if rudder_type == Rudders.RUDDER_X:
             offset_value = self.xy_rudder.get_x_rudder_offset_value()
             publisher = self.x_offset_publisher
@@ -157,7 +159,7 @@ class Rudder(Node):
         }
         self.calc_and_send(rudder_direction=direction, roll_degrees=self.current_roll)
 
-    def calc_and_send(self, rudder_direction: Vector2d, roll_degrees: float):
+    def calc_and_send(self, rudder_direction: Vector2d, roll_degrees: float) -> None:
         rotation = -roll_degrees
         compensated = rotate_vector(vector=rudder_direction, rotation_degrees=rotation)
         clamped: Vector2d = {
@@ -175,7 +177,7 @@ class Rudder(Node):
         self.rudder_status_publisher.publish(status_vector_msg)
 
 
-def shutdown_handler(signum, frame, node: Rudder):
+def shutdown_handler(signum: int, frame: FrameType | None, node: Rudder) -> None:
     # Call the shutdown method of your node
     node.shutdown()
     rclpy.try_shutdown()
@@ -185,7 +187,7 @@ def shutdown_handler(signum, frame, node: Rudder):
 # Register the shutdown handler for SIGTERM signal
 
 
-def main(args=None):
+def main(args: Optional[list[str]] = None) -> None:
     rclpy.init(args=args)
     node = Rudder()
     signal.signal(

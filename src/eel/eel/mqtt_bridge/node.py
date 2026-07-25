@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
-from typing import Callable, List, Mapping, Optional, Tuple, TypedDict, cast, Sequence
+from typing import Callable, List, Mapping, Optional, Sequence, Tuple, TypedDict, cast
 import json
 
 from awscrt import mqtt, io
@@ -197,7 +197,7 @@ def transform_pressure_status_msg(msg: PressureStatus) -> PressureStatusMqtt:
 # usage:
 # ros2 run eel mqtt_bridge --ros-args -p path_for_config:=/path/to/config.json
 class MqttBridge(Node):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("mqtt_bridge_node", parameter_overrides=[])
 
         self.mqtt_conn: Optional[mqtt.Connection] = None
@@ -358,7 +358,7 @@ class MqttBridge(Node):
         dup: bool,
         qos: mqtt.QoS,
         retain: bool,
-        **kwargs,
+        **_kwargs: object,
     ) -> None:
         converted = cast(FloatMsgMqtt, json.loads(payload))
         msg = Float32()
@@ -372,7 +372,7 @@ class MqttBridge(Node):
         dup: bool,
         qos: mqtt.QoS,
         retain: bool,
-        **kwargs,
+        **_kwargs: object,
     ) -> None:
         converted = cast(FloatMsgMqtt, json.loads(payload))
         msg = Float32()
@@ -386,7 +386,7 @@ class MqttBridge(Node):
         dup: bool,
         qos: mqtt.QoS,
         retain: bool,
-        **kwargs,
+        **_kwargs: object,
     ) -> None:
         converted = cast(FloatMsgMqtt, json.loads(payload))
         motor_value = float(converted["data"])
@@ -401,7 +401,7 @@ class MqttBridge(Node):
         dup: bool,
         qos: mqtt.QoS,
         retain: bool,
-        **kwargs,
+        **_kwargs: object,
     ) -> None:
         converted = cast(BoolMsgMqtt, json.loads(payload))
         msg = Bool()
@@ -415,7 +415,7 @@ class MqttBridge(Node):
         dup: bool,
         qos: mqtt.QoS,
         retain: bool,
-        **kwargs,
+        **_kwargs: object,
     ) -> None:
         converted = cast(DepthControlCmdMqtt, json.loads(payload))
         msg = DepthControlCmd()
@@ -432,7 +432,7 @@ class MqttBridge(Node):
         dup: bool,
         qos: mqtt.QoS,
         retain: bool,
-        **kwargs,
+        **_kwargs: object,
     ) -> None:
         converted = cast(FloatMsgMqtt, json.loads(payload))
         value = float(converted["data"])
@@ -447,7 +447,7 @@ class MqttBridge(Node):
         dup: bool,
         qos: mqtt.QoS,
         retain: bool,
-        **kwargs,
+        **_kwargs: object,
     ) -> None:
         converted = cast(FloatMsgMqtt, json.loads(payload))
         value = float(converted["data"])
@@ -462,7 +462,7 @@ class MqttBridge(Node):
         dup: bool,
         qos: mqtt.QoS,
         retain: bool,
-        **kwargs,
+        **_kwargs: object,
     ) -> None:
         converted = cast(NavigationMissionMqtt, json.loads(payload))
         msg = NavigationMission()
@@ -486,7 +486,7 @@ class MqttBridge(Node):
         dup: bool,
         qos: mqtt.QoS,
         retain: bool,
-        **kwargs,
+        **_kwargs: object,
     ) -> None:
         converted = cast(StringMqtt, json.loads(payload))
         msg = String()
@@ -500,7 +500,7 @@ class MqttBridge(Node):
         dup: bool,
         qos: mqtt.QoS,
         retain: bool,
-        **kwargs,
+        **_kwargs: object,
     ) -> None:
         converted = cast(CoordinateMqtt, json.loads(payload))
         msg = Coordinate()
@@ -508,7 +508,7 @@ class MqttBridge(Node):
         msg.lon = converted["lon"]
         self.gnss_status_publisher.publish(msg)
 
-    def publish_mqtt(self, topic: str, mqtt_message: Mapping) -> None:
+    def publish_mqtt(self, topic: str, mqtt_message: Mapping[str, object]) -> None:
         if self.is_connected is True and self.mqtt_conn:
             json_payload = json.dumps(mqtt_message)
             self.mqtt_conn.publish(
@@ -578,7 +578,7 @@ class MqttBridge(Node):
         self.publish_mqtt(topic, mqtt_message)
 
 
-def main(args=None):
+def main(args: Optional[list[str]] = None) -> None:
     rclpy.init(args=args)
     node = MqttBridge()
     rclpy.spin(node)
