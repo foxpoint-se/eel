@@ -69,3 +69,4 @@ class PressureSensor(PressureSource):
         depth = self._get_depth_reading()
         if depth and self.atmosphere_offset:
             return depth - self.atmosphere_offset
+        return None

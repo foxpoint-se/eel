@@ -13,7 +13,7 @@ class ModemSimulator(ModemSource):
             PressureStatus, PRESSURE_STATUS, self._handle_pressure_status_msg, 10
         )
 
-    def _handle_pressure_status_msg(self, msg):
+    def _handle_pressure_status_msg(self, msg: PressureStatus) -> None:
         self._current_depth = msg.depth
 
     def get_received_signal_strength_indicator(self) -> Union[int, None]:
@@ -31,11 +31,10 @@ class ModemSimulator(ModemSource):
         
         return registration_status
 
-    def ping(self):
+    def ping(self) -> bool:
         if self._current_depth < 0.2:
-            connectivity  = True
+            connectivity = True
         else:
-            connectivity= False
+            connectivity = False
 
         return connectivity
-        
