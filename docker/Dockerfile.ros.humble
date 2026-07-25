@@ -33,6 +33,7 @@ RUN python3 -m pip install --no-cache-dir \
 
 WORKDIR /eel
 COPY pyproject.toml Makefile ./
+COPY typings ./typings
 COPY ./src ./src
 
 RUN source /opt/ros/${ROS_DISTRO}/setup.bash && \

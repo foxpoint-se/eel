@@ -1,6 +1,6 @@
 from collections import deque
 from time import time
-from typing import Deque, List, Optional, Protocol, Sequence
+from typing import Deque, List, Optional, Protocol, Sequence, TypeAlias
 
 import rclpy
 from action_msgs.msg import GoalStatus
@@ -35,11 +35,11 @@ from ..utils.topics import (
 from ..utils.constants import NavigationMissionStatus
 from .common import get_2d_distance_from_coords
 
-NavigateGoalHandle = ClientGoalHandle[
+NavigateGoalHandle: TypeAlias = ClientGoalHandle[
     Navigate.Goal, Navigate.Result, Navigate.Feedback, _Navigate_Impl
 ]
-SendGoalFuture = Future[NavigateGoalHandle]
-GetResultFuture = Future[GetResultServiceResponse[Navigate.Result]]
+SendGoalFuture: TypeAlias = Future[NavigateGoalHandle]
+GetResultFuture: TypeAlias = Future[GetResultServiceResponse[Navigate.Result]]
 
 
 class NavigateFeedbackMessage(Protocol):
@@ -126,7 +126,7 @@ def create_goals(assignments: Sequence[NavigationAssignment], current_position: 
 
 
 def is_waypoint_goal(goal: Navigate.Goal) -> bool:
-    return goal.type == Navigate.Goal.TYPE_WAYPOINT
+    return bool(goal.type == Navigate.Goal.TYPE_WAYPOINT)
 
 
 def extract_waypoints_from_goals(goals: Deque[Navigate.Goal]) -> List[Coordinate]:

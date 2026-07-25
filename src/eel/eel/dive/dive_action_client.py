@@ -1,4 +1,4 @@
-from typing import Optional, Protocol
+from typing import Optional, Protocol, TypeAlias
 
 import rclpy
 from rclpy.action import ActionClient
@@ -10,9 +10,11 @@ from rclpy.type_support import GetResultServiceResponse
 from eel_interfaces.action import Dive
 from eel_interfaces.action._dive import _Dive_Impl
 
-DiveGoalHandle = ClientGoalHandle[Dive.Goal, Dive.Result, Dive.Feedback, _Dive_Impl]
-SendGoalFuture = Future[DiveGoalHandle]
-GetResultFuture = Future[GetResultServiceResponse[Dive.Result]]
+DiveGoalHandle: TypeAlias = ClientGoalHandle[
+    Dive.Goal, Dive.Result, Dive.Feedback, _Dive_Impl
+]
+SendGoalFuture: TypeAlias = Future[DiveGoalHandle]
+GetResultFuture: TypeAlias = Future[GetResultServiceResponse[Dive.Result]]
 
 
 class DiveFeedbackMessage(Protocol):

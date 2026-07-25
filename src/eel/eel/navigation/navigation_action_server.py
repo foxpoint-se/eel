@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from time import sleep, time
-from typing import Optional
+from typing import Optional, TypeAlias
 
 import rclpy
 from rclpy.action import ActionServer, CancelResponse, GoalResponse
@@ -24,7 +24,7 @@ from eel_interfaces.action._navigate import _Navigate_Impl
 from eel_interfaces.msg import Coordinate, ImuStatus, DepthControlCmd, PressureStatus
 from std_msgs.msg import Float32
 
-NavigateGoalHandle = ServerGoalHandle[
+NavigateGoalHandle: TypeAlias = ServerGoalHandle[
     Navigate.Goal, Navigate.Result, Navigate.Feedback, _Navigate_Impl
 ]
 
