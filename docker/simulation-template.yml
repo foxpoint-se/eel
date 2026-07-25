@@ -37,7 +37,7 @@ services:
 
   navigation:
     image: foxpoint/eel:jazzy
-    command: ros2 run eel navigation
+    command: ros2 run eel navigate
     network_mode: ${NETWORK_MODE:-bridge}
 
   depth_control:

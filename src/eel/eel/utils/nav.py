@@ -53,20 +53,6 @@ def get_relative_bearing_in_degrees(lat_1, lon_1, lat_2, lon_2):
     return true_bearing
 
 
-def convert_deg_min_to_deg(position):
-    """
-    Converts a position either long or lat from the deg min format into decimal degrees.
-    Default NMEA format is deg min format.
-
-    :param position: Either longitude or latitude in deg minute format
-    :return: Position in degree decimal format
-    """
-    deg = int(position)
-    decimal = position - deg
-
-    return deg + (decimal / 60)
-
-
 def get_closest_turn_direction(current_heading: float, target_heading: float) -> int:
     """
     Given current heading and target heading, get closest direction to turn, right or left.
