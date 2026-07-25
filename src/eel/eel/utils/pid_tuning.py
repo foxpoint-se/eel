@@ -88,32 +88,32 @@ def get_Kd(Kp: float, Td: float) -> float:
 
 
 def lookup_zieglernichols_gains(
-    Ku: float, Tu: float, type: str
+    Ku: float, Tu: float, pid_type: str
 ) -> tuple[float, float, float]:
-    if type == "classic_PID":
+    if pid_type == "classic_PID":
         Kp = 0.6 * Ku
         Ti = Tu / 2
         Td = Tu / 8
         Ki = get_Ki(Kp, Ti)
         Kd = get_Kd(Kp, Td)
         return Kp, Ki, Kd
-    elif type == "P":
+    elif pid_type == "P":
         Kp = 0.5 * Ku
         return Kp, 0, 0
 
-    elif type == "PI":
+    elif pid_type == "PI":
         Kp = 0.45 * Ku
         Ti = Tu / 1.2
         Ki = get_Ki(Kp, Ti)
         return Kp, Ki, 0
 
-    elif type == "PD":
+    elif pid_type == "PD":
         Kp = 0.8 * Ku
         Td = Tu / 8
         Kd = get_Kd(Kp, Td)
         return Kp, 0, Kd
 
-    elif type == "pessen_integration":
+    elif pid_type == "pessen_integration":
         Kp = 0.8 * Ku
         Ti = 2 * Tu / 5
         Td = 3 * Tu / 20
@@ -121,7 +121,7 @@ def lookup_zieglernichols_gains(
         Kd = get_Kd(Kp, Td)
         return Kp, Ki, Kd
 
-    elif type == "some_overshoot":
+    elif pid_type == "some_overshoot":
         Kp = Ku / 3
         Ti = Tu / 2
         Td = Tu / 3
@@ -129,7 +129,7 @@ def lookup_zieglernichols_gains(
         Kd = get_Kd(Kp, Td)
         return Kp, Ki, Kd
 
-    elif type == "no_overshoot":
+    elif pid_type == "no_overshoot":
         Kp = 0.2 * Ku
         Ti = Tu / 2
         Td = Tu / 3
