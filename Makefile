@@ -72,9 +72,18 @@ setup: check-sourced		## Install deps and build (source source_me.sh first)
 install-voltage-sensor: venv
 	source $(VENV_DIR)/bin/activate; python3 -m pip install -U "$(PI_INA226_GIT)"
 
-.PHONY: typecheck
-typecheck: check-sourced		## Run mypy on the eel package
+.PHONY: typecheck typecheck-core test test-core test-ci
+typecheck-core:
 	python3 -m mypy
+
+typecheck: check-sourced typecheck-core		## Run mypy on the eel package
+
+test-core: typecheck-core
+	python3 -m colcon test --python-testing pytest; python3 -m colcon test-result --verbose
+
+test: check-sourced test-core		## Run typecheck and colcon tests
+
+test-ci: test-core		## CI/Docker: typecheck and colcon tests (no venv guard)
 
 start-pigpio:		## start pigpio
 	sudo pigpiod
@@ -110,6 +119,3 @@ install-modem:		## Steps on how to install modem both software and service file 
 
 detect-i2c:		## detect i2c
 	sudo i2cdetect -y 1
-
-test: check-sourced typecheck		## Run typecheck and colcon tests
-	python3 -m colcon test --python-testing pytest; python3 -m colcon test-result --verbose
