@@ -73,7 +73,7 @@ install-voltage-sensor: venv
 	source $(VENV_DIR)/bin/activate; python3 -m pip install -U "$(PI_INA226_GIT)"
 
 .PHONY: typecheck
-typecheck: check-sourced		## Run mypy (see files list in pyproject.toml)
+typecheck: check-sourced		## Run mypy on the eel package
 	python3 -m mypy
 
 start-pigpio:		## start pigpio
