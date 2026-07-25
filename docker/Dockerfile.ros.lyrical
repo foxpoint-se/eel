@@ -39,7 +39,7 @@ COPY ./src ./src
 RUN source /opt/ros/${ROS_DISTRO}/setup.bash && \
     rosdep install --from-paths src --ignore-src -r -y
 
-RUN python3 -m pip install --break-system-packages --no-cache-dir "src/eel[dev]"
+RUN python3 -m pip install --break-system-packages --no-cache-dir "src/eel[dev]" --ignore-installed librt
 
 RUN source /opt/ros/${ROS_DISTRO}/setup.bash && \
     colcon build --symlink-install
