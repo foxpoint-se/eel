@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from typing import Optional
+
 import rclpy
 from rclpy.node import Node
 from eel_interfaces.msg import BatteryStatus
@@ -9,7 +11,7 @@ from ..utils.topics import BATTERY_STATUS
 
 
 class BatteryNode(Node):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("battery_node")
         self.declare_parameter(SIMULATE_PARAM, False)
         self.should_simulate = self.get_parameter(SIMULATE_PARAM).value
@@ -18,6 +20,7 @@ class BatteryNode(Node):
         # hertz (publications per second)
         self.update_frequency = 2
 
+        sensor: BatterySensor | BatterySimulator
         sensor = (
             BatterySensor()
             if not self.should_simulate
@@ -36,7 +39,7 @@ class BatteryNode(Node):
 
         self.get_logger().info("Battery node started")
 
-    def publish_battery(self):
+    def publish_battery(self) -> None:
         msg = BatteryStatus()
         msg.voltage = self.get_voltage()
         msg.current = self.get_current()
@@ -48,7 +51,7 @@ class BatteryNode(Node):
         self.status_publisher.publish(msg)
 
 
-def main(args=None):
+def main(args: Optional[list[str]] = None) -> None:
     rclpy.init(args=args)
     node = BatteryNode()
     rclpy.spin(node)

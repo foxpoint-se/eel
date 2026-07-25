@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from typing import Optional
+
 import rclpy
 from rclpy.node import Node
 from eel_interfaces.msg import Coordinate
@@ -8,7 +10,7 @@ from ..utils.topics import GNSS_STATUS
 
 
 class GNSS(Node):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("gnss_node", parameter_overrides=[])
 
         # The gnss sensor delivers new positions every second.
@@ -32,7 +34,7 @@ class GNSS(Node):
         self.poller = self.create_timer(1.0 / self.update_frequency_hz, self.publish)
         self.get_logger().info("GNSS node started.")
 
-    def publish(self):
+    def publish(self) -> None:
         lat, lon = self.get_current_position()
 
         if isinstance(lat, float) and isinstance(lon, float):
@@ -44,7 +46,7 @@ class GNSS(Node):
                 self.publisher.publish(msg)
 
 
-def main(args=None):
+def main(args: Optional[list[str]] = None) -> None:
     rclpy.init(args=args)
     node = GNSS()
     rclpy.spin(node)

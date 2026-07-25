@@ -1,24 +1,32 @@
 from time import time
+from typing import Callable, Optional
 
 
 class PidController:
-    def __init__(self, set_point, kP=0.0, kI=0.0, kD=0.0, on_log_error=None) -> None:
+    def __init__(
+        self,
+        set_point: float,
+        kP: float = 0.0,
+        kI: float = 0.0,
+        kD: float = 0.0,
+        on_log_error: Optional[Callable[[float], None]] = None,
+    ) -> None:
         self.kP = kP  # proportional gain
         self.kI = kI  # integral gain
         self.kD = kD  # derivative gain
         self.set_point = set_point
-        self.last_computed_at = None
+        self.last_computed_at: Optional[float] = None
         self.cumulative_error = 0.0
         self.last_error = 0.0
         self.on_log_error = on_log_error
 
-    def update_set_point(self, value):
+    def update_set_point(self, value: float) -> None:
         self.set_point = value
- 
-    def reset_cumulative_error(self):
+
+    def reset_cumulative_error(self) -> None:
         self.cumulative_error = 0
 
-    def compute(self, system_current_value):
+    def compute(self, system_current_value: float) -> float:
         now = time()
 
         if self.last_computed_at is None:

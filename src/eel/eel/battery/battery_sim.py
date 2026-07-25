@@ -20,32 +20,32 @@ class BatterySimulator:
 
         self.battery_updater = parent_node.create_timer(1.0, self._loop)
 
-    def _loop(self):
+    def _loop(self) -> None:
         self._update_voltage()
         self.last_update = time()
 
-    def _update_voltage(self):
+    def _update_voltage(self) -> None:
         now = time()
 
         if (int(now) - int(self.start_time)) % DEGENERATION_TIME_S == 0:
             self.voltage = self.voltage - (BATTERY_MAX_VOLTAGE * DEGEN_RATE_PERCENT)
 
-    def get_voltage(self):
+    def get_voltage(self) -> float:
         return self.voltage
 
-    def get_voltage_percent(self):
+    def get_voltage_percent(self) -> float:
         voltage = self.get_voltage()
         percent = calculate_voltage_percent(voltage)
         return float(percent / 100)
 
-    def get_current(self):
+    def get_current(self) -> float:
         return self.current
 
-    def get_power(self):
+    def get_power(self) -> float:
         return self.power
 
-    def get_supply_voltage(self):
+    def get_supply_voltage(self) -> float:
         return self.supply_voltage
 
-    def get_shunt_voltage(self):
+    def get_shunt_voltage(self) -> float:
         return self.shunt_voltage
