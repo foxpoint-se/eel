@@ -5,6 +5,8 @@
 Backlog: https://github.com/orgs/foxpoint-se/projects/1  
 When creating a GitHub issue, add it to that board.
 
+Also set **Priority** (org issue field), **Type** (Bug / Feature / Task), and **label(s)**. Inspect what already exists in the repo (labels, types, board fields) and pick what fits — don’t invent a parallel scheme.
+
 ## Commits
 
 Use conventional commits. Write messages for **why / value / purpose**, not a file changelog.  
@@ -26,3 +28,9 @@ The sibling **promotion** repo can publish those later (optional sync); linking 
 Prefer short, clearly named functions — the call chain should read as the story.  
 Don’t bury non-trivial logic in long bodies; extract into helpers, modules, or classes.  
 Match the style of nearby code.
+
+## Tests
+
+Name: `test__when_<condition>__should_<outcome>` (double underscores).
+
+Prefer **pure unit tests** — extract logic from ROS callbacks/nodes into small functions, then test those. Don’t grow 50-line tests full of mocks; refactor production code until each test is ~10 lines: setup (helpers ok), act, assert.
