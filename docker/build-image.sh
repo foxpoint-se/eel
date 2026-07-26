@@ -3,8 +3,8 @@ set -e
 
 # Usage: ./build-image.sh <distro> [--multiarch | --ci]
 # Example: ./build-image.sh humble
-#          ./build-image.sh jazzy --multiarch
-#          ./build-image.sh humble --ci    # CI: multi-arch verify, no --load
+#          ./build-image.sh jazzy --multiarch  # multi-arch verify, no --load
+#          ./build-image.sh humble --ci        # same as --multiarch (CI)
 
 if [ -z "$1" ]; then
   echo "Usage: $0 <ros_distro> [--multiarch | --ci]"
@@ -76,7 +76,8 @@ fi
 ensure_buildx_builder
 
 if [ "$MODE" = "multiarch" ]; then
-  echo "Building multi-arch image for amd64 and arm64..."
+  # Multi-platform images cannot be --load'ed into the local docker store.
+  echo "Multi-arch verify build for linux/amd64 and linux/arm64 (no local load)..."
   docker buildx build \
     --platform linux/amd64,linux/arm64 \
     --build-arg ROS_DISTRO="${ROS_DISTRO}" \
@@ -84,9 +85,8 @@ if [ "$MODE" = "multiarch" ]; then
     -f "${DOCKERFILE}" \
     -t "${IMAGE_NAME}" \
     -t "${IMAGE_NAME_PINNED}" \
-    --load \
     ..
-  echo "Built: ${IMAGE_NAME} and ${IMAGE_NAME_PINNED} (multi-arch)"
+  echo "Multi-arch verify succeeded: ${IMAGE_NAME} and ${IMAGE_NAME_PINNED}"
 else
   ARCH=$(uname -m)
   if [ "$ARCH" = "x86_64" ]; then
