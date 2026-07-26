@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import re
-import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -17,20 +16,40 @@ TARGETS = (
     REPO_ROOT / "src" / "eel_bringup" / "package.xml",
 )
 
+_SECTION_HEADER = re.compile(r"^\[([^\]]+)\]")
+_VERSION_ASSIGN = re.compile(r"""^version\s*=\s*(["'])([^"']+)\1\s*$""")
+
+
+def _without_comment(line: str) -> str:
+    """Drop a TOML `#` comment outside quotes (good enough for version lines)."""
+    in_single = False
+    in_double = False
+    for i, char in enumerate(line):
+        if char == "'" and not in_double:
+            in_single = not in_single
+        elif char == '"' and not in_single:
+            in_double = not in_double
+        elif char == "#" and not in_single and not in_double:
+            return line[:i].rstrip()
+    return line.rstrip()
+
 
 def read_project_version(pyproject: Path) -> str:
     text = pyproject.read_text(encoding="utf-8")
     in_project = False
-    for line in text.splitlines():
-        stripped = line.strip()
-        if stripped.startswith("[") and stripped.endswith("]"):
-            in_project = stripped == "[project]"
+    for raw_line in text.splitlines():
+        line = _without_comment(raw_line).strip()
+        if not line:
+            continue
+        header = _SECTION_HEADER.fullmatch(line)
+        if header:
+            in_project = header.group(1) == "project"
             continue
         if not in_project:
             continue
-        match = re.fullmatch(r'version\s*=\s*"([^"]+)"', stripped)
+        match = _VERSION_ASSIGN.fullmatch(line)
         if match:
-            return match.group(1)
+            return match.group(2)
     raise ValueError(f"No [project].version found in {pyproject}")
 
 
@@ -66,22 +85,24 @@ def sync_package_xml(path: Path, version: str) -> bool:
     return True
 
 
+def sync_targets(version: str, targets: tuple[Path, ...] = TARGETS) -> list[Path]:
+    changed: list[Path] = []
+    for path in targets:
+        if path.suffix == ".py":
+            did_change = sync_setup_py(path, version)
+        else:
+            did_change = sync_package_xml(path, version)
+        if did_change:
+            changed.append(path)
+    return changed
+
+
 def main() -> int:
+    import sys
+
     try:
         version = read_project_version(PYPROJECT)
-    except (OSError, ValueError) as exc:
-        print(f"error: {exc}", file=sys.stderr)
-        return 1
-
-    changed: list[Path] = []
-    try:
-        for path in TARGETS:
-            if path.suffix == ".py":
-                did_change = sync_setup_py(path, version)
-            else:
-                did_change = sync_package_xml(path, version)
-            if did_change:
-                changed.append(path)
+        changed = sync_targets(version)
     except (OSError, ValueError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
@@ -96,4 +117,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    raise SystemExit(main())

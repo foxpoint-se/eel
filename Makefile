@@ -79,7 +79,7 @@ typecheck-core:
 typecheck: check-sourced typecheck-core		## Run mypy on the eel package
 
 test-checks: typecheck-core
-	python3 -m pytest src/eel/test/
+	python3 -m pytest src/eel/test/ tests/
 
 test-integration:
 	python3 -m colcon test --python-testing pytest; python3 -m colcon test-result --verbose
