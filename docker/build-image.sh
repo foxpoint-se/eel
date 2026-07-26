@@ -20,6 +20,10 @@ sys.path.insert(0, '${REPO_ROOT}/scripts')
 from sync_version import read_project_version
 print(read_project_version(Path('${REPO_ROOT}') / 'pyproject.toml'))
 ")"
+if [[ ! "${EEL_VERSION}" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]]; then
+  echo "error: version '${EEL_VERSION}' is not a valid Docker tag component (use letters, digits, ., _, -)" >&2
+  exit 1
+fi
 IMAGE_NAME="foxpoint/eel:${ROS_DISTRO}"
 IMAGE_NAME_PINNED="foxpoint/eel:${ROS_DISTRO}-${EEL_VERSION}"
 MODE="local"
