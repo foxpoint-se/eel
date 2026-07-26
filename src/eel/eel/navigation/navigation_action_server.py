@@ -114,7 +114,7 @@ class NavigationActionServer(Node):
         self, goal_request: Navigate.Goal
     ) -> GoalResponse:
         if self.current_position is None:
-            self.logger.info("No gps position has been aquired yet, rejecting goal.")
+            self.logger.info("No gps position has been acquired yet, rejecting goal.")
             return GoalResponse.REJECT
 
         distance_to_target = get_2d_distance(

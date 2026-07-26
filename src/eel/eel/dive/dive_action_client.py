@@ -58,7 +58,7 @@ class DiveActionClient(Node):
 
     def feedback_callback(self, feedback_msg: DiveFeedbackMessage) -> None:
         feedback = feedback_msg.feedback
-        self.logger.info(f"Recieved feedback, now at: {round(feedback.current_depth, 5)}m")
+        self.logger.info(f"Received feedback, now at: {round(feedback.current_depth, 5)}m")
 
 
 def main(args: Optional[list[str]] = None) -> None:
