@@ -351,8 +351,6 @@ class NavigationActionClient(Node):
     def goal_response_callback(self, future: SendGoalFuture) -> None:
         """Call back for when client has sent a goal to the server, will be accepted / rejected"""
         goal_handle = future.result()
-        if goal_handle is None:
-            return
 
         if not goal_handle.accepted:
             self.logger.warning("Goal server is unable to process goal")
@@ -367,8 +365,6 @@ class NavigationActionClient(Node):
     def get_result_callback(self, future: GetResultFuture) -> None:
         """Call back method for when the action server reports that is has finished a goal."""
         result_response = future.result()
-        if result_response is None:
-            return
         status = result_response.status
 
         if status == GoalStatus.STATUS_SUCCEEDED:

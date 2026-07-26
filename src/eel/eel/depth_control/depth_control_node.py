@@ -260,14 +260,13 @@ class DepthControlNode(Node):
         self.pid_publisher_base.publish(base_msg)
 
     def message_tanks(self, next_front: float, next_rear: float) -> None:
-        if next_front is not None and next_rear is not None:
-            front_msg = Float32()
-            front_msg.data = next_front
-            rear_msg = Float32()
-            rear_msg.data = next_rear
+        front_msg = Float32()
+        front_msg.data = next_front
+        rear_msg = Float32()
+        rear_msg.data = next_rear
 
-            self.front_tank_pub.publish(front_msg)
-            self.rear_tank_pub.publish(rear_msg)
+        self.front_tank_pub.publish(front_msg)
+        self.rear_tank_pub.publish(rear_msg)
 
     def try_message_tanks(
         self, next_front: float | None, next_rear: float | None

@@ -40,8 +40,6 @@ class DiveActionClient(Node):
     
     def goal_response_callback(self, future: SendGoalFuture) -> None:
         goal_handle = future.result()
-        if goal_handle is None:
-            return
 
         if not goal_handle.accepted:
             self.logger.info("Goal was rejected.")
@@ -54,8 +52,6 @@ class DiveActionClient(Node):
     
     def get_result_callback(self, future: GetResultFuture) -> None:
         result_response = future.result()
-        if result_response is None:
-            return
         result = result_response.result
         self.logger.info(f"Result, final depth: {result.final_depth}m")
         rclpy.shutdown()
