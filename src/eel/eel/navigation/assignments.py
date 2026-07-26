@@ -6,13 +6,12 @@ from .common import (
     LatLon,
     get_2d_distance,
     get_relative_bearing,
-    get_next_rudder_turn,
     TOLERANCE_IN_METERS,
 )
-from ..utils.nav import get_closest_turn_direction
+from ..utils.nav import get_closest_turn_direction, get_next_rudder_turn
 
 
-def cap_value(value, floor, ceiling):
+def cap_value(value: float, floor: float, ceiling: float) -> float:
     if value > max([ceiling, floor]):
         return max([ceiling, floor])
     elif value < min([ceiling, floor]):
@@ -47,7 +46,11 @@ class Assignment(ABC):
         pass
 
 
-def has_passed_waypoint(prev_wp, cur_wp, vehicle_pos):
+def has_passed_waypoint(
+    prev_wp: tuple[float, float],
+    cur_wp: tuple[float, float],
+    vehicle_pos: tuple[float, float],
+) -> bool:
     # Extract coordinates
     x_prev, y_prev = prev_wp
     x_cur, y_cur = cur_wp
@@ -74,7 +77,7 @@ def get_desired_heading_with_cte_correction(
         current_pos: LatLon,
         target_pos: LatLon,
         initial_bearing_to_target: float,
-        distance_to_target
+        distance_to_target: float,
     ) -> float:
         bearing_to_target = get_relative_bearing(current_pos, target_pos)
 

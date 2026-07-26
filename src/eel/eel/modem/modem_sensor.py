@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import re
-from typing import Union
+
 import serial
 import time
 
@@ -14,18 +14,18 @@ from requests.exceptions import ConnectionError, ConnectTimeout, ReadTimeout
 AT_COMMAND_TIMEOUT_MS = 5000
 
 
-def get_time_with_ms():
+def get_time_with_ms() -> int:
     return int(time.time() * 1000)
 
 
 class ModemSensor(ModemSource):
-    def __init__(self, p="/dev/ttyUSB4", b=115200):
+    def __init__(self, p: str = "/dev/ttyUSB4", b: int = 115200) -> None:
         self.serial_connection = serial.Serial(port=p, baudrate=b)
         self.serial_connection.parity = serial.PARITY_NONE
         self.serial_connection.stopbits = serial.STOPBITS_ONE
         self.serial_connection.bytesize = serial.EIGHTBITS
 
-    def get_response(self, timeout_ms=AT_COMMAND_TIMEOUT_MS):
+    def get_response(self, timeout_ms: int = AT_COMMAND_TIMEOUT_MS) -> str:
         """Reads a response from the modem, reading is done over serial and response can 
         take up 100 milliseconds to be read.
         
@@ -37,7 +37,7 @@ class ModemSensor(ModemSource):
 
         return response
 
-    def send_at_command(self, command):
+    def send_at_command(self, command: str) -> None:
         """Sends a AT command over the serial port connection created by the parent class.
         
         :param command: AT command to be sent to the modem
@@ -47,7 +47,7 @@ class ModemSensor(ModemSource):
         self.serial_connection.reset_input_buffer()
         self.serial_connection.write(composed_message.encode())
     
-    def get_registration_status(self) -> Union[int, None]:
+    def get_registration_status(self) -> int | None:
         """Sends the AT+CREG command to the modem to read the network registration status.
         
             0,0 Not registered, ME is not currently searching a new operator to register to
@@ -75,7 +75,7 @@ class ModemSensor(ModemSource):
 
         return None
 
-    def get_received_signal_strength_indicator(self) -> Union[int, None]:
+    def get_received_signal_strength_indicator(self) -> int | None:
         """Sends the AT+CSQ command to the modem to read the received signal strength indicator.
             The received signal strength indicator is a value 0-31 where 0 is the worst possible signal
             strength and 31 is the best. Possible values are listed in this table
@@ -101,19 +101,17 @@ class ModemSensor(ModemSource):
                 return int(last_number)
         return None
     
-    def ping(self):
+    def ping(self) -> bool:
         google_dns_server_url = "https://8.8.8.8"
         acceptable_response_time = 1.0
 
         try:
             req_response = requests.get(google_dns_server_url, timeout=acceptable_response_time)
-            status_code = req_response.status_code
-        except (ConnectionError, ConnectTimeout, ReadTimeout) as e:
+            status_code: int = req_response.status_code
+        except (ConnectionError, ConnectTimeout, ReadTimeout):
             status_code = 408
 
-        connectivity = status_code == 200
-
-        return connectivity
+        return status_code == 200
 
 
 if __name__ == "__main__":

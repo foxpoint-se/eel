@@ -1,4 +1,4 @@
-from typing import TypedDict, cast
+from typing import TypedDict
 
 from .types import ServoOptions
 from .xy_rudder_sim import XYRudderSim
@@ -35,10 +35,9 @@ def get_xy_rudder(options: ActuatorOptions) -> XYRudder:
     if options["simulate"]:
         return XYRudderSim(
             x_options=default_x_options,
-            y_options=default_y_options,)
-    
-    options = cast(ActuatorOptions, options)
-    
+            y_options=default_y_options,
+        )
+
     return XYRudderWithServos(
         x_options=default_x_options,
         y_options=default_y_options,

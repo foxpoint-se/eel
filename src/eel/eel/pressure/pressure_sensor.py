@@ -1,4 +1,4 @@
-from typing import Union, cast
+from typing import cast
 import serial
 import struct
 import time
@@ -36,7 +36,7 @@ class PressureSensor(PressureSource):
 
     def _get_initial_depth(
         self, retries: int = 10, sleep_time: float = 0.2
-    ) -> Union[float, None]:
+    ) -> float | None:
         for i in range(retries):
             depth = self._get_depth_reading()
             if depth:
@@ -48,7 +48,7 @@ class PressureSensor(PressureSource):
     def _get_depth_as_bytes(self) -> bytes:
         return self.serial_connection.read(FLOAT_SIZE_IN_BYTES)
 
-    def _get_depth_from_bytes(self, value: bytes) -> Union[float, None]:
+    def _get_depth_from_bytes(self, value: bytes) -> float | None:
         if value:
             try:
                 stuff = struct.unpack("f", value)
@@ -59,13 +59,14 @@ class PressureSensor(PressureSource):
                 return None
         return None
 
-    def _get_depth_reading(self) -> Union[float, None]:
+    def _get_depth_reading(self) -> float | None:
         depth_as_bytes = self._get_depth_as_bytes()
         if not depth_as_bytes:
             return None
         return self._get_depth_from_bytes(depth_as_bytes)
 
-    def get_current_depth(self) -> Union[float, None]:
+    def get_current_depth(self) -> float | None:
         depth = self._get_depth_reading()
         if depth and self.atmosphere_offset:
             return depth - self.atmosphere_offset
+        return None

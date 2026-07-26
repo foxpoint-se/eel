@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from typing import Optional
+
 import rclpy
 from rclpy.node import Node
 import math
@@ -12,12 +14,17 @@ PUBLISH_FREQUENCY = 5
 DEPTH_MOVEMENT_TOLERANCE = 0.2  # meters
 
 
-def calculate_center_depth(main_depth, pitch_deg, displacement=0.375):
+def calculate_center_depth(main_depth: float, pitch_deg: float, displacement: float = 0.375) -> float:
     pitch_rad = math.radians(pitch_deg)
     return main_depth - (displacement * math.sin(pitch_rad))
 
 
-def get_depth_velocity(depth, previous_depth, now, previous_depth_at):
+def get_depth_velocity(
+    depth: float,
+    previous_depth: float | None,
+    now: float,
+    previous_depth_at: float | None,
+) -> float:
     if previous_depth is None or previous_depth_at is None:
         return 0.0
     depth_delta = depth - previous_depth
@@ -41,7 +48,7 @@ def get_pressure_sensor(
 
 # example usage: ros2 run eel pressure
 class PressureNode(Node):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("pressure_node")
         self.declare_parameter(SIMULATE_PARAM, False)
         self.should_simulate = bool(self.get_parameter(SIMULATE_PARAM).value)
@@ -57,8 +64,8 @@ class PressureNode(Node):
 
         self.current_pitch = 0.0
 
-        self.last_depth_reading = None
-        self.last_depth_at = None
+        self.last_depth_reading: float | None = None
+        self.last_depth_at: float | None = None
 
         self.create_subscription(ImuStatus, IMU_STATUS, self.handle_imu_msg, 10)
 
@@ -71,10 +78,10 @@ class PressureNode(Node):
             )
         )
 
-    def handle_imu_msg(self, msg: ImuStatus):
+    def handle_imu_msg(self, msg: ImuStatus) -> None:
         self.current_pitch = msg.pitch
 
-    def publish_status(self):
+    def publish_status(self) -> None:
         depth_reading = self.sensor.get_current_depth()
 
         if depth_reading is not None:
@@ -95,7 +102,7 @@ class PressureNode(Node):
             self.publisher.publish(msg)
 
 
-def main(args=None):
+def main(args: Optional[list[str]] = None) -> None:
     rclpy.init(args=args)
     node = PressureNode()
     rclpy.spin(node)

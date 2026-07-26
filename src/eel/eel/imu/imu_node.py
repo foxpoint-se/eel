@@ -1,15 +1,23 @@
 #!/usr/bin/env python3
+from typing import Optional
+
 import rclpy
 from rclpy.node import Node
 from eel_interfaces.msg import ImuStatus, ImuOffsets
 from time import time
 from .imu_sensor import ImuSensor
 from .imu_sim import ImuSimulator
+from .types import CalibrationOffsets
 from ..utils.constants import SIMULATE_PARAM
 from ..utils.topics import IMU_STATUS, IMU_OFFSETS
 
 
-def get_pitch_velocity(pitch, previous_pitch, now, previous_pitch_at):
+def get_pitch_velocity(
+    pitch: float,
+    previous_pitch: float | None,
+    now: float,
+    previous_pitch_at: float | None,
+) -> float:
     if previous_pitch is None or previous_pitch_at is None:
         return 0.0
     pitch_delta = pitch - previous_pitch
@@ -18,7 +26,7 @@ def get_pitch_velocity(pitch, previous_pitch, now, previous_pitch_at):
     return velocity
 
 
-SENSOR_CALIBRATION_OFFSETS = None
+SENSOR_CALIBRATION_OFFSETS: CalibrationOffsets | None = None
 # SENSOR_CALIBRATION_OFFSETS = {
 #     "mag": (193, 80, 84),
 #     "gyr": (-2, -7, 1),
@@ -28,25 +36,27 @@ SENSOR_CALIBRATION_OFFSETS = None
 
 # example usage: ros2 run eel imu
 class ImuNode(Node):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("imu_node", parameter_overrides=[])
         self.declare_parameter(SIMULATE_PARAM, False)
         self.should_simulate = self.get_parameter(SIMULATE_PARAM).value
         self.status_publisher = self.create_publisher(ImuStatus, IMU_STATUS, 10)
         self.offset_publisher = self.create_publisher(ImuOffsets, IMU_OFFSETS, 10)
-        self.previous_pitch = None
-        self.previous_pitch_at = None
+        self.previous_pitch: float | None = None
+        self.previous_pitch_at: float | None = None
 
         # hertz (publications per second)
         self.update_frequency = 5
         self.publish_offsets_freq = 0.5
         self.update_calibration_offsets_freq = 0.2
 
+        sensor: ImuSensor | ImuSimulator
         if not self.should_simulate:
-            self.sensor = ImuSensor()
-
+            sensor = ImuSensor()
         else:
-            self.sensor = ImuSimulator(self)
+            sensor = ImuSimulator(self)
+
+        self.sensor = sensor
 
         self.get_euler = self.sensor.get_euler
         self.get_calibration_status = self.sensor.get_calibration_status
@@ -63,7 +73,7 @@ class ImuNode(Node):
             "{}IMU node started.".format("SIMULATE " if self.should_simulate else "")
         )
 
-    def publish_imu(self):
+    def publish_imu(self) -> None:
         try:
             heading, roll, pitch = self.get_euler()
             sys, gyro, accel, mag = self.get_calibration_status()
@@ -97,7 +107,7 @@ class ImuNode(Node):
         except (OSError, IOError) as err:
             self.get_logger().error(str(err))
 
-    def publish_imu_offsets(self):
+    def publish_imu_offsets(self) -> None:
         imu_offsets_map = self.get_imu_offsets()
 
         msg = ImuOffsets()
@@ -107,12 +117,12 @@ class ImuNode(Node):
 
         self.offset_publisher.publish(msg)
 
-    def write_calibration_offsets(self):
-        if SENSOR_CALIBRATION_OFFSETS:
+    def write_calibration_offsets(self) -> None:
+        if SENSOR_CALIBRATION_OFFSETS is not None:
             self.sensor.set_offset_values(SENSOR_CALIBRATION_OFFSETS)
 
 
-def main(args=None):
+def main(args: Optional[list[str]] = None) -> None:
     rclpy.init(args=args)
     node = ImuNode()
     rclpy.spin(node)

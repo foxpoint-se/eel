@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from time import sleep, time
-from typing import Literal, Union
+from typing import Optional, TypeAlias
 
 import rclpy
 from rclpy.action import ActionServer, CancelResponse, GoalResponse
@@ -23,6 +23,10 @@ from eel_interfaces.action import Navigate
 from eel_interfaces.msg import Coordinate, ImuStatus, DepthControlCmd, PressureStatus
 from std_msgs.msg import Float32
 
+NavigateGoalHandle: TypeAlias = ServerGoalHandle[
+    Navigate.Goal, Navigate.Result, Navigate.Feedback, object
+]
+
 
 TARGET_DISTANCE_LIMIT = 2500
 
@@ -31,10 +35,10 @@ SLEEP_TIME = 1 / UPDATE_FREQUENCY_HZ
 
 
 class NavigationActionServer(Node):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("navigation_action_server", parameter_overrides=[])
         self.logger = self.get_logger()
-        self.current_goal: Union[ServerGoalHandle, None] = None
+        self.current_goal: NavigateGoalHandle | None = None
 
         self._action_server = ActionServer(
             self,
@@ -62,7 +66,7 @@ class NavigationActionServer(Node):
             DepthControlCmd, DEPTH_CONTROL_CMD, 10
         )
 
-        self.current_position: Union[Coordinate, None] = None
+        self.current_position: Coordinate | None = None
         self.distance_to_target = 0.0
         self.bearing_to_target = 0.0
         self.current_heading = 0.0
@@ -98,21 +102,19 @@ class NavigationActionServer(Node):
         self.motor_publisher.publish(motor_msg)
 
     def handle_accepted_callback(
-        self, goal_handle: ServerGoalHandle
-    ) -> Literal[GoalResponse.ACCEPT, GoalResponse.REJECT]:
+        self, goal_handle: NavigateGoalHandle
+    ) -> None:
         if self.current_goal is None:
             self.current_goal = goal_handle
             self.current_goal.execute()
-            return GoalResponse.ACCEPT
         else:
             self.logger.info("Goal in progress. Cancel before asking for another goal.")
-            return GoalResponse.REJECT
 
     def goal_callback(
         self, goal_request: Navigate.Goal
-    ) -> Literal[GoalResponse.ACCEPT, GoalResponse.REJECT]:
+    ) -> GoalResponse:
         if self.current_position is None:
-            self.logger.info("No gps position has been aquired yet, rejecting goal.")
+            self.logger.info("No gps position has been acquired yet, rejecting goal.")
             return GoalResponse.REJECT
 
         distance_to_target = get_2d_distance(
@@ -139,8 +141,8 @@ class NavigationActionServer(Node):
             return GoalResponse.REJECT
 
     def cancel_callback(
-        self, goal_handle: ServerGoalHandle
-    ) -> Literal[CancelResponse.ACCEPT, CancelResponse.REJECT]:
+        self, goal_handle: NavigateGoalHandle
+    ) -> CancelResponse:
         self.logger.info(f"Goal cancel request received, turning off motors.")
         self.current_goal = None
         self.publish_depth_cmd(0.0)
@@ -191,7 +193,7 @@ class NavigationActionServer(Node):
         feedback_msg.distance_to_target = distance_to_target
         self.goal_handle.publish_feedback(feedback_msg)
 
-    def execute_callback(self, goal_handle: ServerGoalHandle) -> Navigate.Result:
+    def execute_callback(self, goal_handle: NavigateGoalHandle) -> Navigate.Result:
         if self.current_position is None:
             raise TypeError("No current position. Cannot do calculations.")
 
@@ -239,7 +241,7 @@ class NavigationActionServer(Node):
         return result
 
 
-def main(args=None):
+def main(args: Optional[list[str]] = None) -> None:
     rclpy.init(args=args)
 
     navigation_action_server = NavigationActionServer()

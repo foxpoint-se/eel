@@ -1,4 +1,4 @@
-from typing import Callable, List, Union
+from typing import Callable, List
 from .common import (
     Coord3d,
     TimedCoord3d,
@@ -25,10 +25,10 @@ class PathRecorder:
         seconds_threshold: float,
         on_new_segment: Callable[[Segment], None],
     ) -> None:
-        self.last_recorded_3d_position = None
+        self.last_recorded_3d_position: TimedCoord3d | None = None
         self.meters_threshold = meters_threshold
         self.seconds_threshold = seconds_threshold
-        self.segment_in_progress: Union[Segment, None] = None
+        self.segment_in_progress: Segment | None = None
         self.finalized_segments: List[Segment] = []
         self.on_new_segment = on_new_segment
 
@@ -106,7 +106,7 @@ class PathRecorder:
     def get_finalized_segments(self) -> List[Segment]:
         return self.finalized_segments
 
-    def get_segment_in_progress(self) -> Union[Segment, None]:
+    def get_segment_in_progress(self) -> Segment | None:
         return self.segment_in_progress
 
     def set_thresholds(self, meters_threshold: float, seconds_threshold: float) -> None:

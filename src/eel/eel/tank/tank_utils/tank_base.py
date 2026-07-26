@@ -34,5 +34,5 @@ class Tank(ABC):
         pass
 
     @abstractmethod
-    def run_motor(self, value) -> None:
+    def run_motor(self, value: float) -> None:
         pass

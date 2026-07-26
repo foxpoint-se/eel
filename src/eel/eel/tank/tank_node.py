@@ -108,21 +108,21 @@ def get_level_velocity(
 
 
 class RunningAverage:
-    def __init__(self, size):
+    def __init__(self, size: int) -> None:
         self.size = size
         self.samples = [0.0] * size
         self.index = 0
 
-    def add_sample(self, value):
+    def add_sample(self, value: float) -> None:
         self.samples[self.index] = value
         self.index = (self.index + 1) % self.size
 
-    def get_average(self):
+    def get_average(self) -> float:
         return sum(self.samples) / self.size
 
 
 class TankNode(Node):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("tank_node", parameter_overrides=[])
         self.declare_parameter(SIMULATE_PARAM, False)
         self.declare_parameter(CMD_TOPIC_PARAM)
@@ -241,11 +241,11 @@ class TankNode(Node):
             )
         )
 
-    def stop_checking_against_target(self):
+    def stop_checking_against_target(self) -> None:
         self.target_level = None
         self.is_autocorrecting = False
 
-    def handle_tank_cmd(self, msg: Float32):
+    def handle_tank_cmd(self, msg: Float32) -> None:
         requested_target_level = msg.data
         target_level = clamp(requested_target_level, LEVEL_FLOOR, LEVEL_CEILING)
 
@@ -316,7 +316,7 @@ class TankNode(Node):
         self.tank.shutdown()
 
 
-def main(args=None):
+def main(args: Optional[list[str]] = None) -> None:
     rclpy.init(args=args)
     node = TankNode()
 

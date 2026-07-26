@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
     for arg in sys.argv[1:]:
         msg = f"{arg}\r".encode("utf-8")
-        logger.info(f"Sending command: {msg}")
+        logger.info("Sending command: %r", msg)
         ser.write(msg)
         resp = ser.read(128)
         logger.info(f"Got response {resp.decode()}")

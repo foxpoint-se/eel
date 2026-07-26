@@ -6,11 +6,11 @@ ROLL_CORRECTION = 0.0
 HEADING_CORRECTION = 0
 
 
-def get_corrected_pitch(pitch: float):
+def get_corrected_pitch(pitch: float) -> float:
     return pitch + PITCH_CORRECTION
 
 
-def get_corrected_roll(roll: float):
+def get_corrected_roll(roll: float) -> float:
     return roll + ROLL_CORRECTION
 
 
@@ -59,7 +59,7 @@ my_calibration = CALIBRATION_1
 
 
 class ImuSensor:
-    def __init__(self):
+    def __init__(self) -> None:
         import adafruit_bno055
         import board
 
@@ -70,14 +70,14 @@ class ImuSensor:
         self.sensor.offsets_gyroscope = (-1, -5, 1)
         self.sensor.offsets_accelerometer = (-1, -32, -30)
 
-    def get_is_calibrated(self):
-        return self.sensor.calibrated or False
+    def get_is_calibrated(self) -> bool:
+        return bool(self.sensor.calibrated)
 
-    def get_calibration_status(self):
+    def get_calibration_status(self) -> tuple[int, int, int, int]:
         sys, gyro, accel, mag = self.sensor.calibration_status
         return sys or 0, gyro or 0, accel or 0, mag or 0
 
-    def get_euler(self):
+    def get_euler(self) -> tuple[float, float, float]:
         heading, roll, pitch = self.sensor.euler
         heading = float(heading or 0)
         heading = get_corrected_heading(heading)
@@ -86,15 +86,16 @@ class ImuSensor:
         return heading, roll, pitch
 
     def get_calibration_offsets(self) -> CalibrationOffsets:
-        offset_mapping = {
-            "mag": self.sensor.offsets_magnetometer,
-            "gyr": self.sensor.offsets_gyroscope,
-            "acc": self.sensor.offsets_accelerometer,
+        mag = self.sensor.offsets_magnetometer
+        gyr = self.sensor.offsets_gyroscope
+        acc = self.sensor.offsets_accelerometer
+        return {
+            "mag": (mag[0], mag[1], mag[2]),
+            "gyr": (gyr[0], gyr[1], gyr[2]),
+            "acc": (acc[0], acc[1], acc[2]),
         }
 
-        return offset_mapping
-
-    def set_offset_values(self, offset_mapping: CalibrationOffsets):
+    def set_offset_values(self, offset_mapping: CalibrationOffsets) -> None:
         self.sensor.offsets_magnetometer = offset_mapping["mag"]
         self.sensor.offsets_gyroscope = offset_mapping["gyr"]
         self.sensor.offsets_accelerometer = offset_mapping["acc"]

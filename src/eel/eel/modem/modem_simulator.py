@@ -1,22 +1,21 @@
-from typing import Union
-
 from rclpy.node import Node
 from eel_interfaces.msg import PressureStatus
 from .modem_source import ModemSource
 from ..utils.topics import PRESSURE_STATUS
 
+
 class ModemSimulator(ModemSource):
-    def __init__(self, parent_node: Node):
+    def __init__(self, parent_node: Node) -> None:
 
         self._current_depth = 0.0
         parent_node.create_subscription(
             PressureStatus, PRESSURE_STATUS, self._handle_pressure_status_msg, 10
         )
 
-    def _handle_pressure_status_msg(self, msg):
+    def _handle_pressure_status_msg(self, msg: PressureStatus) -> None:
         self._current_depth = msg.depth
 
-    def get_received_signal_strength_indicator(self) -> Union[int, None]:
+    def get_received_signal_strength_indicator(self) -> int | None:
         if self._current_depth < 0.1:
             signal_strength = 31
         elif 0.1 < self._current_depth < 0.2:
@@ -26,16 +25,15 @@ class ModemSimulator(ModemSource):
         
         return signal_strength
     
-    def get_registration_status(self) -> Union[int, None]:
+    def get_registration_status(self) -> int | None:
         registration_status = 1 if self._current_depth < 0.2 else 0
         
         return registration_status
 
-    def ping(self):
+    def ping(self) -> bool:
         if self._current_depth < 0.2:
-            connectivity  = True
+            connectivity = True
         else:
-            connectivity= False
+            connectivity = False
 
         return connectivity
-        

@@ -1,7 +1,9 @@
 import time
+from typing import Optional, TypeAlias
 
 import rclpy
 from rclpy.action import ActionServer, GoalResponse
+from rclpy.action.server import ServerGoalHandle
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
@@ -21,9 +23,13 @@ from ..utils.topics import (
 
 UPDATE_FREQUENCY_PER_SEC = 5
 
+DiveGoalHandle: TypeAlias = ServerGoalHandle[
+    Dive.Goal, Dive.Result, Dive.Feedback, object
+]
+
 
 class DiveActionServer(Node):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("dive_action_server")
         self._action_server = ActionServer(
             self,
@@ -60,25 +66,25 @@ class DiveActionServer(Node):
         self.logger = self.get_logger()
         self.logger.info("Dive action server started")
 
-    def handle_imu_msg(self, msg):
+    def handle_imu_msg(self, msg: ImuStatus) -> None:
         self.current_pitch = msg.pitch
         self.new_sensor_data = True
     
-    def handle_pressure_msg(self, msg):
+    def handle_pressure_msg(self, msg: PressureStatus) -> None:
         self.current_depth = msg.depth
     
-    def compute_and_send_rudder_value(self):
+    def compute_and_send_rudder_value(self) -> None:
         self.angle_pid_output = self.compute_new_target_angle()
         self.rudder_pid_output = self.compute_new_rudder_output(self.angle_pid_output)
 
         self.send_rudder_msg(self.rudder_pid_output)
 
-    def send_rudder_msg(self, rudder_value):
+    def send_rudder_msg(self, rudder_value: float) -> None:
         rudder_msg = Float32()
         rudder_msg.data = float(rudder_value)
         self.rudder_publisher.publish(rudder_msg)
 
-    def compute_new_target_angle(self):
+    def compute_new_target_angle(self) -> float:
         pid_angle_output = self.angle_pid_controller.compute(self.current_depth)
 
         # Check if the PID is requesting angles larger then max value
@@ -90,7 +96,7 @@ class DiveActionServer(Node):
         
         return -1 * pid_angle_output
     
-    def compute_new_rudder_output(self, target_angle):
+    def compute_new_rudder_output(self, target_angle: float) -> float:
         self.rudder_pid_controller.update_set_point(target_angle)
         rudder_output = self.rudder_pid_controller.compute(self.current_pitch)
 
@@ -103,7 +109,7 @@ class DiveActionServer(Node):
         
         return rudder_output
 
-    def goal_callback(self, goal_request):
+    def goal_callback(self, goal_request: Dive.Goal) -> GoalResponse:
         # Sanity check for depth and dive that the values are not to large
         depth_target_larger_then_max_depth = goal_request.wanted_depth > self.max_dive_depth_m
         dive_time_larger_then_max_dive_time = self.dive_time > self.max_dive_time_sec
@@ -114,7 +120,7 @@ class DiveActionServer(Node):
         
         return GoalResponse.ACCEPT
 
-    def execute_callback(self, goal_handle):
+    def execute_callback(self, goal_handle: DiveGoalHandle) -> Dive.Result:
         self.depth_target = goal_handle.request.wanted_depth
         self.dive_time = goal_handle.request.dive_time
         self.angle_pid_controller.update_set_point(self.depth_target)
@@ -175,7 +181,7 @@ class DiveActionServer(Node):
         return result
 
 
-def main(args=None):
+def main(args: Optional[list[str]] = None) -> None:
     rclpy.init(args=args)
     dive_action_server = DiveActionServer()
     executor = MultiThreadedExecutor()

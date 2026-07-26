@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from typing import Optional
+
 from .localizer import Localizer
 import rclpy
 from rclpy.node import Node
@@ -30,7 +32,7 @@ def calculate_speed_from_motor_mps(motor_speed: float) -> float:
 
 
 class Localization(Node):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("localization", parameter_overrides=[])
         self.update_frequency_hz = 5
         self.gnss_subscription = self.create_subscription(
@@ -99,7 +101,7 @@ class Localization(Node):
             self.status_publisher.publish(msg)
 
 
-def main(args=None):
+def main(args: Optional[list[str]] = None) -> None:
     rclpy.init(args=args)
     node = Localization()
     rclpy.spin(node)

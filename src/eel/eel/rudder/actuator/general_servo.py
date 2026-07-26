@@ -1,4 +1,3 @@
-from typing import Union
 from gpiozero import Servo
 from gpiozero.pins.pigpio import PiGPIOFactory
 from time import sleep
@@ -8,7 +7,7 @@ from .types import ServoOptions
 logger = get_logger(__name__)
 
 
-def create_pigpio_factory(host: str, retries: int, sleep_time: int) -> Union[PiGPIOFactory, None]:
+def create_pigpio_factory(host: str, retries: int, sleep_time: int) -> PiGPIOFactory | None:
     attempts = 0
     factory = None
     while attempts < retries and factory is None:
@@ -19,7 +18,7 @@ def create_pigpio_factory(host: str, retries: int, sleep_time: int) -> Union[PiG
             logger.info("Could not create pigpio factory, trying again")
             sleep(sleep_time)
         finally:
-            retries += 1
+            attempts += 1
     return factory
 
 
@@ -45,7 +44,7 @@ class RudderServo:
 
     # We want -1 to be left and 1 to be right, but for some reason it has been
     # flipped on the servo. So we just flip it back by setting it to its inverse.
-    def set_value(self, value):
+    def set_value(self, value: float) -> None:
         corrected_value = value + self.offset
 
         if corrected_value > self.cap_max:
@@ -60,17 +59,17 @@ class RudderServo:
 
     # This method will not contain any checks against max/min cap, this should be 
     # handled in the rudder node
-    def set_offset_value(self, value):
+    def set_offset_value(self, value: float) -> None:
         self.offset = value
 
-    def get_offset_value(self):
+    def get_offset_value(self) -> float:
         return self.offset
 
-    def get_cap_min_value(self):
+    def get_cap_min_value(self) -> float:
         return self.cap_min
-    
-    def get_cap_max_value(self):
+
+    def get_cap_max_value(self) -> float:
         return self.cap_max
 
-    def detach(self):
+    def detach(self) -> None:
         self.servo.detach()

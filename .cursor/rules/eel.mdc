@@ -39,3 +39,13 @@ Match the style of nearby code.
 Name: `test__when_<condition>__should_<outcome>` (double underscores).
 
 Prefer **pure unit tests** — extract logic from ROS callbacks/nodes into small functions, then test those. Don’t grow 50-line tests full of mocks; refactor production code until each test is ~10 lines: setup (helpers ok), act, assert.
+
+## Typing
+
+Strict mypy runs on the file list in `pyproject.toml` (`make typecheck`, part of `make test`). Grow that list as files are clean.
+
+**External imports:** incomplete third-party stubs are fine (`ignore_missing_imports`). Prefer **`types-*`** packages on PyPI when they exist (e.g. `types-pyserial`).
+
+**Our boundaries:** type what we control even when the library doesn’t — callback args (`msg: PressureStatus`), returns, params. If a foreign API stays opaque but we use it often, add a local stub under `typings/` or a thin typed wrapper.
+
+**Avoid** `Any`, `cast(...)`, and `# type: ignore` unless they are genuinely the cleanest fix — prefer proper types, generics (`ParamSpec` / `TypeVar`), or fixing stubs first.
