@@ -50,6 +50,8 @@ ros2 run eel imu --ros-args -p simulate:=true
 - **`[pi]`** — GPIO, sensors, actuators (boat hardware)
 - **`[dev]`** — mypy, pytest
 
+Package version lives in root `pyproject.toml`; after a manual bump run `python3 scripts/sync_version.py` to update `setup.py` and `package.xml` files.
+
 Enough for simulation. For hardware, see [Hardware bring-up](#hardware-bring-up) and the `Makefile`.
 
 ### Docker
