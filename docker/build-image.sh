@@ -12,7 +12,16 @@ if [ -z "$1" ]; then
 fi
 
 ROS_DISTRO="$1"
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+EEL_VERSION="$(python3 -c "
+from pathlib import Path
+import sys
+sys.path.insert(0, '${REPO_ROOT}/scripts')
+from sync_version import read_project_version
+print(read_project_version(Path('${REPO_ROOT}') / 'pyproject.toml'))
+")"
 IMAGE_NAME="foxpoint/eel:${ROS_DISTRO}"
+IMAGE_NAME_PINNED="foxpoint/eel:${ROS_DISTRO}-${EEL_VERSION}"
 MODE="local"
 
 if [ "${2:-}" = "--multiarch" ]; then
@@ -44,15 +53,19 @@ ensure_buildx_builder() {
   fi
 }
 
+echo "eel version ${EEL_VERSION}"
+
 if [ "$MODE" = "ci" ]; then
   echo "CI verify build for linux/amd64 and linux/arm64 (no local load)..."
   docker buildx build \
     --platform linux/amd64,linux/arm64 \
     --build-arg ROS_DISTRO="${ROS_DISTRO}" \
+    --build-arg EEL_VERSION="${EEL_VERSION}" \
     -f "${DOCKERFILE}" \
     -t "${IMAGE_NAME}" \
+    -t "${IMAGE_NAME_PINNED}" \
     ..
-  echo "CI verify build succeeded: ${IMAGE_NAME}"
+  echo "CI verify build succeeded: ${IMAGE_NAME} and ${IMAGE_NAME_PINNED}"
   exit 0
 fi
 
@@ -63,11 +76,13 @@ if [ "$MODE" = "multiarch" ]; then
   docker buildx build \
     --platform linux/amd64,linux/arm64 \
     --build-arg ROS_DISTRO="${ROS_DISTRO}" \
+    --build-arg EEL_VERSION="${EEL_VERSION}" \
     -f "${DOCKERFILE}" \
     -t "${IMAGE_NAME}" \
+    -t "${IMAGE_NAME_PINNED}" \
     --load \
     ..
-  echo "Built: ${IMAGE_NAME} (multi-arch)"
+  echo "Built: ${IMAGE_NAME} and ${IMAGE_NAME_PINNED} (multi-arch)"
 else
   ARCH=$(uname -m)
   if [ "$ARCH" = "x86_64" ]; then
@@ -82,9 +97,11 @@ else
   docker buildx build \
     --platform "${PLATFORM}" \
     --build-arg ROS_DISTRO="${ROS_DISTRO}" \
+    --build-arg EEL_VERSION="${EEL_VERSION}" \
     -f "${DOCKERFILE}" \
     -t "${IMAGE_NAME}" \
+    -t "${IMAGE_NAME_PINNED}" \
     --load \
     ..
-  echo "Built and loaded locally: ${IMAGE_NAME} (${PLATFORM})"
+  echo "Built and loaded locally: ${IMAGE_NAME} and ${IMAGE_NAME_PINNED} (${PLATFORM})"
 fi

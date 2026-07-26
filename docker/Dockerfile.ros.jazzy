@@ -1,6 +1,10 @@
 # ROS 2 Jazzy (Ubuntu 24.04) Dockerfile for eel
 ARG ROS_DISTRO=jazzy
+ARG EEL_VERSION=unknown
 FROM --platform=$BUILDPLATFORM ros:${ROS_DISTRO}
+ARG EEL_VERSION
+LABEL org.opencontainers.image.version="${EEL_VERSION}"
+ENV EEL_VERSION=${EEL_VERSION}
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
