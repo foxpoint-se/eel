@@ -39,6 +39,17 @@ ros2 run eel imu --ros-args -p simulate:=true
 
 `make install` sets up pip deps, rosdep, and `pi_ina226` (battery). Source `source_me.sh` in every new shell before `make build`, `make test`, or `ros2 run`. After sourcing, `make setup` re-runs install + build.
 
+**Pip extras** (see `src/eel/setup.py`):
+
+| Where | Install |
+| --- | --- |
+| Pi / local dev | `make install` → `[dev,pi]` |
+| CI (mypy/pytest) | `[dev]` only |
+| Docker image | `[pi]` |
+
+- **`[pi]`** — GPIO, sensors, actuators (boat hardware)
+- **`[dev]`** — mypy, pytest
+
 Enough for simulation. For hardware, see [Hardware bring-up](#hardware-bring-up) and the `Makefile`.
 
 ### Docker

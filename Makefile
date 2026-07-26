@@ -39,7 +39,7 @@ venv:
 	fi
 
 install-py: venv
-	source $(VENV_DIR)/bin/activate; python3 -m pip install -U "src/eel[dev]"
+	source $(VENV_DIR)/bin/activate; python3 -m pip install -U "src/eel[dev,pi]"
 
 install-rosdep:
 	@if [ ! -f /etc/ros/rosdep/sources.list.d/20-default.list ]; then \
