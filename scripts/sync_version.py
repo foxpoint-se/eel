@@ -56,7 +56,7 @@ def read_project_version(pyproject: Path) -> str:
 def sync_setup_py(path: Path, version: str) -> bool:
     text = path.read_text(encoding="utf-8")
     updated, count = re.subn(
-        r'(version\s*=\s*")[^"]+(")',
+        r"""(version\s*=\s*(["']))[^"']+(\2)""",
         rf"\g<1>{version}\2",
         text,
         count=1,
