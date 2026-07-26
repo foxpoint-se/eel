@@ -1,5 +1,6 @@
 # ROS 2 Lyrical (Ubuntu 26.04) Dockerfile for eel
 ARG ROS_DISTRO=lyrical
+ARG EEL_VERSION=unknown
 FROM --platform=$BUILDPLATFORM ros:${ROS_DISTRO}
 
 # Install system dependencies
@@ -47,5 +48,9 @@ RUN source /opt/ros/${ROS_DISTRO}/setup.bash && \
     colcon test --python-testing pytest && colcon test-result --verbose
 
 COPY ./docker/entrypoint.sh /entrypoint.sh
+# Version metadata last so bumps do not invalidate apt/pip/colcon layers
+ARG EEL_VERSION
+LABEL org.opencontainers.image.version="${EEL_VERSION}"
+ENV EEL_VERSION=${EEL_VERSION}
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["bash"]

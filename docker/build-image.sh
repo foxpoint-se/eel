@@ -3,8 +3,8 @@ set -e
 
 # Usage: ./build-image.sh <distro> [--multiarch | --ci]
 # Example: ./build-image.sh humble
-#          ./build-image.sh jazzy --multiarch
-#          ./build-image.sh humble --ci    # CI: multi-arch verify, no --load
+#          ./build-image.sh jazzy --multiarch  # multi-arch verify, no --load
+#          ./build-image.sh humble --ci        # same as --multiarch (CI)
 
 if [ -z "$1" ]; then
   echo "Usage: $0 <ros_distro> [--multiarch | --ci]"
@@ -12,7 +12,20 @@ if [ -z "$1" ]; then
 fi
 
 ROS_DISTRO="$1"
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+EEL_VERSION="$(python3 -c "
+from pathlib import Path
+import sys
+sys.path.insert(0, '${REPO_ROOT}/scripts')
+from sync_version import read_project_version
+print(read_project_version(Path('${REPO_ROOT}') / 'pyproject.toml'))
+")"
+if [[ ! "${EEL_VERSION}" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]]; then
+  echo "error: version '${EEL_VERSION}' is not a valid Docker tag component (use letters, digits, ., _, -)" >&2
+  exit 1
+fi
 IMAGE_NAME="foxpoint/eel:${ROS_DISTRO}"
+IMAGE_NAME_PINNED="foxpoint/eel:${ROS_DISTRO}-${EEL_VERSION}"
 MODE="local"
 
 if [ "${2:-}" = "--multiarch" ]; then
@@ -44,30 +57,36 @@ ensure_buildx_builder() {
   fi
 }
 
+echo "eel version ${EEL_VERSION}"
+
 if [ "$MODE" = "ci" ]; then
   echo "CI verify build for linux/amd64 and linux/arm64 (no local load)..."
   docker buildx build \
     --platform linux/amd64,linux/arm64 \
     --build-arg ROS_DISTRO="${ROS_DISTRO}" \
+    --build-arg EEL_VERSION="${EEL_VERSION}" \
     -f "${DOCKERFILE}" \
     -t "${IMAGE_NAME}" \
+    -t "${IMAGE_NAME_PINNED}" \
     ..
-  echo "CI verify build succeeded: ${IMAGE_NAME}"
+  echo "CI verify build succeeded: ${IMAGE_NAME} and ${IMAGE_NAME_PINNED}"
   exit 0
 fi
 
 ensure_buildx_builder
 
 if [ "$MODE" = "multiarch" ]; then
-  echo "Building multi-arch image for amd64 and arm64..."
+  # Multi-platform images cannot be --load'ed into the local docker store.
+  echo "Multi-arch verify build for linux/amd64 and linux/arm64 (no local load)..."
   docker buildx build \
     --platform linux/amd64,linux/arm64 \
     --build-arg ROS_DISTRO="${ROS_DISTRO}" \
+    --build-arg EEL_VERSION="${EEL_VERSION}" \
     -f "${DOCKERFILE}" \
     -t "${IMAGE_NAME}" \
-    --load \
+    -t "${IMAGE_NAME_PINNED}" \
     ..
-  echo "Built: ${IMAGE_NAME} (multi-arch)"
+  echo "Multi-arch verify succeeded: ${IMAGE_NAME} and ${IMAGE_NAME_PINNED}"
 else
   ARCH=$(uname -m)
   if [ "$ARCH" = "x86_64" ]; then
@@ -82,9 +101,11 @@ else
   docker buildx build \
     --platform "${PLATFORM}" \
     --build-arg ROS_DISTRO="${ROS_DISTRO}" \
+    --build-arg EEL_VERSION="${EEL_VERSION}" \
     -f "${DOCKERFILE}" \
     -t "${IMAGE_NAME}" \
+    -t "${IMAGE_NAME_PINNED}" \
     --load \
     ..
-  echo "Built and loaded locally: ${IMAGE_NAME} (${PLATFORM})"
+  echo "Built and loaded locally: ${IMAGE_NAME} and ${IMAGE_NAME_PINNED} (${PLATFORM})"
 fi

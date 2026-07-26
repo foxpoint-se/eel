@@ -63,6 +63,8 @@ cd docker
 ./build-image.sh jazzy   # or: humble, lyrical
 ```
 
+Builds and tags both `foxpoint/eel:<distro>` (moving) and `foxpoint/eel:<distro>-<version>` (pinned from root `pyproject.toml`). Compose / day-to-day can keep using `:jazzy`; pin a release with e.g. `:jazzy-0.1.0`.
+
 Single node in simulation:
 
 ```bash
