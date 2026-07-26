@@ -12,7 +12,6 @@ from rclpy.task import Future
 from rclpy.type_support import GetResultServiceResponse
 
 from eel_interfaces.action import Navigate
-from eel_interfaces.action._navigate import _Navigate_Impl
 from eel_interfaces.msg import (
     NavigationStatus,
     NavigationMission,
@@ -36,7 +35,7 @@ from ..utils.constants import NavigationMissionStatus
 from .common import get_2d_distance_from_coords
 
 NavigateGoalHandle: TypeAlias = ClientGoalHandle[
-    Navigate.Goal, Navigate.Result, Navigate.Feedback, _Navigate_Impl
+    Navigate.Goal, Navigate.Result, Navigate.Feedback, object
 ]
 SendGoalFuture: TypeAlias = Future[NavigateGoalHandle]
 GetResultFuture: TypeAlias = Future[GetResultServiceResponse[Navigate.Result]]

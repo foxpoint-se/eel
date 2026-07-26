@@ -1,5 +1,5 @@
 import time
-from typing import Optional
+from typing import Optional, TypeAlias
 
 import rclpy
 from rclpy.action import ActionServer, GoalResponse
@@ -12,7 +12,6 @@ from std_msgs.msg import Float32
 from ..utils.pid_controller import PidController
 
 from eel_interfaces.action import Dive
-from eel_interfaces.action._dive import _Dive_Impl
 from eel_interfaces.msg import ImuStatus, PressureStatus
 
 from ..utils.topics import (
@@ -23,6 +22,10 @@ from ..utils.topics import (
 
 
 UPDATE_FREQUENCY_PER_SEC = 5
+
+DiveGoalHandle: TypeAlias = ServerGoalHandle[
+    Dive.Goal, Dive.Result, Dive.Feedback, object
+]
 
 
 class DiveActionServer(Node):
@@ -117,9 +120,7 @@ class DiveActionServer(Node):
         
         return GoalResponse.ACCEPT
 
-    def execute_callback(
-        self, goal_handle: ServerGoalHandle[Dive.Goal, Dive.Result, Dive.Feedback, _Dive_Impl]
-    ) -> Dive.Result:
+    def execute_callback(self, goal_handle: DiveGoalHandle) -> Dive.Result:
         self.depth_target = goal_handle.request.wanted_depth
         self.dive_time = goal_handle.request.dive_time
         self.angle_pid_controller.update_set_point(self.depth_target)

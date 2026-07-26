@@ -8,10 +8,9 @@ from rclpy.task import Future
 from rclpy.type_support import GetResultServiceResponse
 
 from eel_interfaces.action import Dive
-from eel_interfaces.action._dive import _Dive_Impl
 
 DiveGoalHandle: TypeAlias = ClientGoalHandle[
-    Dive.Goal, Dive.Result, Dive.Feedback, _Dive_Impl
+    Dive.Goal, Dive.Result, Dive.Feedback, object
 ]
 SendGoalFuture: TypeAlias = Future[DiveGoalHandle]
 GetResultFuture: TypeAlias = Future[GetResultServiceResponse[Dive.Result]]

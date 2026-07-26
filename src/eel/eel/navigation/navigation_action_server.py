@@ -20,12 +20,11 @@ from ..utils.topics import (
 )
 
 from eel_interfaces.action import Navigate
-from eel_interfaces.action._navigate import _Navigate_Impl
 from eel_interfaces.msg import Coordinate, ImuStatus, DepthControlCmd, PressureStatus
 from std_msgs.msg import Float32
 
 NavigateGoalHandle: TypeAlias = ServerGoalHandle[
-    Navigate.Goal, Navigate.Result, Navigate.Feedback, _Navigate_Impl
+    Navigate.Goal, Navigate.Result, Navigate.Feedback, object
 ]
 
 
