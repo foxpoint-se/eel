@@ -6,7 +6,23 @@ on:
   pull_request:
 
 jobs:
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Install dev deps and run mypy
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "src/eel[dev]"
+          make test-ci
+
   build:
+    needs: typecheck
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -29,19 +45,17 @@ jobs:
           tags: foxpoint/eel:${{ matrix.ros_distro }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-    outputs:
-      status: ${{ job.status }}
 
   notify:
     if: ${{ github.event_name == 'push' }}
     runs-on: ubuntu-latest
-    needs: build
+    needs: [typecheck, build]
     steps:
       - uses: sarisia/actions-status-discord@v1.16.0
         if: always()
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK_BUILD_CHANNEL }}
-          status: ${{ needs.build.outputs.status == 'success' && 'success' || 'failure' }}
-          title: "Docker build & test Eel (humble, jazzy, lyrical)"
+          status: ${{ (needs.typecheck.result == 'success' && needs.build.result == 'success') && 'success' || 'failure' }}
+          title: "Eel CI (typecheck + humble, jazzy, lyrical)"
           username: GitHub Actions
           avatar_url: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"

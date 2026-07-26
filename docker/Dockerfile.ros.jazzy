@@ -32,22 +32,20 @@ RUN python3 -m pip install --break-system-packages --no-cache-dir \
     "git+https://github.com/e71828/pi_ina226.git@ccbaa21c1439f0c9728ef838162f4a18638e21dc"
 
 WORKDIR /eel
-COPY pyproject.toml Makefile ./
-COPY typings ./typings
 COPY ./src ./src
 
 RUN source /opt/ros/${ROS_DISTRO}/setup.bash && \
     rosdep install --from-paths src --ignore-src -r -y
 
-RUN python3 -m pip install --break-system-packages --no-cache-dir "src/eel[dev]" --ignore-installed librt
+# Install Python deps into the system Python (no venv in the image)
+RUN python3 -m pip install --break-system-packages --no-cache-dir src/eel
 
 RUN source /opt/ros/${ROS_DISTRO}/setup.bash && \
     colcon build --symlink-install
 
 RUN source /opt/ros/${ROS_DISTRO}/setup.bash && \
-    source install/setup.bash && \
-    make test-ci
+    colcon test --python-testing pytest && colcon test-result --verbose
 
 COPY ./docker/entrypoint.sh /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
-CMD ["bash"] 
+CMD ["bash"]
