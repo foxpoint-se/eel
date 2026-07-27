@@ -137,30 +137,44 @@ def test__when_release_notes_have_features_after_fixes__should_prioritize_featur
 
 
 def test__when_prioritized_release_notes_truncated__should_keep_feature_visible() -> None:
-    notes = """## v1.1.0 (2026-07-27)
+    long_fix = "- Fix something lengthy in the subsystem\n  ([`deadbeef`](https://github.com/example/commit/deadbeef))\n\n"
+    notes = f"""## v1.1.0 (2026-07-27)
 
 ### Bug Fixes
 
-- Harden Discord notify for edge cases
-  ([`a524bae`](https://github.com/example/commit/a524bae))
-
-- Sanitize Discord mentions and escape link labels
-  ([`c82d253`](https://github.com/example/commit/c82d253))
-
-- Use lowercase status for Discord action input
-  ([`de71305`](https://github.com/example/commit/de71305))
-
+{long_fix * 12}
 ### Features
 
 - Improve Discord CI notify for releases
   ([`8082e3a`](https://github.com/example/commit/8082e3a))
 """
+    prioritized = ci_discord_message.prioritize_release_notes(notes)
+    assert len(prioritized) > ci_discord_message.NOTES_MAX_LEN
+
     summary = ci_discord_message.truncate(
-        ci_discord_message.prioritize_release_notes(notes),
+        prioritized,
         ci_discord_message.NOTES_MAX_LEN,
     )
 
+    assert summary.endswith("…")
+    assert len(summary) <= ci_discord_message.NOTES_MAX_LEN
     assert "Improve Discord CI notify for releases" in summary
+
+
+def test__when_unrecognized_sections__should_preserve_relative_order() -> None:
+    notes = """## v1.0.0
+
+### Chores
+
+- chore a
+
+### Documentation
+
+- docs b
+"""
+    ordered = ci_discord_message.prioritize_release_notes(notes)
+
+    assert ordered.index("### Chores") < ordered.index("### Documentation")
 
 
 def test__when_text_has_discord_mentions__should_neutralize() -> None:

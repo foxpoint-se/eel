@@ -55,8 +55,8 @@ def escape_markdown_link_label(text: str) -> str:
     return text.replace("\\", "\\\\").replace("[", "\\[").replace("]", "\\]")
 
 
-def _section_sort_key(name: str) -> tuple[int, str]:
-    return (_SECTION_ORDER.get(name.lower(), 99), name.lower())
+def _section_sort_key(name: str) -> int:
+    return _SECTION_ORDER.get(name.lower(), 99)
 
 
 def prioritize_release_notes(notes: str) -> str:
