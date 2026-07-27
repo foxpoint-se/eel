@@ -78,7 +78,7 @@ typecheck-core:
 
 typecheck: check-sourced typecheck-core		## Run mypy on the eel package
 
-LINT_PATHS := src/eel/eel src/eel_bringup scripts tests
+LINT_PATHS := src/eel/eel src/eel/test src/eel_bringup scripts tests
 
 lint:		## Run ruff lint + format check (no auto-fix)
 	ruff check $(LINT_PATHS)
