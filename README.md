@@ -48,7 +48,14 @@ ros2 run eel imu --ros-args -p simulate:=true
 | Docker image | `[pi]` |
 
 - **`[pi]`** — GPIO, sensors, actuators (boat hardware)
-- **`[dev]`** — mypy, pytest
+- **`[dev]`** — mypy, pytest, ruff
+
+**Lint** (ruff — check + format; same paths as CI):
+
+```bash
+make lint       # check only
+make fix-lint   # auto-fix, then re-run make test
+```
 
 Package version lives in root `pyproject.toml`. After a manual bump, run `python3 scripts/sync_version.py` to update `setup.py` and `package.xml` files.
 
