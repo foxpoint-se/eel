@@ -4,10 +4,11 @@ from typing import Callable, Optional
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float32
-from .motor_sim import MotorSimulator
-from ..utils.topics import MOTOR_CMD
+
 from ..utils.constants import SIMULATE_PARAM
+from ..utils.topics import MOTOR_CMD
 from ..utils.utils import clamp
+from .motor_sim import MotorSimulator
 
 
 class Motor(Node):
@@ -16,9 +17,7 @@ class Motor(Node):
         self.declare_parameter(SIMULATE_PARAM, False)
         self.should_simulate = self.get_parameter(SIMULATE_PARAM).value
 
-        self.motor_subscription = self.create_subscription(
-            Float32, MOTOR_CMD, self.handle_motor_msg, 10
-        )
+        self.motor_subscription = self.create_subscription(Float32, MOTOR_CMD, self.handle_motor_msg, 10)
 
         stop: Callable[[], None]
         forward: Callable[[float], None]
@@ -40,9 +39,7 @@ class Motor(Node):
         self.forward = forward
         self.backward = backward
 
-        self.get_logger().info(
-            "{}Motor node started.".format("SIMULATE " if self.should_simulate else "")
-        )
+        self.get_logger().info("{}Motor node started.".format("SIMULATE " if self.should_simulate else ""))
 
     def handle_motor_msg(self, msg: Float32) -> None:
         motor_value = clamp(msg.data, -1, 1)

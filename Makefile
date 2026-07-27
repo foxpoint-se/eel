@@ -72,19 +72,19 @@ setup: check-sourced		## Install deps and build (source source_me.sh first)
 install-voltage-sensor: venv
 	source $(VENV_DIR)/bin/activate; python3 -m pip install -U "$(PI_INA226_GIT)"
 
-.PHONY: typecheck typecheck-core lint lint-fix test-checks test-integration test test-ci
+.PHONY: typecheck typecheck-core lint fix-lint test-checks test-integration test test-ci
 typecheck-core:
 	python3 -m mypy
 
 typecheck: check-sourced typecheck-core		## Run mypy on the eel package
 
-LINT_PATHS := src/eel/eel scripts tests
+LINT_PATHS := src/eel/eel src/eel_bringup scripts tests
 
 lint:		## Run ruff lint + format check (no auto-fix)
 	ruff check $(LINT_PATHS)
 	ruff format --check $(LINT_PATHS)
 
-lint-fix:		## Apply ruff lint fixes and formatting
+fix-lint:		## Apply ruff lint fixes and formatting
 	ruff check --fix $(LINT_PATHS)
 	ruff format $(LINT_PATHS)
 

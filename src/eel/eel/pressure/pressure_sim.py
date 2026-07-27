@@ -1,12 +1,14 @@
 import random
-from math import tan, radians
+from math import radians, tan
+from time import time
 
 from rclpy.node import Node
-from eel_interfaces.msg import TankStatus, ImuStatus
 from std_msgs.msg import Float32
-from time import time
+
+from eel_interfaces.msg import ImuStatus, TankStatus
+
+from ..utils.topics import FRONT_TANK_STATUS, IMU_STATUS, MOTOR_CMD, REAR_TANK_STATUS
 from .pressure_source import PressureSource
-from ..utils.topics import FRONT_TANK_STATUS, REAR_TANK_STATUS, IMU_STATUS, MOTOR_CMD
 
 NEUTRAL_LEVEL = 0.5
 NEUTRAL_TOLERANCE = 0.02
@@ -23,9 +25,7 @@ def should_raise_oserror() -> bool:
     return random.random() < OS_ERROR_RATE
 
 
-def get_neutral_offset(
-    tank_level: float, neutral_level: float, neutral_tolerance: float
-) -> float:
+def get_neutral_offset(tank_level: float, neutral_level: float, neutral_tolerance: float) -> float:
     neutral_ceiling = neutral_level + neutral_tolerance
     neutral_floor = neutral_level - neutral_tolerance
     if tank_level < neutral_floor:
@@ -41,9 +41,7 @@ def get_average_bouyancy(
     neutral_level: float,
     neutral_tolerance: float,
 ) -> float:
-    front_offset = get_neutral_offset(
-        front_tank_level, neutral_level, neutral_tolerance
-    )
+    front_offset = get_neutral_offset(front_tank_level, neutral_level, neutral_tolerance)
     rear_offset = get_neutral_offset(rear_tank_level, neutral_level, neutral_tolerance)
     offset_average = (front_offset + rear_offset) / 2
     return offset_average
@@ -71,20 +69,12 @@ def cap_depth(depth: float, min_depth: float, max_depth: float) -> float:
 
 class PressureSensorSimulator(PressureSource):
     def __init__(self, parent_node: Node) -> None:
-        parent_node.create_subscription(
-            TankStatus, FRONT_TANK_STATUS, self._handle_front_tank_msg, 10
-        )
-        parent_node.create_subscription(
-            TankStatus, REAR_TANK_STATUS, self._handle_rear_tank_msg, 10
-        )
+        parent_node.create_subscription(TankStatus, FRONT_TANK_STATUS, self._handle_front_tank_msg, 10)
+        parent_node.create_subscription(TankStatus, REAR_TANK_STATUS, self._handle_rear_tank_msg, 10)
 
-        parent_node.create_subscription(
-            ImuStatus, IMU_STATUS, self._handle_imu_msg, 10
-        )
+        parent_node.create_subscription(ImuStatus, IMU_STATUS, self._handle_imu_msg, 10)
 
-        parent_node.create_subscription(
-            Float32, MOTOR_CMD, self.handle_motor_msg, 10
-        )
+        parent_node.create_subscription(Float32, MOTOR_CMD, self.handle_motor_msg, 10)
 
         self._last_updated_at = time()
         self._current_motor_speed = 0.0
@@ -112,17 +102,16 @@ class PressureSensorSimulator(PressureSource):
         self._calculate_depth()
 
     def _calculate_depth(self) -> None:
-        average_bouyancy = get_average_bouyancy(
-            self._front_tank_level,
-            self._rear_tank_level,
-            NEUTRAL_LEVEL,
-            NEUTRAL_TOLERANCE,
-        )
         # NOTE: setting to negative here, so it will float up when motor not running
+        # average_bouyancy = get_average_bouyancy(
+        #     self._front_tank_level,
+        #     self._rear_tank_level,
+        #     NEUTRAL_LEVEL,
+        #     NEUTRAL_TOLERANCE,
+        # )
         tank_velocity = -0.05  # get_velocity(TERMINAL_VELOCITY_MPS, average_bouyancy)
         pitch_speed_velocity = (
-            get_pitch_speed_velocity(TERMINAL_VELOCITY_MPS, self._current_pitch)
-            * self._current_motor_speed
+            get_pitch_speed_velocity(TERMINAL_VELOCITY_MPS, self._current_pitch) * self._current_motor_speed
         )
         velocity = tank_velocity + pitch_speed_velocity
 

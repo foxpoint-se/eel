@@ -1,8 +1,10 @@
-from typing import cast
-import serial
 import struct
 import time
+from typing import cast
+
+import serial
 from rclpy.node import Node
+
 from .pressure_source import PressureSource
 
 FLOAT_SIZE_IN_BYTES = 4
@@ -14,9 +16,7 @@ class PressureSensor(PressureSource):
 
         self.serial_connection = serial.Serial(serial_port, timeout=0)
 
-        self.logger.info(
-            f"{self.serial_connection.in_waiting} bytes in buffer, flushing now."
-        )
+        self.logger.info(f"{self.serial_connection.in_waiting} bytes in buffer, flushing now.")
 
         self.serial_connection.reset_input_buffer()
         self.serial_connection.reset_output_buffer()
@@ -26,17 +26,11 @@ class PressureSensor(PressureSource):
         self.atmosphere_offset = self._get_initial_depth(retries=number_of_retries)
 
         if not self.atmosphere_offset:
-            raise Exception(
-                f"Could not determine atmosphere offset after {number_of_retries} retries."
-            )
+            raise Exception(f"Could not determine atmosphere offset after {number_of_retries} retries.")
 
-        self.logger.info(
-            f"Sensor initialized, fluid density set to 997 km/m3, offset is {self.atmosphere_offset} m"
-        )
+        self.logger.info(f"Sensor initialized, fluid density set to 997 km/m3, offset is {self.atmosphere_offset} m")
 
-    def _get_initial_depth(
-        self, retries: int = 10, sleep_time: float = 0.2
-    ) -> float | None:
+    def _get_initial_depth(self, retries: int = 10, sleep_time: float = 0.2) -> float | None:
         for i in range(retries):
             depth = self._get_depth_reading()
             if depth:

@@ -189,11 +189,7 @@ def build_discord_payload(
         )
 
     version_note = f" (still v{version})" if version else ""
-    body = (
-        f"{subtitle}\n\n"
-        f"Build succeeded{version_note}\n"
-        f"{DISTROS_NOTE}"
-    )
+    body = f"{subtitle}\n\nBuild succeeded{version_note}\n{DISTROS_NOTE}"
     return DiscordPayload(
         title="Eel CI — no new version",
         description=body,

@@ -1,7 +1,8 @@
-import serial
+import threading
 import time
 from typing import Callable, Optional
-import threading
+
+import serial
 
 SLEEP_TIME = 0.01
 

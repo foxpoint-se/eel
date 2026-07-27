@@ -1,6 +1,5 @@
+from eel.data_logger.common import Coord3d, Segment, TimedCoord3d
 from eel.data_logger.data_recorder import PathRecorder
-from eel.data_logger.common import Coord3d, TimedCoord3d, Segment
-
 from geopy import distance
 
 

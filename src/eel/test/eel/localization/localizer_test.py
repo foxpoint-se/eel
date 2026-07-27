@@ -1,6 +1,7 @@
 import math
 import time
-from eel.localization.localizer import Localizer, LatLon
+
+from eel.localization.localizer import LatLon, Localizer
 
 
 def test__when_instantiated__should_not_have_a_position() -> None:

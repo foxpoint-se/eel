@@ -71,6 +71,7 @@ def get_simulation_pid_settings() -> tuple[float, float, float, float]:
     pitch_Tu = 28.0
     return depth_Ku, depth_Tu, pitch_Ku, pitch_Tu
 
+
 def get_production_pid_settings() -> tuple[float, float, float, float]:
     depth_Ku = 0.0
     depth_Tu = 0.0
@@ -87,9 +88,7 @@ def get_Kd(Kp: float, Td: float) -> float:
     return Kp * Td
 
 
-def lookup_zieglernichols_gains(
-    Ku: float, Tu: float, pid_type: str
-) -> tuple[float, float, float]:
+def lookup_zieglernichols_gains(Ku: float, Tu: float, pid_type: str) -> tuple[float, float, float]:
     if pid_type == "classic_PID":
         Kp = 0.6 * Ku
         Ti = Tu / 2

@@ -1,11 +1,12 @@
 from typing import Callable, List
-from .common import (
-    Coord3d,
-    TimedCoord3d,
-    Segment,
-)
+
 from ..utils.nav import (
     get_distance_in_meters,
+)
+from .common import (
+    Coord3d,
+    Segment,
+    TimedCoord3d,
 )
 
 

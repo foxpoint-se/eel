@@ -1,5 +1,6 @@
 import pynmea2
 from rclpy.logging import get_logger
+
 from ..utils.serial_helpers import SerialReaderWriter
 
 logger = get_logger(__name__)
@@ -10,9 +11,7 @@ class GnssSensor:
         self.current_lat: float | None = None
         self.current_lon: float | None = None
         # TODO: remove this comment if we don't seem to have problem with timeout=0
-        self.serial = SerialReaderWriter(
-            serial_port, baudrate=9600, on_message=self.handle_message
-        )
+        self.serial = SerialReaderWriter(serial_port, baudrate=9600, on_message=self.handle_message)
 
     def handle_message(self, message: str) -> None:
         # TODO: remove this comment if GGA seems to work instead of GPRMC

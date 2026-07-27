@@ -4,6 +4,7 @@ from .battery_utils import calculate_voltage_percent
 class BatterySensor:
     def __init__(self) -> None:
         import logging
+
         from ina226 import INA226
 
         self.ina = INA226(busnum=1, max_expected_amps=16, log_level=logging.INFO)

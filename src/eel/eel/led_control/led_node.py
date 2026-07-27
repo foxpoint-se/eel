@@ -4,12 +4,11 @@ from typing import Optional
 import rclpy
 from rclpy.node import Node
 
-from .led_control import LEDControl
-from ..utils.topics import NAVIGATION_STATUS
-from ..utils.constants import NavigationMissionStatus
-
 from eel_interfaces.msg import NavigationStatus
 
+from ..utils.constants import NavigationMissionStatus
+from ..utils.topics import NAVIGATION_STATUS
+from .led_control import LEDControl
 
 PULSE_COUNT_MAP = {
     NavigationMissionStatus.WAITING_FOR_MISSION.value: 2,

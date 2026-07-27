@@ -1,20 +1,20 @@
-from launch import LaunchDescription
-
 import os
 import sys
+
+from launch import LaunchDescription
 
 # NOTE: workaround to make relative imports work
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(dir_path)
-from common import (
-    create_rudder_node,
+from common import (  # noqa: E402
     create_battery_node,
     create_gnss_node,
     create_localization_node,
     create_motor_node,
-    create_tank_node,
-    create_navigation_node,
     create_navigation_client_node,
+    create_navigation_node,
+    create_rudder_node,
+    create_tank_node,
 )
 
 

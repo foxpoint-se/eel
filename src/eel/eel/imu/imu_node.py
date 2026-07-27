@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
+from time import time
 from typing import Optional
 
 import rclpy
 from rclpy.node import Node
-from eel_interfaces.msg import ImuStatus, ImuOffsets
-from time import time
+
+from eel_interfaces.msg import ImuOffsets, ImuStatus
+
+from ..utils.constants import SIMULATE_PARAM
+from ..utils.topics import IMU_OFFSETS, IMU_STATUS
 from .imu_sensor import ImuSensor
 from .imu_sim import ImuSimulator
 from .types import CalibrationOffsets
-from ..utils.constants import SIMULATE_PARAM
-from ..utils.topics import IMU_STATUS, IMU_OFFSETS
 
 
 def get_pitch_velocity(
@@ -66,12 +68,14 @@ class ImuNode(Node):
         self.updater = self.create_timer(1.0 / self.update_frequency, self.publish_imu)
 
         # TODO: clean up the updating stuff. we'll just go with hard-coded constructor for now.
-        # self.imu_offsets_updater = self.create_timer(1.0 / self.publish_offsets_freq, self.publish_imu_offsets)
-        # self.imu_offsets_writer = self.create_timer(1.0 / self.update_calibration_offsets_freq, self.write_calibration_offsets)
+        # self.imu_offsets_updater = self.create_timer(
+        #     1.0 / self.publish_offsets_freq, self.publish_imu_offsets
+        # )
+        # self.imu_offsets_writer = self.create_timer(
+        #     1.0 / self.update_calibration_offsets_freq, self.write_calibration_offsets
+        # )
 
-        self.get_logger().info(
-            "{}IMU node started.".format("SIMULATE " if self.should_simulate else "")
-        )
+        self.get_logger().info("{}IMU node started.".format("SIMULATE " if self.should_simulate else ""))
 
     def publish_imu(self) -> None:
         try:
@@ -92,9 +96,7 @@ class ImuNode(Node):
 
             pitch_to_send = pitch
 
-            pitch_velocity = get_pitch_velocity(
-                pitch_to_send, self.previous_pitch, now, self.previous_pitch_at
-            )
+            pitch_velocity = get_pitch_velocity(pitch_to_send, self.previous_pitch, now, self.previous_pitch_at)
 
             msg.pitch = pitch_to_send
             msg.pitch_velocity = pitch_velocity

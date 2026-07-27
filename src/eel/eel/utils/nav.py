@@ -3,9 +3,7 @@ import math
 EARTH_RADIUS = 6371000
 
 
-def get_distance_in_meters(
-    lat_1: float, lon_1: float, lat_2: float, lon_2: float
-) -> float:
+def get_distance_in_meters(lat_1: float, lon_1: float, lat_2: float, lon_2: float) -> float:
     """Given two positions as longitude and latitude calculates the distance between the two positions in meters.
 
     :param lat_1: Latitude for first position in signed decimal format
@@ -19,11 +17,9 @@ def get_distance_in_meters(
     delta_lat_rad = (lat_1 - lat_2) * (math.pi / 180.0)
     delta_long_rad = (lon_1 - lon_2) * (math.pi / 180.0)
 
-    a = math.sin(delta_lat_rad / 2.0) * math.sin(delta_lat_rad / 2.0) + math.cos(
-        lat_1_rad
-    ) * math.cos(lat_2_rad) * math.sin(delta_long_rad / 2.0) * math.sin(
-        delta_long_rad / 2.0
-    )
+    a = math.sin(delta_lat_rad / 2.0) * math.sin(delta_lat_rad / 2.0) + math.cos(lat_1_rad) * math.cos(
+        lat_2_rad
+    ) * math.sin(delta_long_rad / 2.0) * math.sin(delta_long_rad / 2.0)
 
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
     distance = EARTH_RADIUS * c
@@ -31,9 +27,7 @@ def get_distance_in_meters(
     return distance
 
 
-def get_relative_bearing_in_degrees(
-    lat_1: float, lon_1: float, lat_2: float, lon_2: float
-) -> float:
+def get_relative_bearing_in_degrees(lat_1: float, lon_1: float, lat_2: float, lon_2: float) -> float:
     """Given two positions as longitude and latitude calculates the bearing between the two positions in meters.
 
     :param lat_1: Latitude for first position in signed decimal format
@@ -47,9 +41,7 @@ def get_relative_bearing_in_degrees(
     delta_long_rad = (lon_1 - lon_2) * (math.pi / 180.0)
 
     y = math.sin(delta_long_rad) * math.cos(lat_2_rad)
-    x = math.cos(lat_1_rad) * math.sin(lat_2_rad) - math.sin(lat_1_rad) * math.cos(
-        lat_2_rad
-    ) * math.cos(delta_long_rad)
+    x = math.cos(lat_1_rad) * math.sin(lat_2_rad) - math.sin(lat_1_rad) * math.cos(lat_2_rad) * math.cos(delta_long_rad)
 
     bearing = math.atan2(y, x) * (180.0 / math.pi)
     true_bearing = bearing * -1 if bearing < 0 else 360.0 - bearing
@@ -82,16 +74,10 @@ def get_next_rudder_turn(current_heading: float, target_heading: float) -> float
     :return: -1.0 for left and 1.0 for right, and all values in between.
     """
     closest_angle_offset = abs(target_heading - current_heading) % 360
-    closest_angle_offset = (
-        360 - closest_angle_offset
-        if closest_angle_offset > 180
-        else closest_angle_offset
-    )
+    closest_angle_offset = 360 - closest_angle_offset if closest_angle_offset > 180 else closest_angle_offset
 
     proportional_offset = closest_angle_offset / 180.0
-    rudder_adjustment = (
-        1 if abs(proportional_offset) > 0.1 else (proportional_offset * 3)
-    )
+    rudder_adjustment = 1 if abs(proportional_offset) > 0.1 else (proportional_offset * 3)
     direction = get_closest_turn_direction(current_heading, target_heading)
     return float(rudder_adjustment * direction)
 

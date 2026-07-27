@@ -21,8 +21,9 @@ Implementation Notes
 """
 
 import time
-import board
+
 import adafruit_bno055
+import board
 
 
 # pylint: disable=too-few-public-methods

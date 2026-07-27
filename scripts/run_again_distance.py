@@ -7,8 +7,9 @@
 # Will print the sensed range/distance every second.
 
 import time
-import board
+
 import adafruit_vl53l1x
+import board
 
 i2c = board.I2C()
 

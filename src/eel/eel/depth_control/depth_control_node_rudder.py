@@ -3,23 +3,23 @@ from typing import Optional
 
 import rclpy
 from rclpy.node import Node
-from ..utils.pid_controller import PidController
 from std_msgs.msg import Float32
 
 from eel_interfaces.msg import (
-    ImuStatus,
-    PressureStatus,
     DepthControlCmd,
     DepthControlStatus,
+    ImuStatus,
+    PressureStatus,
 )
+
+from ..utils.pid_controller import PidController
 from ..utils.topics import (
+    DEPTH_CONTROL_CMD,
+    DEPTH_CONTROL_STATUS,
     IMU_STATUS,
     PRESSURE_STATUS,
     RUDDER_Y_CMD,
-    DEPTH_CONTROL_CMD,
-    DEPTH_CONTROL_STATUS,
 )
-
 
 UPDATE_FREQUENCY = 5
 
@@ -42,17 +42,11 @@ class DepthControlNode(Node):
         self.current_depth = 0.0
 
         self.create_subscription(ImuStatus, IMU_STATUS, self.handle_imu_msg, 10)
-        self.create_subscription(
-            PressureStatus, PRESSURE_STATUS, self.handle_pressure_msg, 10
-        )
-        self.create_subscription(
-            DepthControlCmd, DEPTH_CONTROL_CMD, self.handle_cmd_msg, 10
-        )
+        self.create_subscription(PressureStatus, PRESSURE_STATUS, self.handle_pressure_msg, 10)
+        self.create_subscription(DepthControlCmd, DEPTH_CONTROL_CMD, self.handle_cmd_msg, 10)
 
         self.rudder_publisher = self.create_publisher(Float32, RUDDER_Y_CMD, 10)
-        self.status_publisher = self.create_publisher(
-            DepthControlStatus, DEPTH_CONTROL_STATUS, 10
-        )
+        self.status_publisher = self.create_publisher(DepthControlStatus, DEPTH_CONTROL_STATUS, 10)
 
         self.updater = self.create_timer(1.0 / UPDATE_FREQUENCY, self.compute_and_send)
 
@@ -88,11 +82,7 @@ class DepthControlNode(Node):
         pid_angle_output = self.inner_pid_target_angle.compute(self.current_depth)
 
         if abs(pid_angle_output) > self.max_dive_angle:
-            pid_angle_output = (
-                self.max_dive_angle
-                if pid_angle_output > 0
-                else -1 * self.max_dive_angle
-            )
+            pid_angle_output = self.max_dive_angle if pid_angle_output > 0 else -1 * self.max_dive_angle
 
         return -1 * pid_angle_output
 
@@ -101,11 +91,7 @@ class DepthControlNode(Node):
         rudder_output = self.out_pid_rudder_output.compute(self.current_pitch)
 
         if abs(rudder_output) > self.max_rudder_output:
-            rudder_output = (
-                self.max_rudder_output
-                if rudder_output > 0
-                else -1.0 * self.max_rudder_output
-            )
+            rudder_output = self.max_rudder_output if rudder_output > 0 else -1.0 * self.max_rudder_output
 
         return rudder_output
 

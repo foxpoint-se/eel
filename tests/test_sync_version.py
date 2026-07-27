@@ -6,9 +6,7 @@ from pathlib import Path
 import pytest
 
 SCRIPTS_DIR = Path(__file__).resolve().parents[1] / "scripts"
-SPEC = importlib.util.spec_from_file_location(
-    "sync_version", SCRIPTS_DIR / "sync_version.py"
-)
+SPEC = importlib.util.spec_from_file_location("sync_version", SCRIPTS_DIR / "sync_version.py")
 if SPEC is None or SPEC.loader is None:
     raise ImportError(f"Could not load sync_version from {SCRIPTS_DIR}")
 sync_version = importlib.util.module_from_spec(SPEC)

@@ -3,10 +3,12 @@ from typing import Optional
 
 import rclpy
 from rclpy.node import Node
+
 from eel_interfaces.msg import Coordinate
-from .gnss_sensor import GnssSensor
+
 from ..utils.constants import SIMULATE_PARAM
 from ..utils.topics import GNSS_STATUS
+from .gnss_sensor import GnssSensor
 
 
 class GNSS(Node):
@@ -24,9 +26,7 @@ class GNSS(Node):
         # At the time of writing, Ålen uses /dev/ttyUSB1 (which is why it's the default)
         # and Tvålen uses /dev/ttyUSB0 for some reason.
         self.declare_parameter("serial_port", "/dev/ttyUSB1")
-        serial_port = (
-            self.get_parameter("serial_port").get_parameter_value().string_value
-        )
+        serial_port = self.get_parameter("serial_port").get_parameter_value().string_value
 
         sensor = GnssSensor(serial_port=serial_port)
         self.get_current_position = sensor.get_current_position

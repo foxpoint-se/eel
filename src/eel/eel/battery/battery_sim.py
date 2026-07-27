@@ -1,5 +1,7 @@
-from rclpy.node import Node
 from time import time
+
+from rclpy.node import Node
+
 from .battery_utils import calculate_voltage_percent
 
 BATTERY_MAX_VOLTAGE = 16.8

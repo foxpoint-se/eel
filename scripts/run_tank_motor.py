@@ -1,12 +1,7 @@
 import argparse
-from fcntl import F_SEAL_SEAL
-from queue import Empty
 import time
-import board
-import busio
-import adafruit_vl53l0x
-import RPi.GPIO as GPIO
 
+import RPi.GPIO as GPIO
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-f", "--front", action="count", help="Start front motor")
