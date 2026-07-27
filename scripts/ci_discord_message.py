@@ -121,7 +121,7 @@ def build_discord_payload(
             description=body,
             color=COLOR_FAIL,
             url=run_url,
-            status="Failure",
+            status="failure",
         )
 
     if released:
@@ -138,7 +138,7 @@ def build_discord_payload(
             description="\n".join(parts),
             color=COLOR_SUCCESS,
             url=notes_url,
-            status="Success",
+            status="success",
         )
 
     version_note = f" (still v{version})" if version else ""
@@ -152,7 +152,7 @@ def build_discord_payload(
         description=body,
         color=COLOR_SUCCESS,
         url=run_url,
-        status="Success",
+        status="success",
     )
 
 

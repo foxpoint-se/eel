@@ -46,7 +46,7 @@ def test__when_all_jobs_pass_and_no_release__should_build_no_version_message() -
     payload = _payload()
 
     assert payload.title == "Eel CI — no new version"
-    assert payload.status == "Success"
+    assert payload.status == "success"
     assert payload.url == RUN_URL
     assert "Build succeeded (still v1.0.1)" in payload.description
     assert "pull/204" in payload.description
@@ -75,7 +75,7 @@ def test__when_test_checks_fail__should_list_failed_job() -> None:
     payload = _payload(test_checks="failure")
 
     assert payload.title == "Eel CI failed"
-    assert payload.status == "Failure"
+    assert payload.status == "failure"
     assert "Failed: checks" in payload.description
 
 
