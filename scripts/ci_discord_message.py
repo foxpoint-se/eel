@@ -12,8 +12,14 @@ from dataclasses import dataclass
 COLOR_FAIL = "0xED4245"
 COLOR_SUCCESS = "0x57F287"
 DISTROS_NOTE = "Checks + docker: humble, jazzy, lyrical"
-NOTES_MAX_LEN = 500
+NOTES_MAX_LEN = 800
 SUBTITLE_MAX_LEN = 120
+
+_SECTION_ORDER = {
+    "breaking changes": 0,
+    "features": 1,
+    "bug fixes": 2,
+}
 
 _MERGE_PR = re.compile(r"Merge pull request #(\d+)", re.IGNORECASE)
 _SQUASH_PR = re.compile(r"\(#(\d+)\)\s*$")
@@ -47,6 +53,32 @@ def sanitize_discord_text(text: str) -> str:
 
 def escape_markdown_link_label(text: str) -> str:
     return text.replace("\\", "\\\\").replace("[", "\\[").replace("]", "\\]")
+
+
+def _section_sort_key(name: str) -> int:
+    return _SECTION_ORDER.get(name.lower(), 99)
+
+
+def prioritize_release_notes(notes: str) -> str:
+    """Put Features (and Breaking Changes) before Bug Fixes for Discord summaries."""
+    stripped = notes.strip()
+    if not stripped:
+        return stripped
+
+    parts = re.split(r"(?=^### )", stripped, flags=re.MULTILINE)
+    if len(parts) == 1:
+        return stripped
+
+    preamble = parts[0].rstrip()
+    sections = parts[1:]
+
+    def section_header(section: str) -> str:
+        first = section.splitlines()[0]
+        return first.removeprefix("### ").strip() if first.startswith("### ") else ""
+
+    sections.sort(key=lambda section: _section_sort_key(section_header(section)))
+    chunks = [chunk.strip() for chunk in ([preamble] if preamble.strip() else []) + sections]
+    return "\n\n".join(chunks) + "\n"
 
 
 def truncate(text: str, max_len: int) -> str:
@@ -141,7 +173,7 @@ def build_discord_payload(
 
     if released:
         title = f"Released eel v{version}"
-        notes = truncate(release_notes, NOTES_MAX_LEN)
+        notes = truncate(prioritize_release_notes(release_notes), NOTES_MAX_LEN)
         parts = [subtitle, ""]
         if notes:
             parts.append(notes)
