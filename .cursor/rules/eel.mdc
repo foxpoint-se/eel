@@ -18,6 +18,25 @@ Use conventional commits. Messages focus on **why / value / purpose**, not a fil
 Bad: `update README`, `remove unused file`.  
 Good: what improved, or why the change was needed.
 
+**Release types** (semantic-release on `main` — `feat`/`fix` cut a version; `chore`/`ci`/`docs` do not):
+
+- **`feat:`** — new or changed **boat/runtime behavior** (ROS nodes, fleet-visible capability).
+- **`fix:`** — **application bug** (wrong behavior on Pi/boat).
+- **`chore:`** — tooling, CI plumbing, version sync metadata; small lint/format with no meaningful source diff.
+- **`ci:`** / **`docs:`** — workflows or documentation only.
+
+Prefer `chore:` / `ci:` for infra-only work that never touches application source (Discord notify, Docker tagging, workflow YAML).
+
+**Bulk lint/format** across many source files: `feat:` or `fix:` is fine — we touch real code and a version bump is a useful marker even when behavior is unchanged.
+
+## Before commit
+
+```bash
+source source_me.sh && make test
+```
+
+If lint fails: `make fix-lint`, then `make test` again.
+
 ## Scope
 
 Stay on the asked task. Don’t expand the PR or invent unrelated work.  
