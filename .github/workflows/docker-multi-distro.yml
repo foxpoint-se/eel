@@ -49,6 +49,7 @@ jobs:
       version: ${{ steps.release.outputs.version }}
       tag: ${{ steps.release.outputs.tag }}
       release_notes: ${{ steps.release.outputs.release_notes }}
+      link: ${{ steps.release.outputs.link }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -66,15 +67,37 @@ jobs:
           git_committer_email: "actions@users.noreply.github.com"
 
   notify:
-    if: ${{ github.event_name == 'push' }}
+    if: ${{ always() && github.event_name == 'push' && github.actor != 'github-actions[bot]' }}
     runs-on: ubuntu-latest
     needs: [test-checks, build, release]
     steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Compose Discord message
+        id: discord
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          TEST_CHECKS_RESULT: ${{ needs.test-checks.result }}
+          BUILD_RESULT: ${{ needs.build.result }}
+          RELEASE_RESULT: ${{ needs.release.result }}
+          RELEASED: ${{ needs.release.outputs.released }}
+          VERSION: ${{ needs.release.outputs.version }}
+          RELEASE_NOTES: ${{ needs.release.outputs.release_notes }}
+          RELEASE_LINK: ${{ needs.release.outputs.link }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          COMMIT_SHA: ${{ github.sha }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        run: python3 scripts/ci_discord_message.py
+
       - uses: sarisia/actions-status-discord@v1.16.0
         if: always()
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK_BUILD_CHANNEL }}
-          status: ${{ (needs.test-checks.result == 'success' && needs.build.result == 'success' && (needs.release.result == 'success' || needs.release.result == 'skipped')) && 'success' || 'failure' }}
-          title: "Eel CI (checks + humble, jazzy, lyrical)"
+          status: ${{ steps.discord.outputs.status }}
+          title: ${{ steps.discord.outputs.title }}
+          description: ${{ steps.discord.outputs.description }}
+          color: ${{ steps.discord.outputs.color }}
+          url: ${{ steps.discord.outputs.url }}
+          nodetail: true
           username: GitHub Actions
           avatar_url: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
