@@ -9,3 +9,18 @@ ignore_missing_imports = true
 mypy_path = "src/eel:typings"
 packages = ["eel"]
 exclude = ["^build/", "^install/", "^log/", "^venv/"]
+
+[tool.semantic_release]
+version_toml = ["pyproject.toml:project.version"]
+tag_format = "v{version}"
+commit_parser = "conventional"
+build_command = """
+python3 scripts/sync_version.py
+git add src/eel/setup.py src/eel/package.xml src/eel_interfaces/package.xml src/eel_bringup/package.xml
+"""
+
+[tool.semantic_release.branches.main]
+match = "(main)"
+
+[tool.semantic_release.changelog]
+mode = "update"

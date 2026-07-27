@@ -38,16 +38,43 @@ jobs:
         working-directory: docker
         run: ./build-image.sh ${{ matrix.ros_distro }} --ci
 
+  release:
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    needs: [test-checks, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      released: ${{ steps.release.outputs.released || 'false' }}
+      version: ${{ steps.release.outputs.version }}
+      tag: ${{ steps.release.outputs.tag }}
+      release_notes: ${{ steps.release.outputs.release_notes }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref_name }}
+      - name: Force branch to workflow sha
+        run: git reset --hard ${{ github.sha }}
+      - name: Semantic release
+        id: release
+        uses: python-semantic-release/python-semantic-release@v10.5.3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          git_committer_name: "github-actions"
+          git_committer_email: "actions@users.noreply.github.com"
+
   notify:
     if: ${{ github.event_name == 'push' }}
     runs-on: ubuntu-latest
-    needs: [test-checks, build]
+    needs: [test-checks, build, release]
     steps:
       - uses: sarisia/actions-status-discord@v1.16.0
         if: always()
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK_BUILD_CHANNEL }}
-          status: ${{ (needs.test-checks.result == 'success' && needs.build.result == 'success') && 'success' || 'failure' }}
+          status: ${{ (needs.test-checks.result == 'success' && needs.build.result == 'success' && (needs.release.result == 'success' || needs.release.result == 'skipped')) && 'success' || 'failure' }}
           title: "Eel CI (checks + humble, jazzy, lyrical)"
           username: GitHub Actions
           avatar_url: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"

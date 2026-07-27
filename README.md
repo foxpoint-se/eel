@@ -50,7 +50,11 @@ ros2 run eel imu --ros-args -p simulate:=true
 - **`[pi]`** — GPIO, sensors, actuators (boat hardware)
 - **`[dev]`** — mypy, pytest
 
-Package version lives in root `pyproject.toml`; after a manual bump run `python3 scripts/sync_version.py` to update `setup.py` and `package.xml` files.
+Package version lives in root `pyproject.toml`; after a manual bump run `python3 scripts/sync_version.py` to update `setup.py` and `package.xml` files. On `main`, [python-semantic-release](https://python-semantic-release.readthedocs.io/) bumps that version from conventional commits (`feat` / `fix` / breaking); `chore` / `docs` alone do not cut a release. Dry-run locally: `pip install 'python-semantic-release>=10,<11' && semantic-release -v version --print`.
+
+### Releases
+
+After CI is green on `main`, semantic-release may create tag `vX.Y.Z`, update `CHANGELOG.md`, open a GitHub Release, and sync package versions. On the boat: `git fetch && git checkout vX.Y.Z && make build`.
 
 Enough for simulation. For hardware, see [Hardware bring-up](#hardware-bring-up) and the `Makefile`.
 
