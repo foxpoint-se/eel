@@ -116,6 +116,34 @@ def test__when_release_notes_long__should_truncate() -> None:
     assert len(truncated) == ci_discord_message.NOTES_MAX_LEN
 
 
+def test__when_text_has_discord_mentions__should_neutralize() -> None:
+    text = "@everyone @here <@123456789> <@&987654321>"
+    sanitized = ci_discord_message.sanitize_discord_text(text)
+
+    assert "@everyone" not in sanitized
+    assert "@here" not in sanitized
+    assert "<@123456789>" not in sanitized
+    assert "<@&987654321>" not in sanitized
+
+
+def test__when_commit_message_has_brackets__should_escape_subtitle_label() -> None:
+    message = "fix: handle [edge case] in parser"
+    link = ci_discord_message.subtitle_link(message, SHA, REPO)
+
+    assert r"\[edge case\]" in link
+    assert link.endswith(f"](https://github.com/{REPO}/commit/{SHA})")
+
+
+def test__when_release_notes_have_mentions__should_neutralize_in_payload() -> None:
+    payload = _payload(
+        released=True,
+        release_notes="### Bug Fixes\n- fix @everyone spam\n",
+    )
+
+    assert "@everyone" not in payload.description
+    assert "everyone spam" in payload.description
+
+
 @pytest.mark.parametrize(
     ("message", "expected_pr"),
     [

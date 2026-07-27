@@ -17,6 +17,9 @@ SUBTITLE_MAX_LEN = 120
 
 _MERGE_PR = re.compile(r"Merge pull request #(\d+)", re.IGNORECASE)
 _SQUASH_PR = re.compile(r"\(#(\d+)\)\s*$")
+_USER_MENTION = re.compile(r"<@!?(\d+)>")
+_ROLE_MENTION = re.compile(r"<@&(\d+)>")
+_ZERO_WIDTH = "\u200b"
 
 _JOB_LABELS = {
     "test-checks": "checks",
@@ -34,8 +37,20 @@ class DiscordPayload:
     status: str
 
 
+def sanitize_discord_text(text: str) -> str:
+    """Break Discord mention triggers in user-controlled text."""
+    sanitized = re.sub(r"@everyone", f"@{_ZERO_WIDTH}everyone", text, flags=re.IGNORECASE)
+    sanitized = re.sub(r"@here", f"@{_ZERO_WIDTH}here", sanitized, flags=re.IGNORECASE)
+    sanitized = _USER_MENTION.sub(f"@{_ZERO_WIDTH}user", sanitized)
+    return _ROLE_MENTION.sub(f"@{_ZERO_WIDTH}role", sanitized)
+
+
+def escape_markdown_link_label(text: str) -> str:
+    return text.replace("\\", "\\\\").replace("[", "\\[").replace("]", "\\]")
+
+
 def truncate(text: str, max_len: int) -> str:
-    stripped = text.strip()
+    stripped = sanitize_discord_text(text.strip())
     if len(stripped) <= max_len:
         return stripped
     return stripped[: max_len - 1].rstrip() + "…"
@@ -56,7 +71,7 @@ def pr_number_from_message(message: str) -> str | None:
 
 
 def subtitle_link(message: str, sha: str, repo: str) -> str:
-    line = truncate(first_line(message), SUBTITLE_MAX_LEN)
+    line = escape_markdown_link_label(truncate(first_line(message), SUBTITLE_MAX_LEN))
     if not line:
         line = sha[:7]
 
