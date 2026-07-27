@@ -2,6 +2,17 @@
 
 <!-- version list -->
 
+## v1.1.1 (2026-07-27)
+
+### Bug Fixes
+
+- Preserve section order for unrecognized changelog headings
+  ([`95f1119`](https://github.com/foxpoint-se/eel/commit/95f111949625528197d14edbd7a34fb0437807e1))
+
+- Show features first in Discord release summary
+  ([`750e518`](https://github.com/foxpoint-se/eel/commit/750e51810d707fa7fe8a18a9d849295aa8c831ea))
+
+
 ## v1.1.0 (2026-07-27)
 
 ### Bug Fixes
