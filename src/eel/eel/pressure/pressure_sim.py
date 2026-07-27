@@ -102,13 +102,13 @@ class PressureSensorSimulator(PressureSource):
         self._calculate_depth()
 
     def _calculate_depth(self) -> None:
+        _ = get_average_bouyancy(
+            self._front_tank_level,
+            self._rear_tank_level,
+            NEUTRAL_LEVEL,
+            NEUTRAL_TOLERANCE,
+        )
         # NOTE: setting to negative here, so it will float up when motor not running
-        # average_bouyancy = get_average_bouyancy(
-        #     self._front_tank_level,
-        #     self._rear_tank_level,
-        #     NEUTRAL_LEVEL,
-        #     NEUTRAL_TOLERANCE,
-        # )
         tank_velocity = -0.05  # get_velocity(TERMINAL_VELOCITY_MPS, average_bouyancy)
         pitch_speed_velocity = (
             get_pitch_speed_velocity(TERMINAL_VELOCITY_MPS, self._current_pitch) * self._current_motor_speed
