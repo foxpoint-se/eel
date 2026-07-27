@@ -56,7 +56,7 @@ On `main`, [python-semantic-release](https://python-semantic-release.readthedocs
 
 ### Releases
 
-After CI is green on `main`, semantic-release may create tag `vX.Y.Z`, update `CHANGELOG.md`, open a GitHub Release, and sync package versions. On the boat: `git fetch && git checkout vX.Y.Z && make build`.
+After CI is green on `main`, semantic-release may create tag `vX.Y.Z`, update `CHANGELOG.md`, open a GitHub Release, and sync package versions. On the boat: `git fetch --tags && git checkout vX.Y.Z && make build`.
 
 Enough for simulation. For hardware, see [Hardware bring-up](#hardware-bring-up) and the `Makefile`.
 
