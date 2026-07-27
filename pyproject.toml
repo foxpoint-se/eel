@@ -20,7 +20,7 @@ git add src/eel/setup.py src/eel/package.xml src/eel_interfaces/package.xml src/
 """
 
 [tool.semantic_release.branches.main]
-match = "(main)"
+match = "^main$"
 
 [tool.semantic_release.changelog]
 mode = "update"
