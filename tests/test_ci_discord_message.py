@@ -79,6 +79,20 @@ def test__when_test_checks_fail__should_list_failed_job() -> None:
     assert "Failed: checks" in payload.description
 
 
+def test__when_job_cancelled__should_list_cancelled_job() -> None:
+    payload = _payload(build="cancelled")
+
+    assert payload.title == "Eel CI failed"
+    assert "Failed: docker build" in payload.description
+
+
+def test__when_released_without_release_link__should_fallback_to_run_url() -> None:
+    payload = _payload(released=True, release_link="", release_notes="- fix something\n")
+
+    assert payload.url == RUN_URL
+    assert f"]({RUN_URL})" in payload.description
+
+
 def test__when_merge_commit__should_link_subtitle_to_pr() -> None:
     link = ci_discord_message.subtitle_link(MERGE_MSG, SHA, REPO)
 

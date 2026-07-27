@@ -67,7 +67,7 @@ jobs:
           git_committer_email: "actions@users.noreply.github.com"
 
   notify:
-    if: ${{ github.event_name == 'push' && github.event.head_commit.author.username != 'github-actions[bot]' }}
+    if: ${{ always() && github.event_name == 'push' && github.actor != 'github-actions[bot]' }}
     runs-on: ubuntu-latest
     needs: [test-checks, build, release]
     steps:

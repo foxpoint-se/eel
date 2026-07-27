@@ -6,6 +6,7 @@ from __future__ import annotations
 import os
 import re
 import sys
+import uuid
 from dataclasses import dataclass
 
 COLOR_FAIL = "0xED4245"
@@ -80,7 +81,7 @@ def failed_jobs(
     }
     failed: list[str] = []
     for job, result in results.items():
-        if result == "failure":
+        if result in {"failure", "cancelled"}:
             failed.append(_JOB_LABELS[job])
     return failed
 
@@ -130,12 +131,13 @@ def build_discord_payload(
         if notes:
             parts.append(notes)
             parts.append("")
-        parts.extend([DISTROS_NOTE, f"[Full release notes →]({release_link})"])
+        notes_url = release_link or run_url
+        parts.extend([DISTROS_NOTE, f"[Full release notes →]({notes_url})"])
         return DiscordPayload(
             title=title,
             description="\n".join(parts),
             color=COLOR_SUCCESS,
-            url=release_link or run_url,
+            url=notes_url,
             status="Success",
         )
 
@@ -167,7 +169,8 @@ def _write_github_output(payload: DiscordPayload) -> None:
     }
     with open(output_path, "a", encoding="utf-8") as handle:
         for key, value in fields.items():
-            handle.write(f"{key}<<EOF\n{value}\nEOF\n")
+            delimiter = f"EOF_{uuid.uuid4().hex}"
+            handle.write(f"{key}<<{delimiter}\n{value}\n{delimiter}\n")
 
 
 def main() -> int:
