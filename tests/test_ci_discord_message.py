@@ -109,11 +109,58 @@ def test__when_squash_commit__should_link_subtitle_to_pr_from_hash_suffix() -> N
 
 
 def test__when_release_notes_long__should_truncate() -> None:
-    notes = "x" * 600
+    notes = "x" * 900
     truncated = ci_discord_message.truncate(notes, ci_discord_message.NOTES_MAX_LEN)
 
     assert truncated.endswith("…")
     assert len(truncated) == ci_discord_message.NOTES_MAX_LEN
+
+
+def test__when_release_notes_have_features_after_fixes__should_prioritize_features() -> None:
+    notes = """## v1.1.0 (2026-07-27)
+
+### Bug Fixes
+
+- Harden Discord notify for edge cases
+  ([`a524bae`](https://github.com/example/commit/a524bae))
+
+### Features
+
+- Improve Discord CI notify for releases
+  ([`8082e3a`](https://github.com/example/commit/8082e3a))
+"""
+    ordered = ci_discord_message.prioritize_release_notes(notes)
+    features_at = ordered.index("### Features")
+    fixes_at = ordered.index("### Bug Fixes")
+
+    assert features_at < fixes_at
+
+
+def test__when_prioritized_release_notes_truncated__should_keep_feature_visible() -> None:
+    notes = """## v1.1.0 (2026-07-27)
+
+### Bug Fixes
+
+- Harden Discord notify for edge cases
+  ([`a524bae`](https://github.com/example/commit/a524bae))
+
+- Sanitize Discord mentions and escape link labels
+  ([`c82d253`](https://github.com/example/commit/c82d253))
+
+- Use lowercase status for Discord action input
+  ([`de71305`](https://github.com/example/commit/de71305))
+
+### Features
+
+- Improve Discord CI notify for releases
+  ([`8082e3a`](https://github.com/example/commit/8082e3a))
+"""
+    summary = ci_discord_message.truncate(
+        ci_discord_message.prioritize_release_notes(notes),
+        ci_discord_message.NOTES_MAX_LEN,
+    )
+
+    assert "Improve Discord CI notify for releases" in summary
 
 
 def test__when_text_has_discord_mentions__should_neutralize() -> None:
