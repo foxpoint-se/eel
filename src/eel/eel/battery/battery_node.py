@@ -3,11 +3,13 @@ from typing import Optional
 
 import rclpy
 from rclpy.node import Node
+
 from eel_interfaces.msg import BatteryStatus
-from .battery_sensor import BatterySensor
-from .battery_sim import BatterySimulator
+
 from ..utils.constants import SIMULATE_PARAM
 from ..utils.topics import BATTERY_STATUS
+from .battery_sensor import BatterySensor
+from .battery_sim import BatterySimulator
 
 
 class BatteryNode(Node):
@@ -21,11 +23,7 @@ class BatteryNode(Node):
         self.update_frequency = 2
 
         sensor: BatterySensor | BatterySimulator
-        sensor = (
-            BatterySensor()
-            if not self.should_simulate
-            else BatterySimulator(parent_node=self)
-        )
+        sensor = BatterySensor() if not self.should_simulate else BatterySimulator(parent_node=self)
         self.get_voltage = sensor.get_voltage
         self.get_current = sensor.get_current
         self.get_power = sensor.get_power
@@ -33,9 +31,7 @@ class BatteryNode(Node):
         self.get_shunt_voltage = sensor.get_shunt_voltage
         self.get_voltage_percent = sensor.get_voltage_percent
 
-        self.updater = self.create_timer(
-            1.0 / self.update_frequency, self.publish_battery
-        )
+        self.updater = self.create_timer(1.0 / self.update_frequency, self.publish_battery)
 
         self.get_logger().info("Battery node started")
 

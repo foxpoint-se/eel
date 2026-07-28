@@ -1,5 +1,4 @@
-from setuptools import find_packages
-from setuptools import setup
+from setuptools import find_packages, setup
 
 package_name = "eel"
 
@@ -31,7 +30,13 @@ setup(
             "adafruit-circuitpython-ads1x15>=3.0,<4",
             "adafruit-circuitpython-mcp3xxx>=1.5,<2",
         ],
-        "dev": ["mypy>=2.3,<3", "pytest>=8.0", "types-pyserial>=3.5.0", "types-requests"],
+        "dev": [
+            "mypy>=2.3,<3",
+            "pytest>=8.0",
+            "ruff>=0.9,<1",
+            "types-pyserial>=3.5.0",
+            "types-requests",
+        ],
     },
     zip_safe=True,
     maintainer="bulingen",

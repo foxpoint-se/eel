@@ -1,4 +1,4 @@
-from abc import abstractmethod, ABC
+from abc import ABC, abstractmethod
 from typing import Literal, Optional
 
 Direction = Literal["emptying", "filling"]

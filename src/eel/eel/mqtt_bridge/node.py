@@ -1,52 +1,53 @@
 #!/usr/bin/env python3
-import rclpy
-from rclpy.node import Node
-from typing import Callable, List, Mapping, Optional, Sequence, Tuple, TypedDict, cast
 import json
+from typing import Callable, List, Mapping, Optional, Sequence, Tuple, TypedDict, cast
 
-from awscrt import mqtt, io
+import rclpy
+from awscrt import mqtt
 from awsiot import mqtt_connection_builder
-from std_msgs.msg import Float32, Bool, String
+from rclpy.node import Node
+from std_msgs.msg import Bool, Float32, String
+
 from eel_interfaces.msg import (
-    ImuStatus,
-    ImuOffsets,
     BatteryStatus,
     Coordinate,
-    NavigationStatus,
-    TankStatus,
-    PressureStatus,
     DepthControlCmd,
+    ImuOffsets,
+    ImuStatus,
     ModemStatus,
-    TracedRoute,
-    NavigationMission,
     NavigationAssignment,
+    NavigationMission,
+    NavigationStatus,
+    PressureStatus,
+    TankStatus,
+    TracedRoute,
 )
 
+from ..utils.throttle import throttle
 from ..utils.topics import (
-    MOTOR_CMD,
-    IMU_STATUS,
-    IMU_OFFSETS,
-    RUDDER_X_CMD,
-    RUDDER_Y_CMD,
     BATTERY_STATUS,
-    LOCALIZATION_STATUS,
-    NAVIGATION_STATUS,
-    NAVIGATION_CMD,
-    FRONT_TANK_CMD,
-    REAR_TANK_CMD,
-    LEAKAGE_STATUS,
-    REAR_TANK_STATUS,
-    FRONT_TANK_STATUS,
-    PRESSURE_STATUS,
     DEPTH_CONTROL_CMD,
+    FRONT_TANK_CMD,
+    FRONT_TANK_STATUS,
+    GNSS_STATUS,
+    IMU_OFFSETS,
+    IMU_STATUS,
+    LEAKAGE_STATUS,
+    LOCALIZATION_STATUS,
     MODEM_STATUS,
-    ROUTE_TRACING_UPDATES,
+    MOTOR_CMD,
+    NAVIGATION_CMD,
     NAVIGATION_LOAD_MISSION,
     NAVIGATION_LOAD_NAMED_MISSION,
-    GNSS_STATUS,
+    NAVIGATION_STATUS,
+    PRESSURE_STATUS,
+    REAR_TANK_CMD,
+    REAR_TANK_STATUS,
+    ROUTE_TRACING_UPDATES,
+    RUDDER_X_CMD,
+    RUDDER_Y_CMD,
 )
-from ..utils.throttle import throttle
-from .types import CoordinateMqtt, transform_coordinate_msg, to_traced_route_mqtt
+from .types import CoordinateMqtt, to_traced_route_mqtt, transform_coordinate_msg
 
 
 class CertData(TypedDict):
@@ -63,6 +64,7 @@ class DepthControlCmdMqtt(TypedDict):
     pitch_target: float
     depth_pid_type: str
     pitch_pid_type: str
+
 
 class StringMqtt(TypedDict):
     data: str
@@ -131,9 +133,7 @@ class PressureStatusMqtt(TypedDict):
 SubscriberCallback = Callable[[str, bytes, bool, mqtt.QoS, bool], None]
 
 
-def init_one_mqtt_sub(
-    mqtt_conn: mqtt.Connection, topic: str, callback: SubscriberCallback
-) -> None:
+def init_one_mqtt_sub(mqtt_conn: mqtt.Connection, topic: str, callback: SubscriberCallback) -> None:
     mqtt_conn.subscribe(
         topic=topic,
         qos=mqtt.QoS.AT_LEAST_ONCE,
@@ -204,9 +204,7 @@ class MqttBridge(Node):
 
         self.declare_parameter("path_for_config", "")
 
-        path_for_config = (
-            self.get_parameter("path_for_config").get_parameter_value().string_value
-        )
+        path_for_config = self.get_parameter("path_for_config").get_parameter_value().string_value
 
         self.is_connected: bool = False
 
@@ -225,9 +223,7 @@ class MqttBridge(Node):
         self.init_mqtt_subs()
 
     def connect_to_endpoint(self, cert_data: CertData) -> None:
-        self.get_logger().info(
-            f"Connecting directly to endpoint {cert_data['endpoint']}"
-        )
+        self.get_logger().info(f"Connecting directly to endpoint {cert_data['endpoint']}")
         self.mqtt_conn = mqtt_connection_builder.mtls_from_path(
             endpoint=cert_data["endpoint"],
             port=cert_data["port"],
@@ -285,44 +281,26 @@ class MqttBridge(Node):
             for t in topics_and_callbacks:
                 topic = t[0]
                 callback = t[1]
-                init_one_mqtt_sub(
-                    mqtt_conn=self.mqtt_conn, topic=topic, callback=callback
-                )
+                init_one_mqtt_sub(mqtt_conn=self.mqtt_conn, topic=topic, callback=callback)
                 self.get_logger().info(f"Subscribed to MQTT topic {topic}")
         else:
             self.get_logger().info("Could not subscribe. Connection is undefined.")
 
     def init_ros_pubs(self) -> None:
         self.motor_publisher = self.create_publisher(Float32, MOTOR_CMD, 10)
-        self.rudder_horizontal_publisher = self.create_publisher(
-            Float32, RUDDER_X_CMD, 10
-        )
-        self.rudder_vertical_publisher = self.create_publisher(
-            Float32, RUDDER_Y_CMD, 10
-        )
+        self.rudder_horizontal_publisher = self.create_publisher(Float32, RUDDER_X_CMD, 10)
+        self.rudder_vertical_publisher = self.create_publisher(Float32, RUDDER_Y_CMD, 10)
         self.nav_cmd_publisher = self.create_publisher(Bool, NAVIGATION_CMD, 10)
-        self.front_tank_cmd_publisher = self.create_publisher(
-            Float32, FRONT_TANK_CMD, 10
-        )
+        self.front_tank_cmd_publisher = self.create_publisher(Float32, FRONT_TANK_CMD, 10)
         self.rear_tank_cmd_publisher = self.create_publisher(Float32, REAR_TANK_CMD, 10)
-        self.depth_pitch_publisher = self.create_publisher(
-            DepthControlCmd, DEPTH_CONTROL_CMD, 10
-        )
-        self.mission_publisher = self.create_publisher(
-            NavigationMission, NAVIGATION_LOAD_MISSION, 10
-        )
-        self.named_mission_publisher = self.create_publisher(
-            String, NAVIGATION_LOAD_NAMED_MISSION, 10
-        )
+        self.depth_pitch_publisher = self.create_publisher(DepthControlCmd, DEPTH_CONTROL_CMD, 10)
+        self.mission_publisher = self.create_publisher(NavigationMission, NAVIGATION_LOAD_MISSION, 10)
+        self.named_mission_publisher = self.create_publisher(String, NAVIGATION_LOAD_NAMED_MISSION, 10)
         self.gnss_status_publisher = self.create_publisher(Coordinate, GNSS_STATUS, 10)
 
     def init_subs(self) -> None:
-        self.imu_subscription = self.create_subscription(
-            ImuStatus, IMU_STATUS, self.imu_status_callback, 10
-        )
-        self.imu_offsets_subscription = self.create_subscription(
-            ImuOffsets, IMU_OFFSETS, self.imu_offsets_callback, 10
-        )
+        self.imu_subscription = self.create_subscription(ImuStatus, IMU_STATUS, self.imu_status_callback, 10)
+        self.imu_offsets_subscription = self.create_subscription(ImuOffsets, IMU_OFFSETS, self.imu_offsets_callback, 10)
         self.battery_subscription = self.create_subscription(
             BatteryStatus, BATTERY_STATUS, self.battery_status_callback, 10
         )
@@ -511,9 +489,7 @@ class MqttBridge(Node):
     def publish_mqtt(self, topic: str, mqtt_message: Mapping[str, object]) -> None:
         if self.is_connected is True and self.mqtt_conn:
             json_payload = json.dumps(mqtt_message)
-            self.mqtt_conn.publish(
-                topic=topic, payload=json_payload, qos=mqtt.QoS.AT_LEAST_ONCE
-            )
+            self.mqtt_conn.publish(topic=topic, payload=json_payload, qos=mqtt.QoS.AT_LEAST_ONCE)
 
     def modem_status_callback(self, msg: ModemStatus) -> None:
         self.is_connected = msg.connectivity

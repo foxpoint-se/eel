@@ -8,24 +8,23 @@ from rclpy.action.server import ServerGoalHandle
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
-from .common import LatLon, get_2d_distance
-from .assignments import Assignment, SurfaceAssignment, WaypointAndDepth
-from ..utils.topics import (
-    RUDDER_X_CMD,
-    MOTOR_CMD,
-    IMU_STATUS,
-    LOCALIZATION_STATUS,
-    DEPTH_CONTROL_CMD,
-    PRESSURE_STATUS,
-)
-
-from eel_interfaces.action import Navigate
-from eel_interfaces.msg import Coordinate, ImuStatus, DepthControlCmd, PressureStatus
 from std_msgs.msg import Float32
 
-NavigateGoalHandle: TypeAlias = ServerGoalHandle[
-    Navigate.Goal, Navigate.Result, Navigate.Feedback, object
-]
+from eel_interfaces.action import Navigate
+from eel_interfaces.msg import Coordinate, DepthControlCmd, ImuStatus, PressureStatus
+
+from ..utils.topics import (
+    DEPTH_CONTROL_CMD,
+    IMU_STATUS,
+    LOCALIZATION_STATUS,
+    MOTOR_CMD,
+    PRESSURE_STATUS,
+    RUDDER_X_CMD,
+)
+from .assignments import Assignment, SurfaceAssignment, WaypointAndDepth
+from .common import LatLon, get_2d_distance
+
+NavigateGoalHandle: TypeAlias = ServerGoalHandle[Navigate.Goal, Navigate.Result, Navigate.Feedback, object]
 
 
 TARGET_DISTANCE_LIMIT = 2500
@@ -54,17 +53,13 @@ class NavigationActionServer(Node):
         self.position_subscription = self.create_subscription(
             Coordinate, LOCALIZATION_STATUS, self.handle_location_update, 10
         )
-        self.imu_subscription = self.create_subscription(
-            ImuStatus, IMU_STATUS, self.handle_imu_update, 10
-        )
+        self.imu_subscription = self.create_subscription(ImuStatus, IMU_STATUS, self.handle_imu_update, 10)
         self.pressure_subscription = self.create_subscription(
             PressureStatus, PRESSURE_STATUS, self.handle_pressure_update, 10
         )
         self.motor_publisher = self.create_publisher(Float32, MOTOR_CMD, 10)
         self.rudder_publisher = self.create_publisher(Float32, RUDDER_X_CMD, 10)
-        self.depth_control_publisher = self.create_publisher(
-            DepthControlCmd, DEPTH_CONTROL_CMD, 10
-        )
+        self.depth_control_publisher = self.create_publisher(DepthControlCmd, DEPTH_CONTROL_CMD, 10)
 
         self.current_position: Coordinate | None = None
         self.distance_to_target = 0.0
@@ -101,18 +96,14 @@ class NavigationActionServer(Node):
         motor_msg.data = motor_value
         self.motor_publisher.publish(motor_msg)
 
-    def handle_accepted_callback(
-        self, goal_handle: NavigateGoalHandle
-    ) -> None:
+    def handle_accepted_callback(self, goal_handle: NavigateGoalHandle) -> None:
         if self.current_goal is None:
             self.current_goal = goal_handle
             self.current_goal.execute()
         else:
             self.logger.info("Goal in progress. Cancel before asking for another goal.")
 
-    def goal_callback(
-        self, goal_request: Navigate.Goal
-    ) -> GoalResponse:
+    def goal_callback(self, goal_request: Navigate.Goal) -> GoalResponse:
         if self.current_position is None:
             self.logger.info("No gps position has been acquired yet, rejecting goal.")
             return GoalResponse.REJECT
@@ -127,23 +118,20 @@ class NavigationActionServer(Node):
 
         # Simple sanity check that the target is not to far away, could be removed
         if distance_to_target < TARGET_DISTANCE_LIMIT:
-            self.logger.info(
-                f"Accepted new target, lat: {goal_request.goal.lat} lon: {goal_request.goal.lon}"
-            )
+            self.logger.info(f"Accepted new target, lat: {goal_request.goal.lat} lon: {goal_request.goal.lon}")
             self.logger.info(f"Distance to new target: {distance_to_target}m")
 
             return GoalResponse.ACCEPT
         else:
             self.logger.info(
-                f"Goal rejected - Distance to target {distance_to_target} is larget then set limit {TARGET_DISTANCE_LIMIT}"
+                f"Goal rejected - Distance to target {distance_to_target} is larger "
+                f"than set limit {TARGET_DISTANCE_LIMIT}"
             )
 
             return GoalResponse.REJECT
 
-    def cancel_callback(
-        self, goal_handle: NavigateGoalHandle
-    ) -> CancelResponse:
-        self.logger.info(f"Goal cancel request received, turning off motors.")
+    def cancel_callback(self, goal_handle: NavigateGoalHandle) -> CancelResponse:
+        self.logger.info("Goal cancel request received, turning off motors.")
         self.current_goal = None
         self.publish_depth_cmd(0.0)
         self.publish_motor_cmd(0.0)
@@ -162,11 +150,7 @@ class NavigationActionServer(Node):
                     lat=goal_request.start.lat,
                     lon=goal_request.start.lon,
                 ),
-                depth=(
-                    0.0
-                    if len(goal_request.next_coordinate_depth) == 0
-                    else goal_request.next_coordinate_depth[0]
-                ),
+                depth=(0.0 if len(goal_request.next_coordinate_depth) == 0 else goal_request.next_coordinate_depth[0]),
                 on_set_motor=self.publish_motor_cmd,
                 on_set_rudder=self.publish_rudder_cmd,
                 on_set_depth=self.publish_depth_cmd,
@@ -205,23 +189,20 @@ class NavigationActionServer(Node):
         next_coordinate = goal_request.goal
         # TODO: print distance to target here.
         self.logger.info(
-            f"Executing new goal, target set to {next_coordinate.lat=} {next_coordinate.lon=}, {self.distance_to_target=}"
+            f"Executing new goal, target set to {next_coordinate.lat=} "
+            f"{next_coordinate.lon=}, {self.distance_to_target=}"
         )
 
         self.assignment.start()
 
         while not goal_handle.is_cancel_requested and not self.assignment.get_is_done():
             progress = self.assignment.step(
-                current_position=LatLon(
-                    lat=self.current_position.lat, lon=self.current_position.lon
-                ),
+                current_position=LatLon(lat=self.current_position.lat, lon=self.current_position.lon),
                 current_heading=self.current_heading,
                 current_depth=self.current_depth,
                 current_time_seconds=time(),
             )
-            goal_handle.publish_feedback(
-                Navigate.Feedback(distance_to_target=progress["distance_to_target"])
-            )
+            goal_handle.publish_feedback(Navigate.Feedback(distance_to_target=progress["distance_to_target"]))
 
             sleep(SLEEP_TIME)
 

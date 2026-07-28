@@ -9,23 +9,15 @@ from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
 from std_msgs.msg import Float32
 
-from ..utils.pid_controller import PidController
-
 from eel_interfaces.action import Dive
 from eel_interfaces.msg import ImuStatus, PressureStatus
 
-from ..utils.topics import (
-    PRESSURE_STATUS,
-    RUDDER_Y_CMD,
-    IMU_STATUS
-)
-
+from ..utils.pid_controller import PidController
+from ..utils.topics import IMU_STATUS, PRESSURE_STATUS, RUDDER_Y_CMD
 
 UPDATE_FREQUENCY_PER_SEC = 5
 
-DiveGoalHandle: TypeAlias = ServerGoalHandle[
-    Dive.Goal, Dive.Result, Dive.Feedback, object
-]
+DiveGoalHandle: TypeAlias = ServerGoalHandle[Dive.Goal, Dive.Result, Dive.Feedback, object]
 
 
 class DiveActionServer(Node):
@@ -37,11 +29,11 @@ class DiveActionServer(Node):
             "dive",
             execute_callback=self.execute_callback,
             goal_callback=self.goal_callback,
-            callback_group=ReentrantCallbackGroup()
+            callback_group=ReentrantCallbackGroup(),
         )
 
         self.create_subscription(ImuStatus, IMU_STATUS, self.handle_imu_msg, 10)
-        self.create_subscription(PressureStatus, PRESSURE_STATUS, self.handle_pressure_msg, 10)        
+        self.create_subscription(PressureStatus, PRESSURE_STATUS, self.handle_pressure_msg, 10)
         self.rudder_publisher = self.create_publisher(Float32, RUDDER_Y_CMD, 10)
 
         self.depth_target = 0.0
@@ -53,7 +45,7 @@ class DiveActionServer(Node):
         self.max_dive_time_sec = 120.0
 
         self.angle_pid_output = 0.0
-        self.angle_pid_controller = PidController(0.0, kP=-35, kD=-5) # Inner PID
+        self.angle_pid_controller = PidController(0.0, kP=-35, kD=-5)  # Inner PID
         self.rudder_pid_output = 0.0
         self.rudder_pid_controller = PidController(0.0, kP=1 / 15)
 
@@ -69,10 +61,10 @@ class DiveActionServer(Node):
     def handle_imu_msg(self, msg: ImuStatus) -> None:
         self.current_pitch = msg.pitch
         self.new_sensor_data = True
-    
+
     def handle_pressure_msg(self, msg: PressureStatus) -> None:
         self.current_depth = msg.depth
-    
+
     def compute_and_send_rudder_value(self) -> None:
         self.angle_pid_output = self.compute_new_target_angle()
         self.rudder_pid_output = self.compute_new_rudder_output(self.angle_pid_output)
@@ -93,9 +85,9 @@ class DiveActionServer(Node):
                 pid_angle_output = self.max_dive_angle
             else:
                 pid_angle_output = -1 * self.max_dive_angle
-        
+
         return -1 * pid_angle_output
-    
+
     def compute_new_rudder_output(self, target_angle: float) -> float:
         self.rudder_pid_controller.update_set_point(target_angle)
         rudder_output = self.rudder_pid_controller.compute(self.current_pitch)
@@ -106,18 +98,18 @@ class DiveActionServer(Node):
                 rudder_output = self.max_rudder_output
             else:
                 rudder_output = -1 * self.max_rudder_output
-        
+
         return rudder_output
 
     def goal_callback(self, goal_request: Dive.Goal) -> GoalResponse:
         # Sanity check for depth and dive that the values are not to large
         depth_target_larger_then_max_depth = goal_request.wanted_depth > self.max_dive_depth_m
         dive_time_larger_then_max_dive_time = self.dive_time > self.max_dive_time_sec
-        
+
         if any([depth_target_larger_then_max_depth, dive_time_larger_then_max_dive_time]):
-            self.logger.info(f"Invalid request parameters, will reject goal.")
+            self.logger.info("Invalid request parameters, will reject goal.")
             return GoalResponse.REJECT
-        
+
         return GoalResponse.ACCEPT
 
     def execute_callback(self, goal_handle: DiveGoalHandle) -> Dive.Result:
@@ -136,7 +128,7 @@ class DiveActionServer(Node):
         while time.time() - start_ts < self.dive_time:
             if goal_handle.is_cancel_requested:
                 goal_handle.canceled()
-                self.logger.info(f"Goal cancelled will start to ascend")
+                self.logger.info("Goal cancelled will start to ascend")
                 break
 
             if depth_reached_after == 0.0 and self.current_depth >= self.depth_target:
@@ -174,7 +166,7 @@ class DiveActionServer(Node):
 
         self.send_rudder_msg(0.0)
         goal_handle.succeed()
-        
+
         result.final_depth = self.current_depth
         result.action_time = time.time() - start_ts
 

@@ -1,26 +1,27 @@
 #!/usr/bin/env python3
 import sys
-from typing import Literal, Optional, Union
+from typing import Literal, Optional
+
 import rclpy
-from time import time
-from rclpy.node import Node
 from rclpy.executors import ExternalShutdownException
+from rclpy.node import Node
 from std_msgs.msg import Float32
+
 from eel_interfaces.msg import TankStatus
 
 from ..utils.constants import (
-    SIMULATE_PARAM,
-    MOTOR_PIN_PARAM,
+    CMD_TOPIC_PARAM,
     DIRECTION_PIN_PARAM,
     DISTANCE_SENSOR_CHANNEL_PARAM,
-    CMD_TOPIC_PARAM,
+    MOTOR_PIN_PARAM,
+    SIMULATE_PARAM,
     STATUS_TOPIC_PARAM,
-    TANK_FLOOR_VALUE_PARAM,
     TANK_CEILING_VALUE_PARAM,
+    TANK_FLOOR_VALUE_PARAM,
 )
+from ..utils.pid_controller import PidController
 from ..utils.utils import clamp
 from .tank_utils.create_tank import create_tank
-from ..utils.pid_controller import PidController
 
 TANK_FILL_TIME_S = 22
 # change depending on how big of an error we accept
@@ -49,16 +50,12 @@ LEVEL_CEILING = 1.0
 UPDATE_FREQUENCY = 10
 
 
-TargetStatus = Literal[
-    "target_reached", "ceiling_reached", "floor_reached", "no_target", "adjusting"
-]
+TargetStatus = Literal["target_reached", "ceiling_reached", "floor_reached", "no_target", "adjusting"]
 
 
 # TODO:
 # '<=' not supported between instances of 'float' and 'NoneType'
-def is_within_accepted_target_boundaries(
-    current_level: Optional[float], target_level: Optional[float]
-) -> bool:
+def is_within_accepted_target_boundaries(current_level: Optional[float], target_level: Optional[float]) -> bool:
     if current_level is None or target_level is None:
         return False
     low_threshold = target_level - (TARGET_TOLERANCE / 2)
@@ -101,10 +98,16 @@ def get_level_velocity(
 
 # NOTE: example usage
 # OLD
-# ros2 run eel tank --ros-args -p simulate:=False -p cmd_topic:=/tank_rear/cmd -p status_topic:=/tank_rear/status -p motor_pin:=24 -p direction_pin:=25 -p tank_floor_mm:=15 -p tank_ceiling_mm:=63 -p xshut_pin_param:=21
-# ros2 run eel tank --ros-args -p simulate:=False -p cmd_topic:=/tank_front/cmd -p status_topic:=/tank_front/status -p motor_pin:=23 -p direction_pin:=18 -p tank_floor_mm:=15 -p tank_ceiling_mm:=63 -p xshut_pin_param:=21
+# ros2 run eel tank --ros-args -p simulate:=False -p cmd_topic:=/tank_rear/cmd \
+#   -p status_topic:=/tank_rear/status -p motor_pin:=24 -p direction_pin:=25 \
+#   -p tank_floor_mm:=15 -p tank_ceiling_mm:=63 -p xshut_pin_param:=21
+# ros2 run eel tank --ros-args -p simulate:=False -p cmd_topic:=/tank_front/cmd \
+#   -p status_topic:=/tank_front/status -p motor_pin:=23 -p direction_pin:=18 \
+#   -p tank_floor_mm:=15 -p tank_ceiling_mm:=63 -p xshut_pin_param:=21
 # NEW
-# ros2 run eel tank --ros-args -p simulate:=False -p cmd_topic:=/tank_front/cmd -p status_topic:=/tank_front/status -p motor_pin:=23 -p direction_pin:=18 -p tank_floor_value:=4736 -p tank_ceiling_value:=18256 -p distance_sensor_channel:=1
+# ros2 run eel tank --ros-args -p simulate:=False -p cmd_topic:=/tank_front/cmd \
+#   -p status_topic:=/tank_front/status -p motor_pin:=23 -p direction_pin:=18 \
+#   -p tank_floor_value:=4736 -p tank_ceiling_value:=18256 -p distance_sensor_channel:=1
 
 
 class RunningAverage:
@@ -134,27 +137,13 @@ class TankNode(Node):
         self.declare_parameter(TANK_CEILING_VALUE_PARAM)
 
         should_simulate = bool(self.get_parameter(SIMULATE_PARAM).value)
-        motor_pin = int(
-            self.get_parameter(MOTOR_PIN_PARAM).get_parameter_value().integer_value
-        )
-        direction_pin = int(
-            self.get_parameter(DIRECTION_PIN_PARAM).get_parameter_value().integer_value
-        )
+        motor_pin = int(self.get_parameter(MOTOR_PIN_PARAM).get_parameter_value().integer_value)
+        direction_pin = int(self.get_parameter(DIRECTION_PIN_PARAM).get_parameter_value().integer_value)
         distance_sensor_channel = int(
-            self.get_parameter(DISTANCE_SENSOR_CHANNEL_PARAM)
-            .get_parameter_value()
-            .integer_value
+            self.get_parameter(DISTANCE_SENSOR_CHANNEL_PARAM).get_parameter_value().integer_value
         )
-        floor_value = float(
-            self.get_parameter(TANK_FLOOR_VALUE_PARAM)
-            .get_parameter_value()
-            .double_value
-        )
-        ceiling_value = float(
-            self.get_parameter(TANK_CEILING_VALUE_PARAM)
-            .get_parameter_value()
-            .double_value
-        )
+        floor_value = float(self.get_parameter(TANK_FLOOR_VALUE_PARAM).get_parameter_value().double_value)
+        ceiling_value = float(self.get_parameter(TANK_CEILING_VALUE_PARAM).get_parameter_value().double_value)
 
         self.is_autocorrecting: bool = False
         self.target_level: Optional[float] = None
@@ -196,22 +185,12 @@ class TankNode(Node):
 
         self._next_value_log_counter = 0  # For debouncing next_value log
 
-        cmd_topic = str(
-            self.get_parameter(CMD_TOPIC_PARAM).get_parameter_value().string_value
-        )
-        status_topic = str(
-            self.get_parameter(STATUS_TOPIC_PARAM).get_parameter_value().string_value
-        )
+        cmd_topic = str(self.get_parameter(CMD_TOPIC_PARAM).get_parameter_value().string_value)
+        status_topic = str(self.get_parameter(STATUS_TOPIC_PARAM).get_parameter_value().string_value)
         if not cmd_topic or not status_topic:
-            raise TypeError(
-                "Missing topic arguments ({}, {})".format(
-                    CMD_TOPIC_PARAM, STATUS_TOPIC_PARAM
-                )
-            )
+            raise TypeError("Missing topic arguments ({}, {})".format(CMD_TOPIC_PARAM, STATUS_TOPIC_PARAM))
 
-        self.level_cmd_subscription = self.create_subscription(
-            Float32, cmd_topic, self.handle_tank_cmd, 10
-        )
+        self.level_cmd_subscription = self.create_subscription(Float32, cmd_topic, self.handle_tank_cmd, 10)
         self.publisher = self.create_publisher(TankStatus, status_topic, 10)
 
         self.tank = create_tank(
@@ -223,12 +202,12 @@ class TankNode(Node):
             channel=distance_sensor_channel,
         )
 
-        self.check_target_updater = self.create_timer(
-            1.0 / UPDATE_FREQUENCY, self.target_loop
-        )
+        self.check_target_updater = self.create_timer(1.0 / UPDATE_FREQUENCY, self.target_loop)
 
         self.get_logger().info(
-            "{}Tank node started. Motor pin: {}, Direction pin: {}, Distance sensor channel: {}, Update frequency: {}, Range: {} - {} mm, CMD topic: {}, status topic: {}".format(
+            "{}Tank node started. Motor pin: {}, Direction pin: {}, "
+            "Distance sensor channel: {}, Update frequency: {}, "
+            "Range: {} - {} mm, CMD topic: {}, status topic: {}".format(
                 "SIMULATE " if should_simulate else "",
                 motor_pin,
                 direction_pin,

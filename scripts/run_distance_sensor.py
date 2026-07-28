@@ -1,10 +1,9 @@
 import argparse
 import time
+
+import adafruit_vl53l0x
 import board
 import busio
-import adafruit_vl53l0x
-import adafruit_bno055
-
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-f", "--front", action="count", help="Reads front distance sensor")

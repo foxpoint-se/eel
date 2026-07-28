@@ -1,15 +1,12 @@
 #!/usr/bin/env python3
 import re
-
-import serial
 import time
 
-from .modem_source import ModemSource
-
-
 import requests
+import serial
 from requests.exceptions import ConnectionError, ConnectTimeout, ReadTimeout
 
+from .modem_source import ModemSource
 
 AT_COMMAND_TIMEOUT_MS = 5000
 
@@ -26,9 +23,9 @@ class ModemSensor(ModemSource):
         self.serial_connection.bytesize = serial.EIGHTBITS
 
     def get_response(self, timeout_ms: int = AT_COMMAND_TIMEOUT_MS) -> str:
-        """Reads a response from the modem, reading is done over serial and response can 
+        """Reads a response from the modem, reading is done over serial and response can
         take up 100 milliseconds to be read.
-        
+
         :param timeout_ms: Time out in milliseconds for the serial read function
         :return: Response read from the modem in string format UTF-8 decoded
         """
@@ -39,27 +36,27 @@ class ModemSensor(ModemSource):
 
     def send_at_command(self, command: str) -> None:
         """Sends a AT command over the serial port connection created by the parent class.
-        
+
         :param command: AT command to be sent to the modem
         """
         composed_message = str(command) + "\r"
 
         self.serial_connection.reset_input_buffer()
         self.serial_connection.write(composed_message.encode())
-    
+
     def get_registration_status(self) -> int | None:
         """Sends the AT+CREG command to the modem to read the network registration status.
-        
-            0,0 Not registered, ME is not currently searching a new operator to register to
-            0,1 Registered, home network
-            0,2 Not registered, but ME is currently searching a new operator to register to
-            0,3 Registration denied
-            0,4 Unknown
-            0,5 Registered, Roaming
 
-            What we are hoping for is the 0,1 status indicating that we are registered on the network.
+        0,0 Not registered, ME is not currently searching a new operator to register to
+        0,1 Registered, home network
+        0,2 Not registered, but ME is currently searching a new operator to register to
+        0,3 Registration denied
+        0,4 Unknown
+        0,5 Registered, Roaming
 
-            :return: int 0-5 indicating the registration status
+        What we are hoping for is the 0,1 status indicating that we are registered on the network.
+
+        :return: int 0-5 indicating the registration status
         """
         at_command = "AT+CREG?"
         self.send_at_command(at_command)
@@ -77,16 +74,16 @@ class ModemSensor(ModemSource):
 
     def get_received_signal_strength_indicator(self) -> int | None:
         """Sends the AT+CSQ command to the modem to read the received signal strength indicator.
-            The received signal strength indicator is a value 0-31 where 0 is the worst possible signal
-            strength and 31 is the best. Possible values are listed in this table
+        The received signal strength indicator is a value 0-31 where 0 is the worst possible signal
+        strength and 31 is the best. Possible values are listed in this table
 
-            0 - (-113) dBm or less
-            1 - (-111) dBm
-            2..30 - (-109)dBm..(-53)dBm / 2 dBm per step
-            31 - (-51)dBm or greater
-            99 - not known or not detectable
-        
-            :return: int 0-31 or 99 indicating signal strength
+        0 - (-113) dBm or less
+        1 - (-111) dBm
+        2..30 - (-109)dBm..(-53)dBm / 2 dBm per step
+        31 - (-51)dBm or greater
+        99 - not known or not detectable
+
+        :return: int 0-31 or 99 indicating signal strength
         """
         at_command = "AT+CSQ"
         self.send_at_command(at_command)
@@ -100,7 +97,7 @@ class ModemSensor(ModemSource):
                 last_number = first_group.split(",")[0]
                 return int(last_number)
         return None
-    
+
     def ping(self) -> bool:
         google_dns_server_url = "https://8.8.8.8"
         acceptable_response_time = 1.0

@@ -1,6 +1,5 @@
+from eel.data_logger.common import Coord3d, Segment, TimedCoord3d
 from eel.data_logger.data_recorder import PathRecorder
-from eel.data_logger.common import Coord3d, TimedCoord3d, Segment
-
 from geopy import distance
 
 
@@ -10,9 +9,7 @@ def add_meters(coord: Coord3d, meters_to_add: float) -> Coord3d:
         (coord["lat"], coord["lon"]),
         bearing=bearing,
     )
-    return Coord3d(
-        lat=new_position.latitude, lon=new_position.longitude, depth=coord["depth"]
-    )
+    return Coord3d(lat=new_position.latitude, lon=new_position.longitude, depth=coord["depth"])
 
 
 origin = Coord3d(lat=59.309395, lon=17.974279, depth=0)
@@ -32,17 +29,13 @@ def print_what_to_publish(segment: Segment) -> None:
 
 
 def test__when_instantiated__should_not_have_a_position() -> None:
-    instance_to_test = PathRecorder(
-        meters_threshold=1, seconds_threshold=2.0, on_new_segment=print_what_to_publish
-    )
+    instance_to_test = PathRecorder(meters_threshold=1, seconds_threshold=2.0, on_new_segment=print_what_to_publish)
 
     assert instance_to_test.last_recorded_3d_position is None
 
 
 def test__when_not_enough_time_passed__should_not_return_new_segment() -> None:
-    instance_to_test = PathRecorder(
-        meters_threshold=1, seconds_threshold=2.0, on_new_segment=print_what_to_publish
-    )
+    instance_to_test = PathRecorder(meters_threshold=1, seconds_threshold=2.0, on_new_segment=print_what_to_publish)
     instance_to_test.step(new_pos=TimedCoord3d(coord=origin, created_at=0))
     instance_to_test.step(new_pos=TimedCoord3d(coord=origin_plus6, created_at=1))
     actual = instance_to_test.get_finalized_segments()
@@ -50,9 +43,7 @@ def test__when_not_enough_time_passed__should_not_return_new_segment() -> None:
 
 
 def test__when_enough_time_and_distance__should_be_one_finalized_segment() -> None:
-    instance_to_test = PathRecorder(
-        meters_threshold=1, seconds_threshold=2.0, on_new_segment=print_what_to_publish
-    )
+    instance_to_test = PathRecorder(meters_threshold=1, seconds_threshold=2.0, on_new_segment=print_what_to_publish)
     instance_to_test.step(TimedCoord3d(coord=origin, created_at=0))
     instance_to_test.step(TimedCoord3d(coord=origin_plus3, created_at=1))
     instance_to_test.step(TimedCoord3d(coord=origin_plus6, created_at=2.01))
@@ -60,12 +51,8 @@ def test__when_enough_time_and_distance__should_be_one_finalized_segment() -> No
     assert len(actual) == 1
 
 
-def test__when_enough_time_and_distance__should_be_one_finalized_and_one_in_progress() -> (
-    None
-):
-    instance_to_test = PathRecorder(
-        meters_threshold=1, seconds_threshold=2.0, on_new_segment=print_what_to_publish
-    )
+def test__when_enough_time_and_distance__should_be_one_finalized_and_one_in_progress() -> None:
+    instance_to_test = PathRecorder(meters_threshold=1, seconds_threshold=2.0, on_new_segment=print_what_to_publish)
     instance_to_test.step(TimedCoord3d(coord=origin, created_at=0))
     instance_to_test.step(TimedCoord3d(coord=origin_plus1, created_at=1))
     instance_to_test.step(TimedCoord3d(coord=origin_plus2, created_at=1.5))
@@ -76,9 +63,7 @@ def test__when_enough_time_and_distance__should_be_one_finalized_and_one_in_prog
 
 
 def test__when_finalized__segment_should_have_correct_start_and_finish() -> None:
-    instance_to_test = PathRecorder(
-        meters_threshold=1, seconds_threshold=2.0, on_new_segment=print_what_to_publish
-    )
+    instance_to_test = PathRecorder(meters_threshold=1, seconds_threshold=2.0, on_new_segment=print_what_to_publish)
     instance_to_test.step(TimedCoord3d(coord=origin, created_at=0))
     instance_to_test.step(TimedCoord3d(coord=origin_plus1, created_at=1))
     instance_to_test.step(TimedCoord3d(coord=origin_plus2, created_at=1.5))
@@ -91,9 +76,7 @@ def test__when_finalized__segment_should_have_correct_start_and_finish() -> None
 
 
 def test__when_two_finalized_segments__should_be_connected() -> None:
-    instance_to_test = PathRecorder(
-        meters_threshold=1, seconds_threshold=2.0, on_new_segment=print_what_to_publish
-    )
+    instance_to_test = PathRecorder(meters_threshold=1, seconds_threshold=2.0, on_new_segment=print_what_to_publish)
     instance_to_test.step(TimedCoord3d(coord=origin, created_at=0))
     instance_to_test.step(TimedCoord3d(coord=origin_plus1, created_at=1.9))
     instance_to_test.step(TimedCoord3d(coord=origin_plus2, created_at=2.1))
@@ -104,9 +87,7 @@ def test__when_two_finalized_segments__should_be_connected() -> None:
 
 
 def test__when_segment_without_movement__should_discard_that() -> None:
-    instance_to_test = PathRecorder(
-        meters_threshold=1, seconds_threshold=2.0, on_new_segment=print_what_to_publish
-    )
+    instance_to_test = PathRecorder(meters_threshold=1, seconds_threshold=2.0, on_new_segment=print_what_to_publish)
     # some movement
     instance_to_test.step(TimedCoord3d(coord=origin, created_at=0))
     instance_to_test.step(TimedCoord3d(coord=origin_plus1, created_at=1.9))
@@ -126,9 +107,7 @@ def test__when_segment_without_movement__should_discard_that() -> None:
 
 
 def test__should_be_able_to_change_distance_and_time_threshold() -> None:
-    instance_to_test = PathRecorder(
-        meters_threshold=2, seconds_threshold=10, on_new_segment=print_what_to_publish
-    )
+    instance_to_test = PathRecorder(meters_threshold=2, seconds_threshold=10, on_new_segment=print_what_to_publish)
     instance_to_test.step(TimedCoord3d(coord=origin, created_at=0))
     instance_to_test.step(TimedCoord3d(coord=origin_plus2, created_at=9.9))
 
@@ -137,9 +116,7 @@ def test__should_be_able_to_change_distance_and_time_threshold() -> None:
 
     # more steps
     instance_to_test.step(TimedCoord3d(coord=origin_plus2, created_at=10.5))
-    instance_to_test.step(
-        TimedCoord3d(coord=add_meters(origin_plus2, 0.52), created_at=11.5)
-    )
+    instance_to_test.step(TimedCoord3d(coord=add_meters(origin_plus2, 0.52), created_at=11.5))
 
     # one more, to finalize the previous
     instance_to_test.step(TimedCoord3d(coord=origin_plus3, created_at=13))

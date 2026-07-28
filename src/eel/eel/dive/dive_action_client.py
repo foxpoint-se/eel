@@ -9,9 +9,7 @@ from rclpy.type_support import GetResultServiceResponse
 
 from eel_interfaces.action import Dive
 
-DiveGoalHandle: TypeAlias = ClientGoalHandle[
-    Dive.Goal, Dive.Result, Dive.Feedback, object
-]
+DiveGoalHandle: TypeAlias = ClientGoalHandle[Dive.Goal, Dive.Result, Dive.Feedback, object]
 SendGoalFuture: TypeAlias = Future[DiveGoalHandle]
 GetResultFuture: TypeAlias = Future[GetResultServiceResponse[Dive.Result]]
 
@@ -22,7 +20,7 @@ class DiveFeedbackMessage(Protocol):
 
 class DiveActionClient(Node):
     def __init__(self) -> None:
-        super().__init__('dive_action_client')
+        super().__init__("dive_action_client")
         self._action_client = ActionClient(self, Dive, "dive")
 
         self.logger = self.get_logger()
@@ -33,11 +31,10 @@ class DiveActionClient(Node):
 
         self._action_client.wait_for_server()
 
-        self._send_goal_future = self._action_client.send_goal_async(
-            goal_msg, feedback_callback=self.feedback_callback)
+        self._send_goal_future = self._action_client.send_goal_async(goal_msg, feedback_callback=self.feedback_callback)
 
         self._send_goal_future.add_done_callback(self.goal_response_callback)
-    
+
     def goal_response_callback(self, future: SendGoalFuture) -> None:
         goal_handle = future.result()
 
@@ -49,7 +46,7 @@ class DiveActionClient(Node):
 
         self._get_result_future = goal_handle.get_result_async()
         self._get_result_future.add_done_callback(self.get_result_callback)
-    
+
     def get_result_callback(self, future: GetResultFuture) -> None:
         result_response = future.result()
         result = result_response.result
@@ -63,10 +60,10 @@ class DiveActionClient(Node):
 
 def main(args: Optional[list[str]] = None) -> None:
     rclpy.init(args=args)
-    
+
     action_client = DiveActionClient()
     action_client.send_goal(2.0)
-    
+
     rclpy.spin(action_client)
 
 

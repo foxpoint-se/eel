@@ -1,18 +1,17 @@
 from __future__ import annotations
 
 import importlib.util
+import sys
 from pathlib import Path
 
 import pytest
 
 SCRIPTS_DIR = Path(__file__).resolve().parents[1] / "scripts"
-SPEC = importlib.util.spec_from_file_location(
-    "ci_discord_message", SCRIPTS_DIR / "ci_discord_message.py"
-)
+SPEC = importlib.util.spec_from_file_location("ci_discord_message", SCRIPTS_DIR / "ci_discord_message.py")
 if SPEC is None or SPEC.loader is None:
     raise ImportError(f"Could not load ci_discord_message from {SCRIPTS_DIR}")
 ci_discord_message = importlib.util.module_from_spec(SPEC)
-import sys
+
 sys.modules[SPEC.name] = ci_discord_message
 SPEC.loader.exec_module(ci_discord_message)
 
@@ -137,7 +136,9 @@ def test__when_release_notes_have_features_after_fixes__should_prioritize_featur
 
 
 def test__when_prioritized_release_notes_truncated__should_keep_feature_visible() -> None:
-    long_fix = "- Fix something lengthy in the subsystem\n  ([`deadbeef`](https://github.com/example/commit/deadbeef))\n\n"
+    long_fix = (
+        "- Fix something lengthy in the subsystem\n  ([`deadbeef`](https://github.com/example/commit/deadbeef))\n\n"
+    )
     notes = f"""## v1.1.0 (2026-07-27)
 
 ### Bug Fixes

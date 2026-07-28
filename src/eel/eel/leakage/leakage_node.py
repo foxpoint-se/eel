@@ -4,8 +4,9 @@ from typing import Optional
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Bool
-from ..utils.topics import LEAKAGE_STATUS
+
 from ..utils.constants import SIMULATE_PARAM
+from ..utils.topics import LEAKAGE_STATUS
 from .leakage_source import LeakageSource
 
 
@@ -31,8 +32,7 @@ class Leakage(Node):
         self.sensor = sensor
 
         self.poller = self.create_timer(1.0 / self.update_frequency, self.read_and_publish_sensor_value)
-        self.get_logger().info(
-            f"{'Simulate' if self.should_simulate else ''} Leakage node started.")
+        self.get_logger().info(f"{'Simulate' if self.should_simulate else ''} Leakage node started.")
 
     def read_and_publish_sensor_value(self) -> None:
         msg = Bool()

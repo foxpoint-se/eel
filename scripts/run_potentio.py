@@ -1,9 +1,8 @@
 import time
 
+import adafruit_ads1x15.ads1015 as ADS
 import board
 import busio
-import adafruit_ads1x15.ads1015 as ADS
-
 from adafruit_ads1x15.analog_in import AnalogIn
 
 i2c = busio.I2C(board.SCL, board.SDA)

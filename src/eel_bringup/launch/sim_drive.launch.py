@@ -1,9 +1,10 @@
 import os
 from datetime import datetime
 
+from launch_ros.actions import Node
+
 from launch import LaunchDescription
 from launch.actions import ExecuteProcess
-from launch_ros.actions import Node
 
 SIMULATE_PARAM = "simulate"
 
@@ -15,9 +16,7 @@ def generate_launch_description():
     date_format = date_time.replace(" ", "-").replace(":", "-")
     ros_bag_path = os.path.join(os.getcwd(), "ros_bags", f"{date_format}-recording")
 
-    ros_bag = ExecuteProcess(
-        cmd=["ros2", "bag", "record", "--all", "--storage", "mcap", "--output", ros_bag_path]
-    )
+    ros_bag = ExecuteProcess(cmd=["ros2", "bag", "record", "--all", "--storage", "mcap", "--output", ros_bag_path])
 
     imu_node = Node(
         package="eel",
@@ -53,38 +52,15 @@ def generate_launch_description():
         parameters=[{SIMULATE_PARAM: True}],
     )
 
-    modem_node = Node(
-        package="eel",
-        executable="modem",
-        name="modem_node",
-        parameters=[{SIMULATE_PARAM: True}]
-    )
+    modem_node = Node(package="eel", executable="modem", name="modem_node", parameters=[{SIMULATE_PARAM: True}])
 
-    battery_node = Node(
-        package="eel",
-        executable="battery",
-        name="battery",
-        parameters=[{SIMULATE_PARAM: True}]
-    )
+    battery_node = Node(package="eel", executable="battery", name="battery", parameters=[{SIMULATE_PARAM: True}])
 
-    leakage_node = Node(
-        package="eel",
-        executable="leakage",
-        name="leakage",
-        parameters=[{SIMULATE_PARAM: True}]
-    )
+    leakage_node = Node(package="eel", executable="leakage", name="leakage", parameters=[{SIMULATE_PARAM: True}])
 
-    navigation_server_node = Node(
-        package="eel",
-        executable="navigate",
-        name="navigate"
-    )
+    navigation_server_node = Node(package="eel", executable="navigate", name="navigate")
 
-    navigation_client_node = Node(
-        package="eel",
-        executable="navigate_client",
-        name="navigate_client"
-    )
+    navigation_client_node = Node(package="eel", executable="navigate_client", name="navigate_client")
 
     ld.add_action(ros_bag)
     ld.add_action(imu_node)

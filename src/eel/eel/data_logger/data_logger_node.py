@@ -1,25 +1,27 @@
 #!/usr/bin/env python3
-from time import time
 from datetime import datetime, timezone
+from time import time
 from typing import List, Optional
 
 import rclpy
 from rclpy.node import Node
+
 from eel_interfaces.msg import (
     Coordinate,
-    PressureStatus,
-    TracedRoute,
-    SubmergedCoordinate,
     ModemStatus,
+    PressureStatus,
+    SubmergedCoordinate,
+    TracedRoute,
 )
+
 from ..utils.topics import (
-    MODEM_STATUS,
     LOCALIZATION_STATUS,
+    MODEM_STATUS,
     PRESSURE_STATUS,
     ROUTE_TRACING_UPDATES,
 )
+from .common import Coord3d, Segment, TimedCoord3d
 from .data_recorder import PathRecorder
-from .common import Segment, TimedCoord3d, Coord3d
 
 
 def to_submerged_coordinate(coord: TimedCoord3d) -> SubmergedCoordinate:
@@ -51,19 +53,11 @@ class DataLogger(Node):
     def __init__(self) -> None:
         super().__init__("data_logger_node", parameter_overrides=[])
         self.logger = self.get_logger()
-        self.create_subscription(
-            PressureStatus, PRESSURE_STATUS, self.handle_pressure_msg, 10
-        )
-        self.create_subscription(
-            Coordinate, LOCALIZATION_STATUS, self.handle_location_msg, 10
-        )
+        self.create_subscription(PressureStatus, PRESSURE_STATUS, self.handle_pressure_msg, 10)
+        self.create_subscription(Coordinate, LOCALIZATION_STATUS, self.handle_location_msg, 10)
         self.current_modem_status: ModemStatus | None = None
-        self.create_subscription(
-            ModemStatus, MODEM_STATUS, self.on_connectivity_msg, 10
-        )
-        self.history_event_publisher = self.create_publisher(
-            TracedRoute, ROUTE_TRACING_UPDATES, 10
-        )
+        self.create_subscription(ModemStatus, MODEM_STATUS, self.on_connectivity_msg, 10)
+        self.history_event_publisher = self.create_publisher(TracedRoute, ROUTE_TRACING_UPDATES, 10)
         self.worker = self.create_timer(1.0, self.update_recorder)
 
         self.recorder = PathRecorder(

@@ -1,6 +1,5 @@
 from .types import CalibrationOffsets
 
-
 PITCH_CORRECTION = 1.69
 ROLL_CORRECTION = 0.0
 HEADING_CORRECTION = 0

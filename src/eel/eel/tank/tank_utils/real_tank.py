@@ -1,6 +1,6 @@
-from .tank_base import Tank
-from .real_pump import RealPump
 from .real_distance_sensor import RealDistanceSensor
+from .real_pump import RealPump
+from .tank_base import Tank
 
 
 class RealTank(Tank):

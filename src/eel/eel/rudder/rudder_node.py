@@ -1,28 +1,29 @@
 #!/usr/bin/env python3
-import rclpy
-from rclpy.node import Node
-from rclpy.executors import ExternalShutdownException
-from geometry_msgs.msg import Vector3
-from std_msgs.msg import Float32
 import math
-import sys
 import signal
+import sys
+from enum import Enum
 from types import FrameType
 from typing import Optional
-from enum import Enum
+
+import rclpy
+from geometry_msgs.msg import Vector3
+from rclpy.node import Node
+from std_msgs.msg import Float32
+
 from eel_interfaces.msg import ImuStatus
 
+from ..utils.constants import SIMULATE_PARAM
 from ..utils.topics import (
+    IMU_STATUS,
     RUDDER_STATUS,
     RUDDER_X_CMD,
-    RUDDER_X_SET_OFFSET,
     RUDDER_X_OFFSET,
+    RUDDER_X_SET_OFFSET,
     RUDDER_Y_CMD,
-    RUDDER_Y_SET_OFFSET,
     RUDDER_Y_OFFSET,
-    IMU_STATUS,
+    RUDDER_Y_SET_OFFSET,
 )
-from ..utils.constants import SIMULATE_PARAM
 from ..utils.utils import clamp
 from .actuator.actuator import get_xy_rudder
 from .actuator.types import Vector2d
@@ -54,25 +55,15 @@ class Rudder(Node):
         self.declare_parameter(pigpiod_host_parameter, "localhost")
         self.pigpiod_host = str(self.get_parameter(pigpiod_host_parameter).value)
 
-        self.x_subscription = self.create_subscription(
-            Float32, RUDDER_X_CMD, self.handle_x_cmd, 10
-        )
-        self.x_offset_subscription = self.create_subscription(
-            Float32, RUDDER_X_SET_OFFSET, self.handle_x_offset, 10
-        )
+        self.x_subscription = self.create_subscription(Float32, RUDDER_X_CMD, self.handle_x_cmd, 10)
+        self.x_offset_subscription = self.create_subscription(Float32, RUDDER_X_SET_OFFSET, self.handle_x_offset, 10)
         self.x_offset_publisher = self.create_publisher(Float32, RUDDER_X_OFFSET, 10)
-        self.y_subscription = self.create_subscription(
-            Float32, RUDDER_Y_CMD, self.handle_y_cmd, 10
-        )
-        self.y_offset_subscription = self.create_subscription(
-            Float32, RUDDER_Y_SET_OFFSET, self.handle_y_offset, 10
-        )
+        self.y_subscription = self.create_subscription(Float32, RUDDER_Y_CMD, self.handle_y_cmd, 10)
+        self.y_offset_subscription = self.create_subscription(Float32, RUDDER_Y_SET_OFFSET, self.handle_y_offset, 10)
         self.y_offset_publisher = self.create_publisher(Float32, RUDDER_Y_OFFSET, 10)
         self.rudder_status_publisher = self.create_publisher(Vector3, RUDDER_STATUS, 10)
 
-        self.imu_subscription = self.create_subscription(
-            ImuStatus, IMU_STATUS, self._handle_imu_msg, 10
-        )
+        self.imu_subscription = self.create_subscription(ImuStatus, IMU_STATUS, self._handle_imu_msg, 10)
 
         self.current_x_cmd: float = float()
         self.current_y_cmd: float = float()
@@ -80,13 +71,9 @@ class Rudder(Node):
         self.current_roll = 0.0
         self.current_rudder_status: Vector2d = {"x": 0.0, "y": 0.0}
 
-        self.xy_rudder = get_xy_rudder(
-            {"simulate": self.should_simulate, "pigpiod_host": self.pigpiod_host}
-        )
+        self.xy_rudder = get_xy_rudder({"simulate": self.should_simulate, "pigpiod_host": self.pigpiod_host})
 
-        self.logger.info(
-            "{}Rudder node started.".format("SIMULATE " if self.should_simulate else "")
-        )
+        self.logger.info("{}Rudder node started.".format("SIMULATE " if self.should_simulate else ""))
 
         # Send the initial offset values for rudder x and y for front end to pick up
         self.publish_rudder_offset_value(Rudders.RUDDER_X)
@@ -119,7 +106,7 @@ class Rudder(Node):
         rudder_offset_msg.data = float(offset_value)
         publisher.publish(rudder_offset_msg)
 
-    def handle_x_offset(self, msg:Float32) -> None:
+    def handle_x_offset(self, msg: Float32) -> None:
         offset_value_to_low = msg.data < self.xy_rudder.get_x_rudder_cap_min_value()
         offset_value_to_high = msg.data > self.xy_rudder.get_x_rudder_cap_max_value()
 
@@ -131,15 +118,15 @@ class Rudder(Node):
         self.xy_rudder.set_x_rudder_offset_value(msg.data)
 
         self.publish_rudder_offset_value(Rudders.RUDDER_X)
-    
+
     def publish_x_rudder_offset_value(self) -> None:
         pass
-    
+
     def handle_y_cmd(self, msg: Float32) -> None:
         self.current_y_cmd = msg.data
         self.merge_and_handle_commands()
-    
-    def handle_y_offset(self, msg:Float32) -> None:
+
+    def handle_y_offset(self, msg: Float32) -> None:
         offset_value_to_low = msg.data < self.xy_rudder.get_y_rudder_cap_min_value()
         offset_value_to_high = msg.data > self.xy_rudder.get_y_rudder_cap_max_value()
 
@@ -149,7 +136,7 @@ class Rudder(Node):
 
         self.logger.info(f"Rudder y offset value set to {msg.data}")
         self.xy_rudder.set_y_rudder_offset_value(msg.data)
-    
+
         self.publish_rudder_offset_value(Rudders.RUDDER_Y)
 
     def merge_and_handle_commands(self) -> None:
@@ -190,9 +177,7 @@ def shutdown_handler(signum: int, frame: FrameType | None, node: Rudder) -> None
 def main(args: Optional[list[str]] = None) -> None:
     rclpy.init(args=args)
     node = Rudder()
-    signal.signal(
-        signal.SIGTERM, lambda signum, frame: shutdown_handler(signum, frame, node)
-    )
+    signal.signal(signal.SIGTERM, lambda signum, frame: shutdown_handler(signum, frame, node))
 
     try:
         rclpy.spin(node)

@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
+import math
+from time import time
 from typing import Optional
 
 import rclpy
 from rclpy.node import Node
-import math
-from time import time
-from ..utils.constants import SIMULATE_PARAM
-from ..utils.topics import PRESSURE_STATUS, IMU_STATUS
-from .pressure_source import PressureSource
+
 from eel_interfaces.msg import ImuStatus, PressureStatus
+
+from ..utils.constants import SIMULATE_PARAM
+from ..utils.topics import IMU_STATUS, PRESSURE_STATUS
+from .pressure_source import PressureSource
 
 PUBLISH_FREQUENCY = 5
 DEPTH_MOVEMENT_TOLERANCE = 0.2  # meters
@@ -33,9 +35,7 @@ def get_depth_velocity(
     return velocity
 
 
-def get_pressure_sensor(
-    should_simulate: bool, parent_node: Node, serial_port: str
-) -> PressureSource:
+def get_pressure_sensor(should_simulate: bool, parent_node: Node, serial_port: str) -> PressureSource:
     if should_simulate:
         from .pressure_sim import PressureSensorSimulator
 
@@ -56,9 +56,7 @@ class PressureNode(Node):
         # At the time of writing, Ålen uses /dev/ttyUSB1 (which is why it's the default)
         # and we don't really know which one Tvålen should use.
         self.declare_parameter("serial_port", "/dev/ttyUSB1")
-        serial_port = (
-            self.get_parameter("serial_port").get_parameter_value().string_value
-        )
+        serial_port = self.get_parameter("serial_port").get_parameter_value().string_value
 
         self.sensor = get_pressure_sensor(self.should_simulate, self, serial_port)
 
@@ -72,11 +70,7 @@ class PressureNode(Node):
         self.publisher = self.create_publisher(PressureStatus, PRESSURE_STATUS, 10)
         self.updater = self.create_timer(1.0 / PUBLISH_FREQUENCY, self.publish_status)
 
-        self.get_logger().info(
-            "{}Pressure node started.".format(
-                "SIMULATE " if self.should_simulate else ""
-            )
-        )
+        self.get_logger().info("{}Pressure node started.".format("SIMULATE " if self.should_simulate else ""))
 
     def handle_imu_msg(self, msg: ImuStatus) -> None:
         self.current_pitch = msg.pitch
@@ -89,9 +83,7 @@ class PressureNode(Node):
 
             now = time()
 
-            depth_velocity = get_depth_velocity(
-                current_depth, self.last_depth_reading, now, self.last_depth_at
-            )
+            depth_velocity = get_depth_velocity(current_depth, self.last_depth_reading, now, self.last_depth_at)
 
             msg = PressureStatus()
             msg.depth = current_depth

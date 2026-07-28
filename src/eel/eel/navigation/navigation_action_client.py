@@ -4,39 +4,38 @@ from typing import Deque, List, Optional, Protocol, Sequence, TypeAlias
 
 import rclpy
 from action_msgs.msg import GoalStatus
-from std_msgs.msg import Bool, String
 from rclpy.action import ActionClient
 from rclpy.action.client import ClientGoalHandle
 from rclpy.node import Node
 from rclpy.task import Future
 from rclpy.type_support import GetResultServiceResponse
+from std_msgs.msg import Bool, String
 
 from eel_interfaces.action import Navigate
 from eel_interfaces.msg import (
-    NavigationStatus,
-    NavigationMission,
-    Coordinate,
     BatteryStatus,
+    Coordinate,
     NavigationAssignment,
+    NavigationMission,
+    NavigationStatus,
     PressureStatus,
 )
+
+from ..utils.constants import NavigationMissionStatus
 from ..utils.topics import (
     BATTERY_STATUS,
+    GNSS_STATUS,
     LEAKAGE_STATUS,
+    LOCALIZATION_STATUS,
     NAVIGATION_CMD,
-    NAVIGATION_STATUS,
     NAVIGATION_LOAD_MISSION,
     NAVIGATION_LOAD_NAMED_MISSION,
-    GNSS_STATUS,
+    NAVIGATION_STATUS,
     PRESSURE_STATUS,
-    LOCALIZATION_STATUS,
 )
-from ..utils.constants import NavigationMissionStatus
 from .common import get_2d_distance_from_coords
 
-NavigateGoalHandle: TypeAlias = ClientGoalHandle[
-    Navigate.Goal, Navigate.Result, Navigate.Feedback, object
-]
+NavigateGoalHandle: TypeAlias = ClientGoalHandle[Navigate.Goal, Navigate.Result, Navigate.Feedback, object]
 SendGoalFuture: TypeAlias = Future[NavigateGoalHandle]
 GetResultFuture: TypeAlias = Future[GetResultServiceResponse[Navigate.Result]]
 
@@ -44,28 +43,82 @@ GetResultFuture: TypeAlias = Future[GetResultServiceResponse[Navigate.Result]]
 class NavigateFeedbackMessage(Protocol):
     feedback: Navigate.Feedback
 
+
 GNSS_TIMEOUT_S = 300  # 5 minutes
 MISSION_TIMEOUT_S = 3600  # 1 hour
 MAX_DEPTH_METERS = 3.0
 COUNT_MAX_DEPTHS = 3
 
+
 def create_rotholmen_runt_2025_mission() -> NavigationMission:
     mission = NavigationMission()
     assignments: List[NavigationAssignment] = [
-        NavigationAssignment(coordinate=Coordinate(lat=59.309024798716145, lon=17.97766066452895), target_depth=0.0, sync_after=False),
-        NavigationAssignment(coordinate=Coordinate(lat=59.30938074193075, lon=17.976039505952492), target_depth=0.0, sync_after=False),
-        NavigationAssignment(coordinate=Coordinate(lat=59.31003238216224, lon=17.974268041282897), target_depth=0.0, sync_after=False),
-        NavigationAssignment(coordinate=Coordinate(lat=59.31124253803556, lon=17.973237370929635), target_depth=1.8, sync_after=True),
-        NavigationAssignment(coordinate=Coordinate(lat=59.31260596522936, lon=17.972947494892782), target_depth=1.8, sync_after=True),
-        NavigationAssignment(coordinate=Coordinate(lat=59.313246592863365, lon=17.97532018393514), target_depth=1.8, sync_after=True),
-        NavigationAssignment(coordinate=Coordinate(lat=59.31326301905425, lon=17.977467413837743), target_depth=1.8, sync_after=True),
-        NavigationAssignment(coordinate=Coordinate(lat=59.312304811316324, lon=17.979410656899567), target_depth=1.8, sync_after=True),
-        NavigationAssignment(coordinate=Coordinate(lat=59.31118778078151, lon=17.977972012864825), target_depth=1.8, sync_after=True),
-        NavigationAssignment(coordinate=Coordinate(lat=59.31004240514067, lon=17.97663803259078), target_depth=1.8, sync_after=False),
-        NavigationAssignment(coordinate=Coordinate(lat=59.30951945130858, lon=17.975909267643953), target_depth=0.0, sync_after=False),
-        NavigationAssignment(coordinate=Coordinate(lat=59.309320505648635, lon=17.979238878507378), target_depth=0.0, sync_after=False),
-        NavigationAssignment(coordinate=Coordinate(lat=59.308889, lon=17.979588), target_depth=0.0, sync_after=False),
-    ]    
+        NavigationAssignment(
+            coordinate=Coordinate(lat=59.309024798716145, lon=17.97766066452895),
+            target_depth=0.0,
+            sync_after=False,
+        ),
+        NavigationAssignment(
+            coordinate=Coordinate(lat=59.30938074193075, lon=17.976039505952492),
+            target_depth=0.0,
+            sync_after=False,
+        ),
+        NavigationAssignment(
+            coordinate=Coordinate(lat=59.31003238216224, lon=17.974268041282897),
+            target_depth=0.0,
+            sync_after=False,
+        ),
+        NavigationAssignment(
+            coordinate=Coordinate(lat=59.31124253803556, lon=17.973237370929635),
+            target_depth=1.8,
+            sync_after=True,
+        ),
+        NavigationAssignment(
+            coordinate=Coordinate(lat=59.31260596522936, lon=17.972947494892782),
+            target_depth=1.8,
+            sync_after=True,
+        ),
+        NavigationAssignment(
+            coordinate=Coordinate(lat=59.313246592863365, lon=17.97532018393514),
+            target_depth=1.8,
+            sync_after=True,
+        ),
+        NavigationAssignment(
+            coordinate=Coordinate(lat=59.31326301905425, lon=17.977467413837743),
+            target_depth=1.8,
+            sync_after=True,
+        ),
+        NavigationAssignment(
+            coordinate=Coordinate(lat=59.312304811316324, lon=17.979410656899567),
+            target_depth=1.8,
+            sync_after=True,
+        ),
+        NavigationAssignment(
+            coordinate=Coordinate(lat=59.31118778078151, lon=17.977972012864825),
+            target_depth=1.8,
+            sync_after=True,
+        ),
+        NavigationAssignment(
+            coordinate=Coordinate(lat=59.31004240514067, lon=17.97663803259078),
+            target_depth=1.8,
+            sync_after=False,
+        ),
+        NavigationAssignment(
+            coordinate=Coordinate(lat=59.30951945130858, lon=17.975909267643953),
+            target_depth=0.0,
+            sync_after=False,
+        ),
+        NavigationAssignment(
+            coordinate=Coordinate(lat=59.309320505648635, lon=17.979238878507378),
+            target_depth=0.0,
+            sync_after=False,
+        ),
+        NavigationAssignment(
+            coordinate=Coordinate(lat=59.308889, lon=17.979588),
+            target_depth=0.0,
+            sync_after=False,
+        ),
+    ]
     mission.assignments = assignments
     return mission
 
@@ -105,7 +158,6 @@ MINIMUM_SYNC_DISTANCE_METERS = 15.0
 def create_goals(assignments: Sequence[NavigationAssignment], current_position: Coordinate) -> Deque[Navigate.Goal]:
     result: Deque[Navigate.Goal] = deque()
     for index, elem in enumerate(assignments):
-
         has_prev = index > 0
         if has_prev:
             prev = assignments[index - 1]
@@ -149,7 +201,6 @@ def calculate_mission_distance_meters(goals: Deque[Navigate.Goal]) -> float:
 
 
 class NavigationActionClient(Node):
-
     def __init__(self) -> None:
         super().__init__("navigation_action_client", parameter_overrides=[])
         self.logger = self.get_logger()
@@ -158,42 +209,32 @@ class NavigationActionClient(Node):
         self.update_goals_subscriber = self.create_subscription(
             NavigationMission, NAVIGATION_LOAD_MISSION, self.set_mission, 10
         )
-        
+
         self.named_mission_subscriber = self.create_subscription(
             String, NAVIGATION_LOAD_NAMED_MISSION, self.load_named_mission, 10
         )
 
-        self.navigation_cmd_subscriber = self.create_subscription(
-            Bool, NAVIGATION_CMD, self.handle_nav_cmd, 10
-        )
+        self.navigation_cmd_subscriber = self.create_subscription(Bool, NAVIGATION_CMD, self.handle_nav_cmd, 10)
 
         self.battery_status_subscriber = self.create_subscription(
             BatteryStatus, BATTERY_STATUS, self.handle_battery_status, 10
         )
 
-        self.leakage_status_subscriber = self.create_subscription(
-            Bool, LEAKAGE_STATUS, self.handle_leakage_status, 10
-        )
+        self.leakage_status_subscriber = self.create_subscription(Bool, LEAKAGE_STATUS, self.handle_leakage_status, 10)
 
         self.pressure_status_subscriber = self.create_subscription(
             PressureStatus, PRESSURE_STATUS, self.handle_pressure_status, 10
         )
 
-        self.aborter = self.create_timer(
-            1.0 / 2, self.check_mission_abort_status
-        )
+        self.aborter = self.create_timer(1.0 / 2, self.check_mission_abort_status)
 
-        self.gnss_status_subscriber = self.create_subscription(
-            Coordinate, GNSS_STATUS, self.handle_gnss_status, 10
-        )
+        self.gnss_status_subscriber = self.create_subscription(Coordinate, GNSS_STATUS, self.handle_gnss_status, 10)
 
         self.localization_subscriber = self.create_subscription(
             Coordinate, LOCALIZATION_STATUS, self.handle_localization_update, 10
         )
 
-        self.nav_publisher = self.create_publisher(
-            NavigationStatus, NAVIGATION_STATUS, 10
-        )
+        self.nav_publisher = self.create_publisher(NavigationStatus, NAVIGATION_STATUS, 10)
 
         self.updater = self.create_timer(1.0, self.publish_status)
 
@@ -201,7 +242,6 @@ class NavigationActionClient(Node):
         self.last_seen_leakage = False
 
         self.current_position: Coordinate | None = None
-
 
         self.goals: Deque[Navigate.Goal] = deque()
         self.goal_handles: list[NavigateGoalHandle] = []
@@ -237,14 +277,12 @@ class NavigationActionClient(Node):
             if self.current_position is None:
                 self.logger.info("Cannot create goals without current position.")
                 return
-            
+
             self.goals = create_goals(coordinates, self.current_position)
 
         self.mission_status = NavigationMissionStatus.MISSION_AQUIRED
         self.mission_total_meters = calculate_mission_distance_meters(self.goals)
-        self.logger.info(
-            f"Set mission with {len(self.goals)} goals over {self.mission_total_meters} meters."
-        )
+        self.logger.info(f"Set mission with {len(self.goals)} goals over {self.mission_total_meters} meters.")
 
     def load_named_mission(self, msg: String) -> None:
         if msg.data == "rotholmen_runt_2025":
@@ -259,23 +297,15 @@ class NavigationActionClient(Node):
 
         self.logger.info(f"Navigation mode command recieved:  {new_auto_mode}")
 
-        if new_auto_mode == True and self.goals_in_progress:
-            self.logger.info(
-                "Goals already set and in progress, cancel auto mode and set new goals."
-            )
+        if new_auto_mode and self.goals_in_progress:
+            self.logger.info("Goals already set and in progress, cancel auto mode and set new goals.")
 
-        if (
-            (new_auto_mode == True)
-            and (len(self.goals) > 0)
-            and not self.goals_in_progress
-        ):
-            self.logger.info(
-                f"Mission started. Mission contains {len(self.goals)} goals."
-            )
+        if (new_auto_mode) and (len(self.goals) > 0) and not self.goals_in_progress:
+            self.logger.info(f"Mission started. Mission contains {len(self.goals)} goals.")
             self.start_mission()
 
-        if (new_auto_mode == False) and self.goals_in_progress:
-            self.logger.info(f"Cancelling goals in progress.")
+        if (not new_auto_mode) and self.goals_in_progress:
+            self.logger.info("Cancelling goals in progress.")
             self.cancel_goals_in_progress()
 
         self.auto_mode = new_auto_mode
@@ -298,13 +328,9 @@ class NavigationActionClient(Node):
         battery_level_low = self.last_seen_battery_level < battery_level_threshold
 
         if self.mission_start_time:
-            mission_time_exceeded = (
-                int(time() - self.mission_start_time) > MISSION_TIMEOUT_S
-            )
+            mission_time_exceeded = int(time() - self.mission_start_time) > MISSION_TIMEOUT_S
         else:
             mission_time_exceeded = False
-
-        leakage_detected = self.last_seen_leakage
 
         gnss_timeout = (time() - self.last_gnss_update_time) > GNSS_TIMEOUT_S
 
@@ -328,8 +354,7 @@ class NavigationActionClient(Node):
         self.depth_history.append(msg.depth)
         over_limit_count = sum(d > MAX_DEPTH_METERS for d in self.depth_history)
 
-        self.is_too_deep = (over_limit_count == COUNT_MAX_DEPTHS)
-        
+        self.is_too_deep = over_limit_count == COUNT_MAX_DEPTHS
 
     def start_mission(self) -> None:
         """Method for starting the goal processing, used for starting the iteration."""
@@ -368,13 +393,12 @@ class NavigationActionClient(Node):
         status = result_response.status
 
         if status == GoalStatus.STATUS_SUCCEEDED:
-            result = result_response.result
-            self.logger.info(f"Goal finished successfully")
+            self.logger.info("Goal finished successfully")
 
             self.goals.popleft()
 
             if len(self.goals) == 0:
-                self.logger.info(f"Finished mission, no more goals left.")
+                self.logger.info("Finished mission, no more goals left.")
                 self.goals_in_progress = False
                 self.mission_start_time = None
                 self.auto_mode = False
@@ -384,7 +408,7 @@ class NavigationActionClient(Node):
                 self.send_goal(self.goals[0])
 
         elif status == GoalStatus.STATUS_CANCELED:
-            self.logger.info(f"Goal was cancelled")
+            self.logger.info("Goal was cancelled")
             self.mission_status = NavigationMissionStatus.MISSION_CANCELLED
 
     def feedback_callback(self, feedback: NavigateFeedbackMessage) -> None:
@@ -393,14 +417,12 @@ class NavigationActionClient(Node):
 
     def send_goal(self, goal_msg: Navigate.Goal) -> SendGoalFuture:
         """Method for sending a goal to the action server, returns a goal handle from the server."""
-        self.logger.debug(f"Waiting for action server...")
+        self.logger.debug("Waiting for action server...")
         self._action_client.wait_for_server()
 
-        self.logger.info(f"Sending goal request")
+        self.logger.info("Sending goal request")
 
-        self._send_goal_future = self._action_client.send_goal_async(
-            goal_msg, feedback_callback=self.feedback_callback
-        )
+        self._send_goal_future = self._action_client.send_goal_async(goal_msg, feedback_callback=self.feedback_callback)
 
         self._send_goal_future.add_done_callback(self.goal_response_callback)
 

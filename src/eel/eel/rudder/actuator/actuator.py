@@ -1,9 +1,9 @@
 from typing import TypedDict
 
 from .types import ServoOptions
+from .xy_rudder_base import XYRudder
 from .xy_rudder_sim import XYRudderSim
 from .xy_rudder_with_servos import XYRudderWithServos
-from .xy_rudder_base import XYRudder
 
 
 class ActuatorOptions(TypedDict):
@@ -18,7 +18,7 @@ default_x_options: ServoOptions = {
     "flip_direction": True,
     "cap_min": -0.75,
     "cap_max": 0.75,
-    "offset": -0.20  # Offset value should be as max_cap > value < min_cap
+    "offset": -0.20,  # Offset value should be as max_cap > value < min_cap
 }
 default_y_options: ServoOptions = {
     "pin": 19,
@@ -27,7 +27,7 @@ default_y_options: ServoOptions = {
     "flip_direction": False,
     "cap_min": -0.75,
     "cap_max": 0.75,
-    "offset": 0.0  # Offset value should be as max_cap > value < min_cap
+    "offset": 0.0,  # Offset value should be as max_cap > value < min_cap
 }
 
 

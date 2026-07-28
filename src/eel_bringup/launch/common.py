@@ -1,6 +1,6 @@
 from typing import Literal
-from launch_ros.actions import Node
 
+from launch_ros.actions import Node
 
 SIMULATE_PARAM = "simulate"
 
@@ -61,9 +61,7 @@ def create_motor_node(simulate: bool = False) -> Node:
     )
 
 
-def create_tank_node(
-    name: Literal["front_tank", "rear_tank"], simulate: bool = False
-) -> Node:
+def create_tank_node(name: Literal["front_tank", "rear_tank"], simulate: bool = False) -> Node:
     if name == "front_tank":
         return Node(
             package="eel",

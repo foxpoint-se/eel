@@ -1,14 +1,15 @@
 from abc import ABC, abstractmethod
-from math import sin, radians
-from typing import Callable, TypedDict
+from math import radians, sin
 from time import time
+from typing import Callable, TypedDict
+
+from ..utils.nav import get_next_rudder_turn
 from .common import (
+    TOLERANCE_IN_METERS,
     LatLon,
     get_2d_distance,
     get_relative_bearing,
-    TOLERANCE_IN_METERS,
 )
-from ..utils.nav import get_closest_turn_direction, get_next_rudder_turn
 
 
 def cap_value(value: float, floor: float, ceiling: float) -> float:
@@ -72,40 +73,38 @@ def has_passed_waypoint(
     # Check if waypoint is passed
     return t > 1
 
+
 # NOTE: cte means "cross track error"
 def get_desired_heading_with_cte_correction(
-        current_pos: LatLon,
-        target_pos: LatLon,
-        initial_bearing_to_target: float,
-        distance_to_target: float,
-    ) -> float:
-        bearing_to_target = get_relative_bearing(current_pos, target_pos)
+    current_pos: LatLon,
+    target_pos: LatLon,
+    initial_bearing_to_target: float,
+    distance_to_target: float,
+) -> float:
+    bearing_to_target = get_relative_bearing(current_pos, target_pos)
 
-        offset = bearing_to_target - initial_bearing_to_target
+    offset = bearing_to_target - initial_bearing_to_target
 
-        cross_track_error = sin(radians(offset)) * distance_to_target
+    cross_track_error = sin(radians(offset)) * distance_to_target
 
-        bearing_of_path = initial_bearing_to_target
-        ect = cross_track_error
-        kct = -7.0  # NOTE: -20 works pretty good
-        corrective_turn_angle = ect * kct
+    bearing_of_path = initial_bearing_to_target
+    ect = cross_track_error
+    kct = -7.0  # NOTE: -20 works pretty good
+    corrective_turn_angle = ect * kct
 
-        # NOTE: when capping here, we might get a value like -250, since it's smaller than 90
-        # this results in it turning full circle when we have a large error
-        # instead we're capping between -90 and 90. this way we're avoiding turning the wrong way
+    # NOTE: when capping here, we might get a value like -250, since it's smaller than 90
+    # this results in it turning full circle when we have a large error
+    # instead we're capping between -90 and 90. this way we're avoiding turning the wrong way
 
-        # NOTE: we have not solved what to do if we have passed the point.
-        # the eel will return to desired path, but since it has passed the waypoint,
-        # it will keep on going away from it. just following desired angle.
-        # we need to fix that somehow. like: if it has passed it (if some angle is greater than some
-        # value or something?) then we should just head for the waypoint instead.
-        # i dunno.
-        desired_heading = (
-            bearing_of_path - cap_value(corrective_turn_angle, -90, 90)
-        ) % 360
-        
-        return desired_heading
+    # NOTE: we have not solved what to do if we have passed the point.
+    # the eel will return to desired path, but since it has passed the waypoint,
+    # it will keep on going away from it. just following desired angle.
+    # we need to fix that somehow. like: if it has passed it (if some angle is greater than some
+    # value or something?) then we should just head for the waypoint instead.
+    # i dunno.
+    desired_heading = (bearing_of_path - cap_value(corrective_turn_angle, -90, 90)) % 360
 
+    return desired_heading
 
 
 # TODO: the start_pos should optimally be the start of the route, rather than current position.
@@ -149,10 +148,7 @@ class WaypointAndDepth(Assignment):
             return {"distance_to_target": distance_to_target}
 
         desired_heading = get_desired_heading_with_cte_correction(
-            current_position,
-            self.target_pos,
-            self._initial_bearing_to_target,
-            distance_to_target
+            current_position, self.target_pos, self._initial_bearing_to_target, distance_to_target
         )
 
         next_rudder_turn = get_next_rudder_turn(current_heading, desired_heading)
@@ -216,7 +212,7 @@ class SurfaceAssignment(Assignment):
             print("HAS SYNCED FOR X SECONDS. DONE.")
             self.is_done = True
             return {"distance_to_target": distance_to_target}
-        
+
         next_motor = 1.0
         vehicle_pos = (current_position["lat"], current_position["lon"])
         has_passed = has_passed_waypoint(self._prev_wp, self._curr_wp, vehicle_pos)
@@ -227,19 +223,14 @@ class SurfaceAssignment(Assignment):
             next_motor = 0.0
 
         desired_heading = get_desired_heading_with_cte_correction(
-            current_position,
-            self.target_pos,
-            self._initial_bearing_to_target,
-            distance_to_target
+            current_position, self.target_pos, self._initial_bearing_to_target, distance_to_target
         )
 
         next_rudder_turn = get_next_rudder_turn(current_heading, desired_heading)
 
-
         # bearing_to_target = get_relative_bearing(current_position, self.target_pos)
 
         # next_rudder_turn = get_next_rudder_turn(current_heading, bearing_to_target)
-
 
         self.on_set_rudder(next_rudder_turn)
         self.on_set_motor(next_motor)

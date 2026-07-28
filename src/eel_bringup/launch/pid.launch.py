@@ -1,6 +1,6 @@
-from launch import LaunchDescription
 from launch_ros.actions import Node
 
+from launch import LaunchDescription
 
 SIMULATE_PARAM = "simulate"
 MOTOR_PIN_PARAM = "motor_pin"
@@ -53,7 +53,8 @@ def generate_launch_description():
         ],
     )
 
-    # NOTE: when trimming pid values, run imu and pressure in separate terminals, so they don't have to be re-calibrated every time.
+    # NOTE: when trimming pid values, run imu and pressure in separate terminals,
+    # so they don't have to be re-calibrated every time.
     # pressure_node = Node(
     #     package="eel",
     #     executable="pressure",

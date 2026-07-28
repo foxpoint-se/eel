@@ -1,9 +1,10 @@
+from typing import List, TypedDict
+
 from eel_interfaces.msg import (
     Coordinate,
-    TracedRoute,
     SubmergedCoordinate,
+    TracedRoute,
 )
-from typing import List, TypedDict
 
 
 class CoordinateMqtt(TypedDict):

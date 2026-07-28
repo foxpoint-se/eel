@@ -1,17 +1,19 @@
+from time import time
 from typing import TYPE_CHECKING
 
-from time import time
-from std_msgs.msg import Float32
 from geometry_msgs.msg import Vector3
+from std_msgs.msg import Float32
+
 from eel_interfaces.msg import TankStatus
-from .types import CalibrationOffsets
+
 from ..utils.sim import ANGULAR_VELOCITY
 from ..utils.topics import (
-    RUDDER_STATUS,
-    MOTOR_CMD,
     FRONT_TANK_STATUS,
+    MOTOR_CMD,
     REAR_TANK_STATUS,
+    RUDDER_STATUS,
 )
+from .types import CalibrationOffsets
 
 if TYPE_CHECKING:
     from .imu_node import ImuNode
@@ -75,23 +77,13 @@ class ImuSimulator:
             "acc": (0, 0, 0),
         }
 
-        self.rudder_subscription = parent_node.create_subscription(
-            Vector3, RUDDER_STATUS, self._handle_rudder_msg, 10
-        )
-        self.motor_subscription = parent_node.create_subscription(
-            Float32, MOTOR_CMD, self._handle_motor_msg, 10
-        )
+        self.rudder_subscription = parent_node.create_subscription(Vector3, RUDDER_STATUS, self._handle_rudder_msg, 10)
+        self.motor_subscription = parent_node.create_subscription(Float32, MOTOR_CMD, self._handle_motor_msg, 10)
 
-        parent_node.create_subscription(
-            TankStatus, FRONT_TANK_STATUS, self._handle_front_tank_msg, 10
-        )
-        parent_node.create_subscription(
-            TankStatus, REAR_TANK_STATUS, self._handle_rear_tank_msg, 10
-        )
+        parent_node.create_subscription(TankStatus, FRONT_TANK_STATUS, self._handle_front_tank_msg, 10)
+        parent_node.create_subscription(TankStatus, REAR_TANK_STATUS, self._handle_rear_tank_msg, 10)
 
-        self.imu_updater = parent_node.create_timer(
-            1.0 / (parent_node.update_frequency * 2), self._loop
-        )
+        self.imu_updater = parent_node.create_timer(1.0 / (parent_node.update_frequency * 2), self._loop)
 
     def _handle_rudder_msg(self, msg: Vector3) -> None:
         self.current_rudder_status = msg
@@ -107,23 +99,14 @@ class ImuSimulator:
     def _update_pitch(self) -> None:
         now = time()
         time_delta = now - self.last_updated_at
-        momentum_difference = get_momentum_difference(
-            self._front_tank_level, self._rear_tank_level
-        )
+        momentum_difference = get_momentum_difference(self._front_tank_level, self._rear_tank_level)
 
         tank_pitch_delta = 0.0
         if abs(momentum_difference) > MOMENTUM_TOLERANCE:
-            angular_velocity = get_velocity(
-                TERMINAL_PITCH_ANGULAR_VELOCITY_DEGPS, momentum_difference
-            )
+            angular_velocity = get_velocity(TERMINAL_PITCH_ANGULAR_VELOCITY_DEGPS, momentum_difference)
             tank_pitch_delta = calculate_angle_delta(angular_velocity, time_delta)
 
-        rudder_velocity = (
-            get_velocity(
-                TERMINAL_PITCH_ANGULAR_VELOCITY_DEGPS, self.current_rudder_status.y
-            )
-            * self.speed
-        )
+        rudder_velocity = get_velocity(TERMINAL_PITCH_ANGULAR_VELOCITY_DEGPS, self.current_rudder_status.y) * self.speed
         rudder_pitch_delta = calculate_angle_delta(rudder_velocity, time_delta)
 
         new_pitch = self._current_pitch + tank_pitch_delta + rudder_pitch_delta

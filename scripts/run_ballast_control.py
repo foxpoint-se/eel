@@ -2,10 +2,10 @@ import argparse
 import logging
 import time
 
-import RPi.GPIO as GPIO
 import adafruit_vl53l0x
 import board
 import busio
+import RPi.GPIO as GPIO
 
 logging.basicConfig(format="%(asctime)s %(message)s", level=logging.DEBUG)
 
@@ -41,7 +41,6 @@ class MotorControl:
 
 
 class DistanceSensor:
-
     def __init__(self, address, shut_pin, timing_budget=500000):
         self.address = address
         self.shut_pin = shut_pin
@@ -154,9 +153,7 @@ if __name__ == "__main__":
     ballast_tank = BallastTank(motor, dist_sensor)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--", type=float, default=0.0, help="Sets the ballast tank fill level, given as percentage"
-    )
+    parser.add_argument("--", type=float, default=0.0, help="Sets the ballast tank fill level, given as percentage")
     args = parser.parse_args()
 
     fill_level = args.set

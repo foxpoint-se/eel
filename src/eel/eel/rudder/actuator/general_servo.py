@@ -1,7 +1,9 @@
+from time import sleep
+
 from gpiozero import Servo
 from gpiozero.pins.pigpio import PiGPIOFactory
-from time import sleep
 from rclpy.logging import get_logger
+
 from .types import ServoOptions
 
 logger = get_logger(__name__)
@@ -57,7 +59,7 @@ class RudderServo:
 
         self.servo.value = corrected_value
 
-    # This method will not contain any checks against max/min cap, this should be 
+    # This method will not contain any checks against max/min cap, this should be
     # handled in the rudder node
     def set_offset_value(self, value: float) -> None:
         self.offset = value

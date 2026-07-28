@@ -1,5 +1,6 @@
 import time
 from typing import Optional, TypedDict
+
 from geopy import distance
 
 
@@ -50,7 +51,6 @@ class Localizer:
         current_time_sec: float,
     ) -> Optional[LatLon]:
         if self._current_position:
-
             time_delta = current_time_sec - self._last_recorded_at
 
             drift_meters = self._drift_speed * time_delta
@@ -66,9 +66,7 @@ class Localizer:
                 (new_position.latitude, new_position.longitude), bearing=self._drift_bearing
             )
 
-            self._current_position = LatLon(
-                lat=final_position.latitude, lon=final_position.longitude
-            )
+            self._current_position = LatLon(lat=final_position.latitude, lon=final_position.longitude)
 
         self._last_recorded_at = current_time_sec
 

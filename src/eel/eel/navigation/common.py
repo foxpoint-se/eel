@@ -1,9 +1,10 @@
-from eel_interfaces.msg import Coordinate
 from typing import TypedDict
+
+from eel_interfaces.msg import Coordinate
+
 from ..utils.nav import (
     get_distance_in_meters,
     get_relative_bearing_in_degrees,
-    get_next_rudder_turn,
 )
 
 

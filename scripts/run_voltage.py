@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 import logging
-from ina226 import INA226
 from time import sleep
+
+from ina226 import INA226
 
 
 def read():
@@ -46,9 +47,7 @@ if __name__ == "__main__":
         while 1:
             if ina.is_conversion_ready():
                 sleep(3)
-                print(
-                    "===================================================Conversion ready"
-                )
+                print("===================================================Conversion ready")
                 read()
                 break
         sleep(1)
