@@ -29,6 +29,8 @@ Prefer `chore:` / `ci:` for infra-only work that never touches application sourc
 
 **Bulk lint/format** across many source files: `feat:` or `fix:` is fine — we touch real code and a version bump is a useful marker even when behavior is unchanged.
 
+Before committing, ask: **what changelog entry should this merge produce?** Match commit type and count to that — squash PR wiring into the meaningful commit.
+
 ## Before commit
 
 ```bash
