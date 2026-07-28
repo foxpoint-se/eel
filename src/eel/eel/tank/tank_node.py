@@ -128,13 +128,13 @@ class TankNode(Node):
     def __init__(self) -> None:
         super().__init__("tank_node", parameter_overrides=[])
         self.declare_parameter(SIMULATE_PARAM, False)
-        self.declare_parameter(CMD_TOPIC_PARAM)
-        self.declare_parameter(STATUS_TOPIC_PARAM)
+        self.declare_parameter(CMD_TOPIC_PARAM, "")
+        self.declare_parameter(STATUS_TOPIC_PARAM, "")
         self.declare_parameter(MOTOR_PIN_PARAM, -1)
         self.declare_parameter(DIRECTION_PIN_PARAM, -1)
         self.declare_parameter(DISTANCE_SENSOR_CHANNEL_PARAM, -1)
-        self.declare_parameter(TANK_FLOOR_VALUE_PARAM)
-        self.declare_parameter(TANK_CEILING_VALUE_PARAM)
+        self.declare_parameter(TANK_FLOOR_VALUE_PARAM, 0.0)
+        self.declare_parameter(TANK_CEILING_VALUE_PARAM, 1.0)
 
         should_simulate = bool(self.get_parameter(SIMULATE_PARAM).value)
         motor_pin = int(self.get_parameter(MOTOR_PIN_PARAM).get_parameter_value().integer_value)
