@@ -78,9 +78,7 @@ def generate_test_description():
 
 class TestAllSimNodesPublishStatusOnStartup(unittest.TestCase):
     def test__when_all_sim_nodes_start__should_publish_status_on_startup(self, proc_info) -> None:
-        for _node_name, topic, msg_type in STATUS_PUBLISHERS:
-            with WaitForTopics([(topic, msg_type)], timeout=TOPIC_TIMEOUT_SEC):
-                pass
-            _assert_no_process_crashed(proc_info)
-
+        topics = [(topic, msg_type) for _node_name, topic, msg_type in STATUS_PUBLISHERS]
+        with WaitForTopics(topics, timeout=TOPIC_TIMEOUT_SEC):
+            pass
         _assert_no_process_crashed(proc_info)
