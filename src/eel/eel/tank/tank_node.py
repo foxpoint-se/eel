@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import math
 import sys
 from typing import Literal, Optional
 
@@ -48,6 +49,8 @@ LEVEL_CEILING = 1.0
 # Minimum update frequency: velocity / tolerance = 1.6 / 1.05 = 1.5 hz
 # UPDATE_FREQUENCY = 10 should therefore be plenty.
 UPDATE_FREQUENCY = 10
+
+TANK_CALIBRATION_UNSET = float("nan")
 
 
 TargetStatus = Literal["target_reached", "ceiling_reached", "floor_reached", "no_target", "adjusting"]
@@ -128,13 +131,13 @@ class TankNode(Node):
     def __init__(self) -> None:
         super().__init__("tank_node", parameter_overrides=[])
         self.declare_parameter(SIMULATE_PARAM, False)
-        self.declare_parameter(CMD_TOPIC_PARAM)
-        self.declare_parameter(STATUS_TOPIC_PARAM)
+        self.declare_parameter(CMD_TOPIC_PARAM, "")
+        self.declare_parameter(STATUS_TOPIC_PARAM, "")
         self.declare_parameter(MOTOR_PIN_PARAM, -1)
         self.declare_parameter(DIRECTION_PIN_PARAM, -1)
         self.declare_parameter(DISTANCE_SENSOR_CHANNEL_PARAM, -1)
-        self.declare_parameter(TANK_FLOOR_VALUE_PARAM)
-        self.declare_parameter(TANK_CEILING_VALUE_PARAM)
+        self.declare_parameter(TANK_FLOOR_VALUE_PARAM, TANK_CALIBRATION_UNSET)
+        self.declare_parameter(TANK_CEILING_VALUE_PARAM, TANK_CALIBRATION_UNSET)
 
         should_simulate = bool(self.get_parameter(SIMULATE_PARAM).value)
         motor_pin = int(self.get_parameter(MOTOR_PIN_PARAM).get_parameter_value().integer_value)
@@ -144,6 +147,9 @@ class TankNode(Node):
         )
         floor_value = float(self.get_parameter(TANK_FLOOR_VALUE_PARAM).get_parameter_value().double_value)
         ceiling_value = float(self.get_parameter(TANK_CEILING_VALUE_PARAM).get_parameter_value().double_value)
+
+        if math.isnan(floor_value) or math.isnan(ceiling_value):
+            raise TypeError(f"Missing calibration parameters ({TANK_FLOOR_VALUE_PARAM}, {TANK_CEILING_VALUE_PARAM})")
 
         self.is_autocorrecting: bool = False
         self.target_level: Optional[float] = None

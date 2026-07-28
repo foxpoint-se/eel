@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 from collections import deque
 from time import time
-from typing import Deque, List, Optional, Protocol, Sequence, TypeAlias
+from typing import TYPE_CHECKING, Deque, List, Optional, Protocol, Sequence, TypeAlias
 
 import rclpy
 from action_msgs.msg import GoalStatus
@@ -8,7 +10,6 @@ from rclpy.action import ActionClient
 from rclpy.action.client import ClientGoalHandle
 from rclpy.node import Node
 from rclpy.task import Future
-from rclpy.type_support import GetResultServiceResponse
 from std_msgs.msg import Bool, String
 
 from eel_interfaces.action import Navigate
@@ -35,9 +36,16 @@ from ..utils.topics import (
 )
 from .common import get_2d_distance_from_coords
 
-NavigateGoalHandle: TypeAlias = ClientGoalHandle[Navigate.Goal, Navigate.Result, Navigate.Feedback, object]
-SendGoalFuture: TypeAlias = Future[NavigateGoalHandle]
-GetResultFuture: TypeAlias = Future[GetResultServiceResponse[Navigate.Result]]
+if TYPE_CHECKING:
+    from rclpy.type_support import GetResultServiceResponse
+
+    NavigateGoalHandle: TypeAlias = ClientGoalHandle[Navigate.Goal, Navigate.Result, Navigate.Feedback, object]
+    SendGoalFuture: TypeAlias = Future[NavigateGoalHandle]
+    GetResultFuture: TypeAlias = Future[GetResultServiceResponse[Navigate.Result]]
+else:
+    NavigateGoalHandle = ClientGoalHandle
+    SendGoalFuture = Future
+    GetResultFuture = Future
 
 
 class NavigateFeedbackMessage(Protocol):

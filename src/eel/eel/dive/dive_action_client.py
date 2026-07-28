@@ -1,17 +1,25 @@
-from typing import Optional, Protocol, TypeAlias
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Optional, Protocol, TypeAlias
 
 import rclpy
 from rclpy.action import ActionClient
 from rclpy.action.client import ClientGoalHandle
 from rclpy.node import Node
 from rclpy.task import Future
-from rclpy.type_support import GetResultServiceResponse
 
 from eel_interfaces.action import Dive
 
-DiveGoalHandle: TypeAlias = ClientGoalHandle[Dive.Goal, Dive.Result, Dive.Feedback, object]
-SendGoalFuture: TypeAlias = Future[DiveGoalHandle]
-GetResultFuture: TypeAlias = Future[GetResultServiceResponse[Dive.Result]]
+if TYPE_CHECKING:
+    from rclpy.type_support import GetResultServiceResponse
+
+    DiveGoalHandle: TypeAlias = ClientGoalHandle[Dive.Goal, Dive.Result, Dive.Feedback, object]
+    SendGoalFuture: TypeAlias = Future[DiveGoalHandle]
+    GetResultFuture: TypeAlias = Future[GetResultServiceResponse[Dive.Result]]
+else:
+    DiveGoalHandle = ClientGoalHandle
+    SendGoalFuture = Future
+    GetResultFuture = Future
 
 
 class DiveFeedbackMessage(Protocol):
