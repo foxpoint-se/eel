@@ -38,3 +38,8 @@ match = "^main$"
 
 [tool.semantic_release.changelog]
 mode = "update"
+
+[tool.pytest.ini_options]
+markers = [
+    "launch_test: ROS launch test (requires sourced ROS + built workspace)",
+]
