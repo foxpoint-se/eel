@@ -2,6 +2,44 @@
 
 <!-- version list -->
 
+## v1.2.1 (2026-07-28)
+
+### Bug Fixes
+
+- Let navigate and dive nodes import on humble and jazzy
+  ([`855a0ba`](https://github.com/foxpoint-se/eel/commit/855a0baef95bfd545d7dede042e700739555d206))
+
+- Reject tank nodes that launch without calibration params
+  ([`e523388`](https://github.com/foxpoint-se/eel/commit/e5233882d096b2ca2bb3effb12cea5bbf87bd478))
+
+- Stop tank nodes dying when launch omits param defaults
+  ([`f45a331`](https://github.com/foxpoint-se/eel/commit/f45a331939310c6571d640ebb83a930e77473d8d))
+
+### Documentation
+
+- Remind agents to commit for the merged changelog story
+  ([`0525604`](https://github.com/foxpoint-se/eel/commit/05256049a8b5b6477ff5963a488028d70ee64d09))
+
+### Refactoring
+
+- Reuse eel param and topic constants in sim startup launch
+  ([`04cc853`](https://github.com/foxpoint-se/eel/commit/04cc8537327706397b6f7bc3a0bec0c5182ee743))
+
+### Testing
+
+- Catch sim-stack startup failures before they reach the boat
+  ([`34feb82`](https://github.com/foxpoint-se/eel/commit/34feb8246299b9a5f5d2ab2bbeea902ee0dfbb77))
+
+- Register launch_test marker in workspace pyproject.toml
+  ([`c776a18`](https://github.com/foxpoint-se/eel/commit/c776a18ad374b228c9e2a9aa599cbaf5c265fc14))
+
+- Stabilize colcon pytest runs for the startup test
+  ([`7a924e4`](https://github.com/foxpoint-se/eel/commit/7a924e4160e2d4175b272e7585e19d499d43c1f0))
+
+- Wait for all startup status topics in one pass
+  ([`d7ee3b2`](https://github.com/foxpoint-se/eel/commit/d7ee3b29be5374ff304addc8de5759f6b1436b24))
+
+
 ## v1.2.0 (2026-07-28)
 
 ### Bug Fixes
