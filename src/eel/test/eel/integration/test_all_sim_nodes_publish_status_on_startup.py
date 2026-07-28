@@ -1,10 +1,9 @@
 import os
 import unittest
-from pathlib import Path
 
 import launch
 import pytest
-from ament_index_python.packages import PackageNotFoundError, get_package_share_directory
+from ament_index_python.packages import get_package_share_directory
 from eel.utils.topics import (
     BATTERY_STATUS,
     DEPTH_CONTROL_STATUS,
@@ -59,19 +58,13 @@ def _assert_no_process_crashed(proc_info) -> None:
             raise AssertionError(f"{name} exited with code {event.returncode}")
 
 
-def _sim_all_nodes_startup_launch_file() -> str:
-    launch_name = "sim_all_nodes_startup.launch.py"
-    try:
-        share_dir = get_package_share_directory("eel_bringup")
-    except PackageNotFoundError:
-        src_root = Path(__file__).resolve().parents[4]
-        return str(src_root / "eel_bringup" / "launch" / launch_name)
-    return os.path.join(share_dir, "launch", launch_name)
-
-
 @pytest.mark.launch_test
 def generate_test_description():
-    launch_file = _sim_all_nodes_startup_launch_file()
+    launch_file = os.path.join(
+        get_package_share_directory("eel_bringup"),
+        "launch",
+        "sim_all_nodes_startup.launch.py",
+    )
     return (
         launch.LaunchDescription(
             [

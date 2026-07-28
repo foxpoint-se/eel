@@ -46,6 +46,7 @@ RUN source /opt/ros/${ROS_DISTRO}/setup.bash && \
     colcon build --symlink-install
 
 RUN source /opt/ros/${ROS_DISTRO}/setup.bash && \
+    source install/setup.bash && \
     colcon test --python-testing pytest && colcon test-result --verbose
 
 COPY ./docker/entrypoint.sh /entrypoint.sh

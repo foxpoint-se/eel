@@ -130,7 +130,7 @@ def test__when_one_known_and_sequence_of_moves__should_move_as_specified() -> No
 
 
 def test__when_moving_from_two_very_distant_knowns__distance_traveled_should_not_be_huge() -> None:
-    instance_to_test = Localizer()
+    instance_to_test = Localizer(start_time_sec=0)
     instance_to_test.update_known_position({"lat": 0, "lon": 0})
     instance_to_test.update_speed_mps(1.0)
     instance_to_test.update_heading(0)
@@ -138,7 +138,7 @@ def test__when_moving_from_two_very_distant_knowns__distance_traveled_should_not
 
     # known position is very far from previous
     instance_to_test.update_known_position({"lat": 20, "lon": 20})
-    instance_to_test.get_calculated_position(time.time() + 20.0)
+    instance_to_test.get_calculated_position(20)
 
     actual = round(instance_to_test.get_total_meters_traveled(), 1)
     assert math.isclose(a=actual, b=20, rel_tol=0.01)
