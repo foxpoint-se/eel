@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import time
-from typing import Optional, TypeAlias
+from typing import TYPE_CHECKING, Optional, TypeAlias
 
 import rclpy
 from rclpy.action import ActionServer, GoalResponse
@@ -17,7 +19,10 @@ from ..utils.topics import IMU_STATUS, PRESSURE_STATUS, RUDDER_Y_CMD
 
 UPDATE_FREQUENCY_PER_SEC = 5
 
-DiveGoalHandle: TypeAlias = ServerGoalHandle[Dive.Goal, Dive.Result, Dive.Feedback, object]
+if TYPE_CHECKING:
+    DiveGoalHandle: TypeAlias = ServerGoalHandle[Dive.Goal, Dive.Result, Dive.Feedback, object]
+else:
+    DiveGoalHandle = ServerGoalHandle
 
 
 class DiveActionServer(Node):

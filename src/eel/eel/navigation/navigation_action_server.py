@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
+from __future__ import annotations
+
 from time import sleep, time
-from typing import Optional, TypeAlias
+from typing import TYPE_CHECKING, Optional, TypeAlias
 
 import rclpy
 from rclpy.action import ActionServer, CancelResponse, GoalResponse
@@ -24,7 +26,10 @@ from ..utils.topics import (
 from .assignments import Assignment, SurfaceAssignment, WaypointAndDepth
 from .common import LatLon, get_2d_distance
 
-NavigateGoalHandle: TypeAlias = ServerGoalHandle[Navigate.Goal, Navigate.Result, Navigate.Feedback, object]
+if TYPE_CHECKING:
+    NavigateGoalHandle: TypeAlias = ServerGoalHandle[Navigate.Goal, Navigate.Result, Navigate.Feedback, object]
+else:
+    NavigateGoalHandle = ServerGoalHandle
 
 
 TARGET_DISTANCE_LIMIT = 2500
