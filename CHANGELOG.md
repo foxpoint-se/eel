@@ -2,6 +2,33 @@
 
 <!-- version list -->
 
+## v1.2.0 (2026-07-28)
+
+### Bug Fixes
+
+- Apply ruff lint and format across codebase
+  ([`f22893a`](https://github.com/foxpoint-se/eel/commit/f22893a2d35acb5a78a89cdb98cc21f5ad6cd9ba))
+
+- Extend ruff lint scope to colcon package tests
+  ([`b61f417`](https://github.com/foxpoint-se/eel/commit/b61f4173e64caead78df677455e5e2c37811044f))
+
+- Restore buoyancy call in pressure sim after lint cleanup
+  ([`7dd8b92`](https://github.com/foxpoint-se/eel/commit/7dd8b92c69f5899d9c6363a16e4fa322ae1b45eb))
+
+### Documentation
+
+- Document ruff lint commands in README
+  ([`33abb77`](https://github.com/foxpoint-se/eel/commit/33abb77dab18f9ce6504b6ac79f4beb271939141))
+
+- Encode test workflow and commit type guidance for agents
+  ([`73c2589`](https://github.com/foxpoint-se/eel/commit/73c2589265acab33682b230618e4e5b586a33002))
+
+### Features
+
+- Add ruff lint and format checks to test-checks
+  ([`4a324a9`](https://github.com/foxpoint-se/eel/commit/4a324a9b974deaccf22ed1ab6b70b1869d75276d))
+
+
 ## v1.1.1 (2026-07-27)
 
 ### Bug Fixes
