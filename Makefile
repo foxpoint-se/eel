@@ -89,12 +89,12 @@ fix-lint:		## Apply ruff lint fixes and formatting
 	ruff format $(LINT_PATHS)
 
 test-checks: typecheck-core lint
-	python3 -m pytest src/eel/test/ tests/
+	python3 -m pytest src/eel/test/ tests/ -m "not launch_test" --ignore=src/eel/test/eel/integration
 
-test-integration:
-	python3 -m colcon test --python-testing pytest; python3 -m colcon test-result --verbose
+test-integration: check-sourced
+	python3 -m pytest src/eel/test/eel/integration/ -m launch_test -v
 
-test: check-sourced test-checks test-integration		## Run all checks and colcon tests
+test: check-sourced test-checks test-integration		## Run all checks and integration tests
 
 test-ci: test-checks		## CI: Python checks only (no ROS / venv guard)
 
