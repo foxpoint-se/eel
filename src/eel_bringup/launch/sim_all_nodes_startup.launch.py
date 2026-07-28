@@ -1,20 +1,22 @@
+from eel.utils.constants import (
+    CMD_TOPIC_PARAM,
+    DIRECTION_PIN_PARAM,
+    DISTANCE_SENSOR_CHANNEL_PARAM,
+    MOTOR_PIN_PARAM,
+    SIMULATE_PARAM,
+    STATUS_TOPIC_PARAM,
+    TANK_CEILING_VALUE_PARAM,
+    TANK_FLOOR_VALUE_PARAM,
+)
+from eel.utils.topics import (
+    FRONT_TANK_CMD,
+    FRONT_TANK_STATUS,
+    REAR_TANK_CMD,
+    REAR_TANK_STATUS,
+)
 from launch_ros.actions import Node
 
 from launch import LaunchDescription
-
-SIMULATE_PARAM = "simulate"
-MOTOR_PIN_PARAM = "motor_pin"
-DIRECTION_PIN_PARAM = "direction_pin"
-DISTANCE_SENSOR_CHANNEL_PARAM = "distance_sensor_channel"
-CMD_TOPIC_PARAM = "cmd_topic"
-STATUS_TOPIC_PARAM = "status_topic"
-TANK_FLOOR_VALUE_PARAM = "tank_floor_value"
-TANK_CEILING_VALUE_PARAM = "tank_ceiling_value"
-
-FRONT_TANK_CMD = "tank_front/cmd"
-FRONT_TANK_STATUS = "tank_front/status"
-REAR_TANK_CMD = "tank_rear/cmd"
-REAR_TANK_STATUS = "tank_rear/status"
 
 
 def _tank_node(
