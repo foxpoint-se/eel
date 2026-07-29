@@ -3,8 +3,6 @@ import json
 from typing import Callable, List, Mapping, Optional, Sequence, Tuple, TypedDict, cast
 
 import rclpy
-from awscrt import mqtt
-from awsiot import mqtt_connection_builder
 from rclpy.node import Node
 from std_msgs.msg import Bool, Float32, String
 
@@ -23,6 +21,7 @@ from eel_interfaces.msg import (
     TracedRoute,
 )
 
+from ..utils.constants import SIMULATE_PARAM
 from ..utils.node_runner import spin_node_until_shutdown
 from ..utils.throttle import throttle
 from ..utils.topics import (
@@ -48,16 +47,8 @@ from ..utils.topics import (
     RUDDER_X_CMD,
     RUDDER_Y_CMD,
 )
+from .mqtt_sim import LoggingMqttBackend, MqttBackend
 from .types import CoordinateMqtt, to_traced_route_mqtt, transform_coordinate_msg
-
-
-class CertData(TypedDict):
-    endpoint: str
-    port: int
-    certificatePath: str
-    privateKeyPath: str
-    rootCAPath: str
-    clientID: str
 
 
 class DepthControlCmdMqtt(TypedDict):
@@ -131,15 +122,7 @@ class PressureStatusMqtt(TypedDict):
     depth_velocity: float
 
 
-SubscriberCallback = Callable[[str, bytes, bool, mqtt.QoS, bool], None]
-
-
-def init_one_mqtt_sub(mqtt_conn: mqtt.Connection, topic: str, callback: SubscriberCallback) -> None:
-    mqtt_conn.subscribe(
-        topic=topic,
-        qos=mqtt.QoS.AT_LEAST_ONCE,
-        callback=callback,
-    )
+SubscriberCallback = Callable[[str, bytes, bool, object, bool], None]
 
 
 def transform_battery_msg(msg: BatteryStatus) -> BatteryStatusMqtt:
@@ -201,42 +184,33 @@ class MqttBridge(Node):
     def __init__(self) -> None:
         super().__init__("mqtt_bridge_node", parameter_overrides=[])
 
-        self.mqtt_conn: Optional[mqtt.Connection] = None
-
+        self.declare_parameter(SIMULATE_PARAM, False)
+        should_simulate = bool(self.get_parameter(SIMULATE_PARAM).value)
         self.declare_parameter("path_for_config", "")
-
-        path_for_config = self.get_parameter("path_for_config").get_parameter_value().string_value
 
         self.is_connected: bool = False
 
-        self.get_logger().info("MQTT bridge node starting...")
+        mqtt_backend: MqttBackend
+        if should_simulate:
+            mqtt_backend = LoggingMqttBackend(logger=self.get_logger())
+        else:
+            from .mqtt_aws import AwsIotMqttBackend, CertData
 
-        with open(path_for_config) as f:
-            cert_data = json.load(f)
-            cert_data = cast(CertData, cert_data)
-            self.robot_name = cert_data["clientID"]
+            path_for_config = self.get_parameter("path_for_config").get_parameter_value().string_value
+            with open(path_for_config) as f:
+                cert_data = cast(CertData, json.load(f))
+            mqtt_backend = AwsIotMqttBackend(cert_data)
 
-        self.get_logger().info("Connecting directly to endpoint")
-        self.connect_to_endpoint(cert_data)
+        self._mqtt = mqtt_backend
+        self.robot_name = mqtt_backend.robot_name
+
+        prefix = "SIMULATE " if should_simulate else ""
+        self.get_logger().info(f"{prefix}MQTT bridge node starting...")
+        self._mqtt.connect()
 
         self.init_subs()
         self.init_ros_pubs()
         self.init_mqtt_subs()
-
-    def connect_to_endpoint(self, cert_data: CertData) -> None:
-        self.get_logger().info(f"Connecting directly to endpoint {cert_data['endpoint']}")
-        self.mqtt_conn = mqtt_connection_builder.mtls_from_path(
-            endpoint=cert_data["endpoint"],
-            port=cert_data["port"],
-            cert_filepath=cert_data["certificatePath"],
-            pri_key_filepath=cert_data["privateKeyPath"],
-            ca_filepath=cert_data["rootCAPath"],
-            client_id=cert_data["clientID"],
-            http_proxy_options=None,
-        )
-        connected_future = self.mqtt_conn.connect()
-        connected_future.result()
-        self.get_logger().info("Connected!")
 
     def init_mqtt_subs(self) -> None:
         topics_and_callbacks: Sequence[Tuple[str, SubscriberCallback]] = [
@@ -278,14 +252,8 @@ class MqttBridge(Node):
                 self.handle_incoming_gnss_status,
             ),
         ]
-        if self.mqtt_conn:
-            for t in topics_and_callbacks:
-                topic = t[0]
-                callback = t[1]
-                init_one_mqtt_sub(mqtt_conn=self.mqtt_conn, topic=topic, callback=callback)
-                self.get_logger().info(f"Subscribed to MQTT topic {topic}")
-        else:
-            self.get_logger().info("Could not subscribe. Connection is undefined.")
+        for topic, callback in topics_and_callbacks:
+            self._mqtt.subscribe(topic, callback)
 
     def init_ros_pubs(self) -> None:
         self.motor_publisher = self.create_publisher(Float32, MOTOR_CMD, 10)
@@ -335,7 +303,7 @@ class MqttBridge(Node):
         topic: str,
         payload: bytes,
         dup: bool,
-        qos: mqtt.QoS,
+        qos: object,
         retain: bool,
         **_kwargs: object,
     ) -> None:
@@ -349,7 +317,7 @@ class MqttBridge(Node):
         topic: str,
         payload: bytes,
         dup: bool,
-        qos: mqtt.QoS,
+        qos: object,
         retain: bool,
         **_kwargs: object,
     ) -> None:
@@ -363,7 +331,7 @@ class MqttBridge(Node):
         topic: str,
         payload: bytes,
         dup: bool,
-        qos: mqtt.QoS,
+        qos: object,
         retain: bool,
         **_kwargs: object,
     ) -> None:
@@ -378,7 +346,7 @@ class MqttBridge(Node):
         topic: str,
         payload: bytes,
         dup: bool,
-        qos: mqtt.QoS,
+        qos: object,
         retain: bool,
         **_kwargs: object,
     ) -> None:
@@ -392,7 +360,7 @@ class MqttBridge(Node):
         topic: str,
         payload: bytes,
         dup: bool,
-        qos: mqtt.QoS,
+        qos: object,
         retain: bool,
         **_kwargs: object,
     ) -> None:
@@ -409,7 +377,7 @@ class MqttBridge(Node):
         topic: str,
         payload: bytes,
         dup: bool,
-        qos: mqtt.QoS,
+        qos: object,
         retain: bool,
         **_kwargs: object,
     ) -> None:
@@ -424,7 +392,7 @@ class MqttBridge(Node):
         topic: str,
         payload: bytes,
         dup: bool,
-        qos: mqtt.QoS,
+        qos: object,
         retain: bool,
         **_kwargs: object,
     ) -> None:
@@ -439,7 +407,7 @@ class MqttBridge(Node):
         topic: str,
         payload: bytes,
         dup: bool,
-        qos: mqtt.QoS,
+        qos: object,
         retain: bool,
         **_kwargs: object,
     ) -> None:
@@ -463,7 +431,7 @@ class MqttBridge(Node):
         topic: str,
         payload: bytes,
         dup: bool,
-        qos: mqtt.QoS,
+        qos: object,
         retain: bool,
         **_kwargs: object,
     ) -> None:
@@ -477,7 +445,7 @@ class MqttBridge(Node):
         topic: str,
         payload: bytes,
         dup: bool,
-        qos: mqtt.QoS,
+        qos: object,
         retain: bool,
         **_kwargs: object,
     ) -> None:
@@ -488,9 +456,8 @@ class MqttBridge(Node):
         self.gnss_status_publisher.publish(msg)
 
     def publish_mqtt(self, topic: str, mqtt_message: Mapping[str, object]) -> None:
-        if self.is_connected is True and self.mqtt_conn:
-            json_payload = json.dumps(mqtt_message)
-            self.mqtt_conn.publish(topic=topic, payload=json_payload, qos=mqtt.QoS.AT_LEAST_ONCE)
+        if self.is_connected:
+            self._mqtt.publish(topic, mqtt_message)
 
     def modem_status_callback(self, msg: ModemStatus) -> None:
         self.is_connected = msg.connectivity

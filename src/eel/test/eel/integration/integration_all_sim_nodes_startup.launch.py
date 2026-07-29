@@ -73,6 +73,7 @@ def generate_launch_description():
             # Boot-only: started to catch import/crash regressions, not status-asserted
             Node(package="eel", executable="motor", name="motor_node", parameters=[simulate]),
             Node(package="eel", executable="led_control", name="led_node", parameters=[simulate]),
+            Node(package="eel", executable="mqtt_bridge", name="mqtt_bridge_node", parameters=[simulate]),
             Node(package="eel", executable="localization", name="localization"),
             Node(package="eel", executable="navigate", name="navigation_action_server"),
             Node(package="eel", executable="depth_control", name="depth_control_tank_node"),
