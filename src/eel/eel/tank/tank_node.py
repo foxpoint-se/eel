@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import math
-import sys
 from typing import Literal, Optional
 
 import rclpy
@@ -307,12 +306,11 @@ def main(args: Optional[list[str]] = None) -> None:
 
     try:
         rclpy.spin(node)
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, ExternalShutdownException):
         pass
-    except ExternalShutdownException:
-        sys.exit(1)
     finally:
         node.shutdown()
+        node.destroy_node()
         rclpy.try_shutdown()
 
 
