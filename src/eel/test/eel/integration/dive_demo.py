@@ -61,7 +61,7 @@ class DiveDemo(Node):
         result_response = future.result()
         result = result_response.result
         self.logger.info(f"Result, final depth: {result.final_depth}m")
-        rclpy.shutdown()
+        rclpy.try_shutdown()
 
     def feedback_callback(self, feedback_msg: DiveFeedbackMessage) -> None:
         feedback = feedback_msg.feedback
