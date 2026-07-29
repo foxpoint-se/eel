@@ -23,6 +23,7 @@ class Motor(Node):
         stop: Callable[[], None]
         forward: Callable[[float], None]
         backward: Callable[[float], None]
+        self._motor_control = None
         if self.should_simulate:
             simulator = MotorSimulator()
             stop = simulator.stop
@@ -31,16 +32,21 @@ class Motor(Node):
         else:
             from .motor_control import MotorControl
 
-            motor_control = MotorControl()
-            stop = motor_control.stop
-            forward = motor_control.forward
-            backward = motor_control.backward
+            self._motor_control = MotorControl()
+            stop = self._motor_control.stop
+            forward = self._motor_control.forward
+            backward = self._motor_control.backward
 
         self.stop = stop
         self.forward = forward
         self.backward = backward
 
         self.get_logger().info("{}Motor node started.".format("SIMULATE " if self.should_simulate else ""))
+
+    def shutdown(self) -> None:
+        self.stop()
+        if self._motor_control is not None:
+            self._motor_control.close()
 
     def handle_motor_msg(self, msg: Float32) -> None:
         motor_value = clamp(msg.data, -1, 1)
@@ -55,7 +61,7 @@ class Motor(Node):
 def main(args: Optional[list[str]] = None) -> None:
     rclpy.init(args=args)
     node = Motor()
-    spin_node_until_shutdown(node, cleanup=node.stop)
+    spin_node_until_shutdown(node, cleanup=node.shutdown)
 
 
 if __name__ == "__main__":
