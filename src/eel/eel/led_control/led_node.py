@@ -6,10 +6,10 @@ from rclpy.node import Node
 
 from eel_interfaces.msg import NavigationStatus
 
-from ..utils.constants import NavigationMissionStatus
+from ..utils.constants import SIMULATE_PARAM, NavigationMissionStatus
 from ..utils.node_runner import spin_node_until_shutdown
 from ..utils.topics import NAVIGATION_STATUS
-from .led_control import LEDControl
+from .led_sim import LEDBackend, LEDSimulator
 
 PULSE_COUNT_MAP = {
     NavigationMissionStatus.WAITING_FOR_MISSION.value: 2,
@@ -31,8 +31,15 @@ PULSE_TIME_MAP = {
 class LED(Node):
     def __init__(self) -> None:
         super().__init__("LED_node")
+        self.declare_parameter(SIMULATE_PARAM, False)
+        self.should_simulate = bool(self.get_parameter(SIMULATE_PARAM).value)
 
-        self.led_control = LEDControl()
+        if self.should_simulate:
+            self.led_control: LEDBackend = LEDSimulator()
+        else:
+            from .led_control import LEDControl
+
+            self.led_control = LEDControl()
 
         self.navigation_status_subscription = self.create_subscription(
             NavigationStatus, NAVIGATION_STATUS, self.update_mission_status, 10
@@ -41,7 +48,7 @@ class LED(Node):
         self.poller = self.create_timer(3.0, self.pulse_led)
         self.navigation_status = NavigationMissionStatus.WAITING_FOR_MISSION.value
 
-        self.get_logger().info("Started LED node")
+        self.get_logger().info(f"{'SIMULATE ' if self.should_simulate else ''}LED node started.")
 
     def update_mission_status(self, msg: NavigationStatus) -> None:
         self.navigation_status = msg.mission_status
