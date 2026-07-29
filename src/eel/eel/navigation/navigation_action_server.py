@@ -8,7 +8,7 @@ import rclpy
 from rclpy.action import ActionServer, CancelResponse, GoalResponse
 from rclpy.action.server import ServerGoalHandle
 from rclpy.callback_groups import ReentrantCallbackGroup
-from rclpy.executors import MultiThreadedExecutor
+from rclpy.executors import ExternalShutdownException, MultiThreadedExecutor
 from rclpy.node import Node
 from std_msgs.msg import Float32
 
@@ -229,12 +229,16 @@ class NavigationActionServer(Node):
 
 def main(args: Optional[list[str]] = None) -> None:
     rclpy.init(args=args)
-
     navigation_action_server = NavigationActionServer()
     executor = MultiThreadedExecutor()
-    rclpy.spin(navigation_action_server, executor=executor)
 
-    rclpy.shutdown()
+    try:
+        rclpy.spin(navigation_action_server, executor=executor)
+    except (KeyboardInterrupt, ExternalShutdownException):
+        pass
+    finally:
+        navigation_action_server.destroy_node()
+        rclpy.try_shutdown()
 
 
 if __name__ == "__main__":
