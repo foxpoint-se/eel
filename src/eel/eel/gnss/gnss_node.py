@@ -2,6 +2,7 @@
 from typing import Optional
 
 import rclpy
+from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 
 from eel_interfaces.msg import Coordinate
@@ -49,8 +50,14 @@ class GNSS(Node):
 def main(args: Optional[list[str]] = None) -> None:
     rclpy.init(args=args)
     node = GNSS()
-    rclpy.spin(node)
-    rclpy.shutdown()
+
+    try:
+        rclpy.spin(node)
+    except (KeyboardInterrupt, ExternalShutdownException):
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.try_shutdown()
 
 
 if __name__ == "__main__":

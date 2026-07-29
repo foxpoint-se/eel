@@ -8,6 +8,7 @@ import rclpy
 from action_msgs.msg import GoalStatus
 from rclpy.action import ActionClient
 from rclpy.action.client import ClientGoalHandle
+from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from rclpy.task import Future
 from std_msgs.msg import Bool, String
@@ -440,8 +441,14 @@ class NavigationActionClient(Node):
 def main(args: Optional[list[str]] = None) -> None:
     rclpy.init(args=args)
     action_client = NavigationActionClient()
-    rclpy.spin(action_client)
-    rclpy.shutdown()
+
+    try:
+        rclpy.spin(action_client)
+    except (KeyboardInterrupt, ExternalShutdownException):
+        pass
+    finally:
+        action_client.destroy_node()
+        rclpy.try_shutdown()
 
 
 if __name__ == "__main__":

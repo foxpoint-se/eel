@@ -3,6 +3,7 @@ from time import time
 from typing import Optional
 
 import rclpy
+from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from std_msgs.msg import Float32
 
@@ -345,8 +346,14 @@ class DepthControlNode(Node):
 def main(args: Optional[list[str]] = None) -> None:
     rclpy.init(args=args)
     node = DepthControlNode()
-    rclpy.spin(node)
-    rclpy.shutdown()
+
+    try:
+        rclpy.spin(node)
+    except (KeyboardInterrupt, ExternalShutdownException):
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.try_shutdown()
 
 
 if __name__ == "__main__":

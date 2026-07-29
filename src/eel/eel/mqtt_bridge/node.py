@@ -5,6 +5,7 @@ from typing import Callable, List, Mapping, Optional, Sequence, Tuple, TypedDict
 import rclpy
 from awscrt import mqtt
 from awsiot import mqtt_connection_builder
+from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from std_msgs.msg import Bool, Float32, String
 
@@ -557,8 +558,14 @@ class MqttBridge(Node):
 def main(args: Optional[list[str]] = None) -> None:
     rclpy.init(args=args)
     node = MqttBridge()
-    rclpy.spin(node)
-    rclpy.shutdown()
+
+    try:
+        rclpy.spin(node)
+    except (KeyboardInterrupt, ExternalShutdownException):
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.try_shutdown()
 
 
 if __name__ == "__main__":
