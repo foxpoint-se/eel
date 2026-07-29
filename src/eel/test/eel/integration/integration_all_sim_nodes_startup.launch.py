@@ -62,6 +62,7 @@ def generate_launch_description():
             Node(package="eel", executable="imu", name="imu_node", parameters=[simulate]),
             Node(package="eel", executable="battery", name="battery_node", parameters=[simulate]),
             Node(package="eel", executable="pressure", name="pressure_node", parameters=[simulate]),
+            Node(package="eel", executable="gnss", name="gnss_node", parameters=[simulate]),
             _tank_node("front_tank", FRONT_TANK_CMD, FRONT_TANK_STATUS, 23, 18, 0, 0.66, 0.16),
             _tank_node("rear_tank", REAR_TANK_CMD, REAR_TANK_STATUS, 24, 25, 1, 0.325, 0.005),
             Node(package="eel", executable="leakage", name="leakage_node", parameters=[simulate]),
