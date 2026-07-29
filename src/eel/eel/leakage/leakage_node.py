@@ -6,6 +6,7 @@ from rclpy.node import Node
 from std_msgs.msg import Bool
 
 from ..utils.constants import SIMULATE_PARAM
+from ..utils.node_runner import spin_node_until_shutdown
 from ..utils.topics import LEAKAGE_STATUS
 from .leakage_source import LeakageSource
 
@@ -43,8 +44,7 @@ class Leakage(Node):
 def main(args: Optional[list[str]] = None) -> None:
     rclpy.init(args=args)
     node = Leakage()
-    rclpy.spin(node)
-    rclpy.shutdown()
+    spin_node_until_shutdown(node)
 
 
 if __name__ == "__main__":

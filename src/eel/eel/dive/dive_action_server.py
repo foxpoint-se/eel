@@ -14,6 +14,7 @@ from std_msgs.msg import Float32
 from eel_interfaces.action import Dive
 from eel_interfaces.msg import ImuStatus, PressureStatus
 
+from ..utils.node_runner import spin_node_until_shutdown
 from ..utils.pid_controller import PidController
 from ..utils.topics import IMU_STATUS, PRESSURE_STATUS, RUDDER_Y_CMD
 
@@ -182,8 +183,7 @@ def main(args: Optional[list[str]] = None) -> None:
     rclpy.init(args=args)
     dive_action_server = DiveActionServer()
     executor = MultiThreadedExecutor()
-    rclpy.spin(dive_action_server, executor=executor)
-    rclpy.shutdown()
+    spin_node_until_shutdown(dive_action_server, executor=executor)
 
 
 if __name__ == "__main__":

@@ -6,6 +6,7 @@ from rclpy.node import Node
 from std_msgs.msg import Float32
 
 from ..utils.constants import SIMULATE_PARAM
+from ..utils.node_runner import spin_node_until_shutdown
 from ..utils.topics import MOTOR_CMD
 from ..utils.utils import clamp
 from .motor_sim import MotorSimulator
@@ -54,8 +55,7 @@ class Motor(Node):
 def main(args: Optional[list[str]] = None) -> None:
     rclpy.init(args=args)
     node = Motor()
-    rclpy.spin(node)
-    rclpy.shutdown()
+    spin_node_until_shutdown(node, cleanup=node.stop)
 
 
 if __name__ == "__main__":

@@ -8,6 +8,7 @@ from rclpy.node import Node
 from eel_interfaces.msg import ImuOffsets, ImuStatus
 
 from ..utils.constants import SIMULATE_PARAM
+from ..utils.node_runner import spin_node_until_shutdown
 from ..utils.topics import IMU_OFFSETS, IMU_STATUS
 from .imu_sensor import ImuSensor
 from .imu_sim import ImuSimulator
@@ -127,8 +128,7 @@ class ImuNode(Node):
 def main(args: Optional[list[str]] = None) -> None:
     rclpy.init(args=args)
     node = ImuNode()
-    rclpy.spin(node)
-    rclpy.shutdown()
+    spin_node_until_shutdown(node)
 
 
 if __name__ == "__main__":

@@ -15,6 +15,7 @@ from std_msgs.msg import Float32
 from eel_interfaces.action import Navigate
 from eel_interfaces.msg import Coordinate, DepthControlCmd, ImuStatus, PressureStatus
 
+from ..utils.node_runner import spin_node_until_shutdown
 from ..utils.topics import (
     DEPTH_CONTROL_CMD,
     IMU_STATUS,
@@ -229,12 +230,9 @@ class NavigationActionServer(Node):
 
 def main(args: Optional[list[str]] = None) -> None:
     rclpy.init(args=args)
-
     navigation_action_server = NavigationActionServer()
     executor = MultiThreadedExecutor()
-    rclpy.spin(navigation_action_server, executor=executor)
-
-    rclpy.shutdown()
+    spin_node_until_shutdown(navigation_action_server, executor=executor)
 
 
 if __name__ == "__main__":

@@ -7,6 +7,7 @@ from rclpy.node import Node
 from eel_interfaces.msg import ModemStatus
 
 from ..utils.constants import SIMULATE_PARAM
+from ..utils.node_runner import spin_node_until_shutdown
 from ..utils.topics import MODEM_STATUS
 from .modem_source import ModemSource
 
@@ -63,8 +64,7 @@ class ModemNode(Node):
 def main(args: Optional[list[str]] = None) -> None:
     rclpy.init(args=args)
     node = ModemNode()
-    rclpy.spin(node)
-    rclpy.shutdown()
+    spin_node_until_shutdown(node)
 
 
 if __name__ == "__main__":

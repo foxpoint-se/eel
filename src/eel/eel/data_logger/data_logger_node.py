@@ -14,6 +14,7 @@ from eel_interfaces.msg import (
     TracedRoute,
 )
 
+from ..utils.node_runner import spin_node_until_shutdown
 from ..utils.topics import (
     LOCALIZATION_STATUS,
     MODEM_STATUS,
@@ -111,8 +112,7 @@ class DataLogger(Node):
 def main(args: Optional[list[str]] = None) -> None:
     rclpy.init(args=args)
     data_logger_node = DataLogger()
-    rclpy.spin(data_logger_node)
-    rclpy.shutdown()
+    spin_node_until_shutdown(data_logger_node)
 
 
 if __name__ == "__main__":

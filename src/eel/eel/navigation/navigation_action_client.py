@@ -23,6 +23,7 @@ from eel_interfaces.msg import (
 )
 
 from ..utils.constants import NavigationMissionStatus
+from ..utils.node_runner import spin_node_until_shutdown
 from ..utils.topics import (
     BATTERY_STATUS,
     GNSS_STATUS,
@@ -440,8 +441,7 @@ class NavigationActionClient(Node):
 def main(args: Optional[list[str]] = None) -> None:
     rclpy.init(args=args)
     action_client = NavigationActionClient()
-    rclpy.spin(action_client)
-    rclpy.shutdown()
+    spin_node_until_shutdown(action_client)
 
 
 if __name__ == "__main__":

@@ -16,6 +16,7 @@ from eel_interfaces.msg import (
     TankStatus,
 )
 
+from ..utils.node_runner import spin_node_until_shutdown
 from ..utils.pid_controller import PidController
 from ..utils.pid_tuning import get_production_pid_settings
 from ..utils.topics import (
@@ -345,8 +346,7 @@ class DepthControlNode(Node):
 def main(args: Optional[list[str]] = None) -> None:
     rclpy.init(args=args)
     node = DepthControlNode()
-    rclpy.spin(node)
-    rclpy.shutdown()
+    spin_node_until_shutdown(node)
 
 
 if __name__ == "__main__":

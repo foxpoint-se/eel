@@ -7,6 +7,7 @@ from rclpy.node import Node
 from eel_interfaces.msg import NavigationStatus
 
 from ..utils.constants import NavigationMissionStatus
+from ..utils.node_runner import spin_node_until_shutdown
 from ..utils.topics import NAVIGATION_STATUS
 from .led_control import LEDControl
 
@@ -56,8 +57,7 @@ class LED(Node):
 def main(args: Optional[list[str]] = None) -> None:
     rclpy.init(args=args)
     node = LED()
-    rclpy.spin(node)
-    rclpy.shutdown()
+    spin_node_until_shutdown(node)
 
 
 if __name__ == "__main__":

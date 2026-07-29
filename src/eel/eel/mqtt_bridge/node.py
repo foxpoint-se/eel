@@ -23,6 +23,7 @@ from eel_interfaces.msg import (
     TracedRoute,
 )
 
+from ..utils.node_runner import spin_node_until_shutdown
 from ..utils.throttle import throttle
 from ..utils.topics import (
     BATTERY_STATUS,
@@ -557,8 +558,7 @@ class MqttBridge(Node):
 def main(args: Optional[list[str]] = None) -> None:
     rclpy.init(args=args)
     node = MqttBridge()
-    rclpy.spin(node)
-    rclpy.shutdown()
+    spin_node_until_shutdown(node)
 
 
 if __name__ == "__main__":

@@ -3,7 +3,6 @@ import unittest
 
 import launch
 import pytest
-from ament_index_python.packages import get_package_share_directory
 from eel.utils.topics import (
     BATTERY_STATUS,
     DEPTH_CONTROL_STATUS,
@@ -61,9 +60,8 @@ def _assert_no_process_crashed(proc_info) -> None:
 @pytest.mark.launch_test
 def generate_test_description():
     launch_file = os.path.join(
-        get_package_share_directory("eel_bringup"),
-        "launch",
-        "sim_all_nodes_startup.launch.py",
+        os.path.dirname(__file__),
+        "integration_all_sim_nodes_startup.launch.py",
     )
     return (
         launch.LaunchDescription(

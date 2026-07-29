@@ -1,8 +1,11 @@
+"""Integration boot-test fixture: one-shot dive action client."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional, Protocol, TypeAlias
 
 import rclpy
+from eel.utils.node_runner import spin_node_until_shutdown
 from rclpy.action import ActionClient
 from rclpy.action.client import ClientGoalHandle
 from rclpy.node import Node
@@ -26,11 +29,10 @@ class DiveFeedbackMessage(Protocol):
     feedback: Dive.Feedback
 
 
-class DiveActionClient(Node):
+class DiveDemo(Node):
     def __init__(self) -> None:
-        super().__init__("dive_action_client")
+        super().__init__("dive_demo")
         self._action_client = ActionClient(self, Dive, "dive")
-
         self.logger = self.get_logger()
 
     def send_goal(self, wanted_depth: float) -> None:
@@ -59,7 +61,7 @@ class DiveActionClient(Node):
         result_response = future.result()
         result = result_response.result
         self.logger.info(f"Result, final depth: {result.final_depth}m")
-        rclpy.shutdown()
+        rclpy.try_shutdown()
 
     def feedback_callback(self, feedback_msg: DiveFeedbackMessage) -> None:
         feedback = feedback_msg.feedback
@@ -68,11 +70,9 @@ class DiveActionClient(Node):
 
 def main(args: Optional[list[str]] = None) -> None:
     rclpy.init(args=args)
-
-    action_client = DiveActionClient()
-    action_client.send_goal(2.0)
-
-    rclpy.spin(action_client)
+    demo = DiveDemo()
+    demo.send_goal(2.0)
+    spin_node_until_shutdown(demo)
 
 
 if __name__ == "__main__":

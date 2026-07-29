@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 import math
-import sys
 from typing import Literal, Optional
 
 import rclpy
-from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from std_msgs.msg import Float32
 
@@ -20,6 +18,7 @@ from ..utils.constants import (
     TANK_CEILING_VALUE_PARAM,
     TANK_FLOOR_VALUE_PARAM,
 )
+from ..utils.node_runner import spin_node_until_shutdown
 from ..utils.pid_controller import PidController
 from ..utils.utils import clamp
 from .tank_utils.create_tank import create_tank
@@ -296,7 +295,6 @@ class TankNode(Node):
             self.tank.run_motor(next_value)
 
     def shutdown(self) -> None:
-        self.get_logger().info("Shutting down")
         self.stop_checking_against_target()
         self.tank.shutdown()
 
@@ -304,16 +302,7 @@ class TankNode(Node):
 def main(args: Optional[list[str]] = None) -> None:
     rclpy.init(args=args)
     node = TankNode()
-
-    try:
-        rclpy.spin(node)
-    except KeyboardInterrupt:
-        pass
-    except ExternalShutdownException:
-        sys.exit(1)
-    finally:
-        node.shutdown()
-        rclpy.try_shutdown()
+    spin_node_until_shutdown(node, cleanup=node.shutdown)
 
 
 if __name__ == "__main__":
