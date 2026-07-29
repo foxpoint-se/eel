@@ -2,12 +2,12 @@
 from typing import Optional
 
 import rclpy
-from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 
 from eel_interfaces.msg import Coordinate
 
 from ..utils.constants import SIMULATE_PARAM
+from ..utils.node_runner import spin_node_until_shutdown
 from ..utils.topics import GNSS_STATUS
 from .gnss_sensor import GnssSensor
 
@@ -50,14 +50,7 @@ class GNSS(Node):
 def main(args: Optional[list[str]] = None) -> None:
     rclpy.init(args=args)
     node = GNSS()
-
-    try:
-        rclpy.spin(node)
-    except (KeyboardInterrupt, ExternalShutdownException):
-        pass
-    finally:
-        node.destroy_node()
-        rclpy.try_shutdown()
+    spin_node_until_shutdown(node)
 
 
 if __name__ == "__main__":

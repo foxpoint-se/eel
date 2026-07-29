@@ -8,7 +8,6 @@ import rclpy
 from action_msgs.msg import GoalStatus
 from rclpy.action import ActionClient
 from rclpy.action.client import ClientGoalHandle
-from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from rclpy.task import Future
 from std_msgs.msg import Bool, String
@@ -24,6 +23,7 @@ from eel_interfaces.msg import (
 )
 
 from ..utils.constants import NavigationMissionStatus
+from ..utils.node_runner import spin_node_until_shutdown
 from ..utils.topics import (
     BATTERY_STATUS,
     GNSS_STATUS,
@@ -441,14 +441,7 @@ class NavigationActionClient(Node):
 def main(args: Optional[list[str]] = None) -> None:
     rclpy.init(args=args)
     action_client = NavigationActionClient()
-
-    try:
-        rclpy.spin(action_client)
-    except (KeyboardInterrupt, ExternalShutdownException):
-        pass
-    finally:
-        action_client.destroy_node()
-        rclpy.try_shutdown()
+    spin_node_until_shutdown(action_client)
 
 
 if __name__ == "__main__":

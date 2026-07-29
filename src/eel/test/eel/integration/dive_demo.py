@@ -5,9 +5,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Optional, Protocol, TypeAlias
 
 import rclpy
+from eel.utils.node_runner import spin_node_until_shutdown
 from rclpy.action import ActionClient
 from rclpy.action.client import ClientGoalHandle
-from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from rclpy.task import Future
 
@@ -72,14 +72,7 @@ def main(args: Optional[list[str]] = None) -> None:
     rclpy.init(args=args)
     demo = DiveDemo()
     demo.send_goal(2.0)
-
-    try:
-        rclpy.spin(demo)
-    except (KeyboardInterrupt, ExternalShutdownException):
-        pass
-    finally:
-        demo.destroy_node()
-        rclpy.try_shutdown()
+    spin_node_until_shutdown(demo)
 
 
 if __name__ == "__main__":

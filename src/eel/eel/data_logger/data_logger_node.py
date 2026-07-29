@@ -4,7 +4,6 @@ from time import time
 from typing import List, Optional
 
 import rclpy
-from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 
 from eel_interfaces.msg import (
@@ -15,6 +14,7 @@ from eel_interfaces.msg import (
     TracedRoute,
 )
 
+from ..utils.node_runner import spin_node_until_shutdown
 from ..utils.topics import (
     LOCALIZATION_STATUS,
     MODEM_STATUS,
@@ -112,14 +112,7 @@ class DataLogger(Node):
 def main(args: Optional[list[str]] = None) -> None:
     rclpy.init(args=args)
     data_logger_node = DataLogger()
-
-    try:
-        rclpy.spin(data_logger_node)
-    except (KeyboardInterrupt, ExternalShutdownException):
-        pass
-    finally:
-        data_logger_node.destroy_node()
-        rclpy.try_shutdown()
+    spin_node_until_shutdown(data_logger_node)
 
 
 if __name__ == "__main__":

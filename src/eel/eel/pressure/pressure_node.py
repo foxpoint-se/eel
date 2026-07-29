@@ -4,12 +4,12 @@ from time import time
 from typing import Optional
 
 import rclpy
-from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 
 from eel_interfaces.msg import ImuStatus, PressureStatus
 
 from ..utils.constants import SIMULATE_PARAM
+from ..utils.node_runner import spin_node_until_shutdown
 from ..utils.topics import IMU_STATUS, PRESSURE_STATUS
 from .pressure_source import PressureSource
 
@@ -98,14 +98,7 @@ class PressureNode(Node):
 def main(args: Optional[list[str]] = None) -> None:
     rclpy.init(args=args)
     node = PressureNode()
-
-    try:
-        rclpy.spin(node)
-    except (KeyboardInterrupt, ExternalShutdownException):
-        pass
-    finally:
-        node.destroy_node()
-        rclpy.try_shutdown()
+    spin_node_until_shutdown(node)
 
 
 if __name__ == "__main__":

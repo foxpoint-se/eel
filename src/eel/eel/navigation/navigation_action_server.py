@@ -8,13 +8,14 @@ import rclpy
 from rclpy.action import ActionServer, CancelResponse, GoalResponse
 from rclpy.action.server import ServerGoalHandle
 from rclpy.callback_groups import ReentrantCallbackGroup
-from rclpy.executors import ExternalShutdownException, MultiThreadedExecutor
+from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
 from std_msgs.msg import Float32
 
 from eel_interfaces.action import Navigate
 from eel_interfaces.msg import Coordinate, DepthControlCmd, ImuStatus, PressureStatus
 
+from ..utils.node_runner import spin_node_until_shutdown
 from ..utils.topics import (
     DEPTH_CONTROL_CMD,
     IMU_STATUS,
@@ -231,14 +232,7 @@ def main(args: Optional[list[str]] = None) -> None:
     rclpy.init(args=args)
     navigation_action_server = NavigationActionServer()
     executor = MultiThreadedExecutor()
-
-    try:
-        rclpy.spin(navigation_action_server, executor=executor)
-    except (KeyboardInterrupt, ExternalShutdownException):
-        pass
-    finally:
-        navigation_action_server.destroy_node()
-        rclpy.try_shutdown()
+    spin_node_until_shutdown(navigation_action_server, executor=executor)
 
 
 if __name__ == "__main__":

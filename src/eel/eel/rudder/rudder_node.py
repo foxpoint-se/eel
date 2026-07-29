@@ -5,13 +5,13 @@ from typing import Optional
 
 import rclpy
 from geometry_msgs.msg import Vector3
-from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from std_msgs.msg import Float32
 
 from eel_interfaces.msg import ImuStatus
 
 from ..utils.constants import SIMULATE_PARAM
+from ..utils.node_runner import spin_node_until_shutdown
 from ..utils.topics import (
     IMU_STATUS,
     RUDDER_STATUS,
@@ -164,15 +164,7 @@ class Rudder(Node):
 def main(args: Optional[list[str]] = None) -> None:
     rclpy.init(args=args)
     node = Rudder()
-
-    try:
-        rclpy.spin(node)
-    except (KeyboardInterrupt, ExternalShutdownException):
-        pass
-    finally:
-        node.shutdown()
-        node.destroy_node()
-        rclpy.try_shutdown()
+    spin_node_until_shutdown(node, cleanup=node.shutdown)
 
 
 if __name__ == "__main__":
