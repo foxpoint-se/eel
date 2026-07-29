@@ -1,3 +1,8 @@
+"""Integration boot test only — co-located with test_all_sim_nodes_publish_status_on_startup.py."""
+
+import os
+import sys
+
 from eel.utils.constants import (
     CMD_TOPIC_PARAM,
     DIRECTION_PIN_PARAM,
@@ -14,9 +19,11 @@ from eel.utils.topics import (
     REAR_TANK_CMD,
     REAR_TANK_STATUS,
 )
+from launch import LaunchDescription
+from launch.actions import ExecuteProcess
 from launch_ros.actions import Node
 
-from launch import LaunchDescription
+_INTEGRATION_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 def _tank_node(
@@ -51,22 +58,28 @@ def generate_launch_description():
 
     return LaunchDescription(
         [
+            # Asserted via status topics in test_all_sim_nodes_publish_status_on_startup.py
             Node(package="eel", executable="imu", name="imu_node", parameters=[simulate]),
-            Node(package="eel", executable="motor", name="motor_node", parameters=[simulate]),
-            Node(package="eel", executable="rudder", name="rudder_node", parameters=[simulate]),
             Node(package="eel", executable="battery", name="battery_node", parameters=[simulate]),
             Node(package="eel", executable="pressure", name="pressure_node", parameters=[simulate]),
             _tank_node("front_tank", FRONT_TANK_CMD, FRONT_TANK_STATUS, 23, 18, 0, 0.66, 0.16),
             _tank_node("rear_tank", REAR_TANK_CMD, REAR_TANK_STATUS, 24, 25, 1, 0.325, 0.005),
             Node(package="eel", executable="leakage", name="leakage_node", parameters=[simulate]),
             Node(package="eel", executable="modem", name="modem_node", parameters=[simulate]),
-            Node(package="eel", executable="localization", name="localization"),
-            Node(package="eel", executable="navigate", name="navigation_action_server"),
+            Node(package="eel", executable="rudder", name="rudder_node", parameters=[simulate]),
             Node(package="eel", executable="navigate_client", name="navigation_action_client"),
             Node(package="eel", executable="depth_control_rudder", name="depth_control_rudder_node"),
+            # Boot-only: started to catch import/crash regressions, not status-asserted
+            Node(package="eel", executable="motor", name="motor_node", parameters=[simulate]),
+            Node(package="eel", executable="localization", name="localization"),
+            Node(package="eel", executable="navigate", name="navigation_action_server"),
             Node(package="eel", executable="depth_control", name="depth_control_tank_node"),
             Node(package="eel", executable="dive", name="dive_action_server"),
-            Node(package="eel", executable="dive_client", name="dive_action_client"),
+            ExecuteProcess(
+                cmd=[sys.executable, os.path.join(_INTEGRATION_DIR, "dive_demo.py")],
+                name="dive_demo",
+                output="screen",
+            ),
             Node(package="eel", executable="data_logger", name="data_logger_node"),
         ]
     )

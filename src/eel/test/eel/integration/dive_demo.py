@@ -1,3 +1,5 @@
+"""Integration boot-test fixture: one-shot dive action client."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional, Protocol, TypeAlias
@@ -5,6 +7,7 @@ from typing import TYPE_CHECKING, Optional, Protocol, TypeAlias
 import rclpy
 from rclpy.action import ActionClient
 from rclpy.action.client import ClientGoalHandle
+from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from rclpy.task import Future
 
@@ -26,11 +29,10 @@ class DiveFeedbackMessage(Protocol):
     feedback: Dive.Feedback
 
 
-class DiveActionClient(Node):
+class DiveDemo(Node):
     def __init__(self) -> None:
-        super().__init__("dive_action_client")
+        super().__init__("dive_demo")
         self._action_client = ActionClient(self, Dive, "dive")
-
         self.logger = self.get_logger()
 
     def send_goal(self, wanted_depth: float) -> None:
@@ -68,11 +70,16 @@ class DiveActionClient(Node):
 
 def main(args: Optional[list[str]] = None) -> None:
     rclpy.init(args=args)
+    demo = DiveDemo()
+    demo.send_goal(2.0)
 
-    action_client = DiveActionClient()
-    action_client.send_goal(2.0)
-
-    rclpy.spin(action_client)
+    try:
+        rclpy.spin(demo)
+    except (KeyboardInterrupt, ExternalShutdownException):
+        pass
+    finally:
+        demo.destroy_node()
+        rclpy.try_shutdown()
 
 
 if __name__ == "__main__":

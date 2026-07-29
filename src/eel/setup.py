@@ -46,7 +46,6 @@ setup(
     entry_points={
         "console_scripts": [
             "dive = eel.dive.dive_action_server:main",
-            "dive_client = eel.dive.dive_action_client:main",
             "navigate = eel.navigation.navigation_action_server:main",
             "navigate_client = eel.navigation.navigation_action_client:main",
             "gnss = eel.gnss.gnss_node:main",
