@@ -2,6 +2,28 @@
 
 <!-- version list -->
 
+## v1.2.2 (2026-07-29)
+
+### Bug Fixes
+
+- Always destroy node even when cleanup fails
+  ([`5973808`](https://github.com/foxpoint-se/eel/commit/5973808e01c8c43de7a95bd7339b1e3c9aa09409))
+
+- Avoid rosout errors during hardware node shutdown
+  ([`7e8b2c7`](https://github.com/foxpoint-se/eel/commit/7e8b2c7b076065f9a7c75afafbc81ddb00099197))
+
+- Use try_shutdown in dive_demo goal callback
+  ([`30660e6`](https://github.com/foxpoint-se/eel/commit/30660e6d7f99eceb5a11b8f0ea4c74453c14934c))
+
+### Refactoring
+
+- Co-locate integration boot test fixtures with test code
+  ([`5d6bab7`](https://github.com/foxpoint-se/eel/commit/5d6bab724640484f4b5930a571bfdfe782a7c60a))
+
+- Extract spin_node_until_shutdown helper
+  ([`c57ccf0`](https://github.com/foxpoint-se/eel/commit/c57ccf0966f0427bd9824e4925663a524198a700))
+
+
 ## v1.2.1 (2026-07-28)
 
 ### Bug Fixes
