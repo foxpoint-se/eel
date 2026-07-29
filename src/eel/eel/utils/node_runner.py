@@ -17,6 +17,9 @@ def spin_node_until_shutdown(
         pass
     finally:
         if cleanup is not None:
-            cleanup()
+            try:
+                cleanup()
+            except Exception:
+                pass
         node.destroy_node()
         rclpy.try_shutdown()
