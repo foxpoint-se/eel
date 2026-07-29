@@ -295,7 +295,6 @@ class TankNode(Node):
             self.tank.run_motor(next_value)
 
     def shutdown(self) -> None:
-        self.get_logger().info("Shutting down")
         self.stop_checking_against_target()
         self.tank.shutdown()
 

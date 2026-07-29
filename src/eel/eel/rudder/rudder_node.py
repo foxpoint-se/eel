@@ -78,7 +78,6 @@ class Rudder(Node):
         self.publish_rudder_offset_value(Rudders.RUDDER_Y)
 
     def shutdown(self) -> None:
-        self.logger.info("Rudder node shutting down...")
         self.xy_rudder.shutdown()
 
     def _handle_imu_msg(self, msg: ImuStatus) -> None:
