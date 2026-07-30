@@ -2,6 +2,23 @@
 
 <!-- version list -->
 
+## v1.2.3 (2026-07-30)
+
+### Bug Fixes
+
+- Localization and nav can get a GNSS fix off-Pi
+  ([`abcbed3`](https://github.com/foxpoint-se/eel/commit/abcbed3dd65f7ebf52136738b98b09f2b9acdebc))
+
+- Motor hardware driver stays import-safe off the Pi
+  ([`0107b57`](https://github.com/foxpoint-se/eel/commit/0107b57bcf054b899deae14d3c2cb75750a5bc97))
+
+- Mqtt_bridge sim logs cloud traffic instead of calling AWS
+  ([`5e311b2`](https://github.com/foxpoint-se/eel/commit/5e311b295dc623d330573b9b55f6ba17d9e10ea0))
+
+- Off-Pi sim stacks can run the LED node
+  ([`73dbcb3`](https://github.com/foxpoint-se/eel/commit/73dbcb318fa85ba39ba26a3726d27be7c46daebc))
+
+
 ## v1.2.2 (2026-07-29)
 
 ### Bug Fixes
