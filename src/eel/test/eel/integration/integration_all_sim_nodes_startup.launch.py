@@ -62,6 +62,7 @@ def generate_launch_description():
             Node(package="eel", executable="imu", name="imu_node", parameters=[simulate]),
             Node(package="eel", executable="battery", name="battery_node", parameters=[simulate]),
             Node(package="eel", executable="pressure", name="pressure_node", parameters=[simulate]),
+            Node(package="eel", executable="gnss", name="gnss_node", parameters=[simulate]),
             _tank_node("front_tank", FRONT_TANK_CMD, FRONT_TANK_STATUS, 23, 18, 0, 0.66, 0.16),
             _tank_node("rear_tank", REAR_TANK_CMD, REAR_TANK_STATUS, 24, 25, 1, 0.325, 0.005),
             Node(package="eel", executable="leakage", name="leakage_node", parameters=[simulate]),
@@ -71,6 +72,8 @@ def generate_launch_description():
             Node(package="eel", executable="depth_control_rudder", name="depth_control_rudder_node"),
             # Boot-only: started to catch import/crash regressions, not status-asserted
             Node(package="eel", executable="motor", name="motor_node", parameters=[simulate]),
+            Node(package="eel", executable="led_control", name="led_node", parameters=[simulate]),
+            Node(package="eel", executable="mqtt_bridge", name="mqtt_bridge_node", parameters=[simulate]),
             Node(package="eel", executable="localization", name="localization"),
             Node(package="eel", executable="navigate", name="navigation_action_server"),
             Node(package="eel", executable="depth_control", name="depth_control_tank_node"),

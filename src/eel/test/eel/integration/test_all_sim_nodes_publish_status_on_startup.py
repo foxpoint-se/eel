@@ -7,6 +7,7 @@ from eel.utils.topics import (
     BATTERY_STATUS,
     DEPTH_CONTROL_STATUS,
     FRONT_TANK_STATUS,
+    GNSS_STATUS,
     IMU_STATUS,
     LEAKAGE_STATUS,
     MODEM_STATUS,
@@ -25,6 +26,7 @@ from std_msgs.msg import Bool
 
 from eel_interfaces.msg import (
     BatteryStatus,
+    Coordinate,
     DepthControlStatus,
     ImuStatus,
     ModemStatus,
@@ -40,6 +42,7 @@ STATUS_PUBLISHERS: list[tuple[str, str, type]] = [
     ("imu_node", IMU_STATUS, ImuStatus),
     ("battery_node", BATTERY_STATUS, BatteryStatus),
     ("pressure_node", PRESSURE_STATUS, PressureStatus),
+    ("gnss_node", GNSS_STATUS, Coordinate),
     ("front_tank", FRONT_TANK_STATUS, TankStatus),
     ("rear_tank", REAR_TANK_STATUS, TankStatus),
     ("leakage_node", LEAKAGE_STATUS, Bool),
