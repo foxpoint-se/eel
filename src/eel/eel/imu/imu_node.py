@@ -10,24 +10,9 @@ from eel_interfaces.msg import ImuOffsets, ImuStatus
 from ..utils.constants import SIMULATE_PARAM
 from ..utils.node_runner import spin_node_until_shutdown
 from ..utils.topics import IMU_OFFSETS, IMU_STATUS
-from .imu_sensor import ImuSensor
+from .imu_sensor import ImuSensor, update_pitch_velocity_state
 from .imu_sim import ImuSimulator
 from .types import CalibrationOffsets
-
-
-def get_pitch_velocity(
-    pitch: float,
-    previous_pitch: float | None,
-    now: float,
-    previous_pitch_at: float | None,
-) -> float:
-    if previous_pitch is None or previous_pitch_at is None:
-        return 0.0
-    pitch_delta = pitch - previous_pitch
-    time_delta = now - previous_pitch_at
-    velocity = pitch_delta / time_delta
-    return velocity
-
 
 SENSOR_CALIBRATION_OFFSETS: CalibrationOffsets | None = None
 # SENSOR_CALIBRATION_OFFSETS = {
@@ -80,7 +65,19 @@ class ImuNode(Node):
 
     def publish_imu(self) -> None:
         try:
-            heading, roll, pitch = self.get_euler()
+            euler = self.get_euler()
+            now = time()
+            pitch_velocity, previous_pitch, previous_pitch_at = update_pitch_velocity_state(
+                euler=euler,
+                now=now,
+                previous_pitch=self.previous_pitch,
+                previous_pitch_at=self.previous_pitch_at,
+            )
+            if euler is None:
+                self.previous_pitch = previous_pitch
+                self.previous_pitch_at = previous_pitch_at
+                return
+            heading, roll, pitch = euler
             sys, gyro, accel, mag = self.get_calibration_status()
             is_calibrated = self.get_is_calibrated()
 
@@ -93,19 +90,13 @@ class ImuNode(Node):
             msg.heading = heading
             msg.roll = roll
 
-            now = time()
-
-            pitch_to_send = pitch
-
-            pitch_velocity = get_pitch_velocity(pitch_to_send, self.previous_pitch, now, self.previous_pitch_at)
-
-            msg.pitch = pitch_to_send
-            msg.pitch_velocity = pitch_velocity
+            msg.pitch = pitch
+            msg.pitch_velocity = pitch_velocity or 0.0
 
             self.status_publisher.publish(msg)
 
-            self.previous_pitch = pitch_to_send
-            self.previous_pitch_at = now
+            self.previous_pitch = previous_pitch
+            self.previous_pitch_at = previous_pitch_at
 
         except (OSError, IOError) as err:
             self.get_logger().error(str(err))
