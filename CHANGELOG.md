@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.2.4 (2026-07-31)
+
+### Bug Fixes
+
+- Skip IMU publish when euler read is missing
+  ([`09eeb25`](https://github.com/foxpoint-se/eel/commit/09eeb25714f62137e0a8cefa449119801ed4e303))
+
+
 ## v1.2.3 (2026-07-30)
 
 ### Bug Fixes
