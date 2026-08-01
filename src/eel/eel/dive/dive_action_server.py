@@ -17,6 +17,7 @@ from eel_interfaces.msg import ImuStatus, PressureStatus
 from ..utils.node_runner import spin_node_until_shutdown
 from ..utils.pid_controller import PidController
 from ..utils.topics import IMU_STATUS, PRESSURE_STATUS, RUDDER_Y_CMD
+from .dive_goal_validation import is_dive_goal_valid
 
 UPDATE_FREQUENCY_PER_SEC = 5
 
@@ -108,11 +109,12 @@ class DiveActionServer(Node):
         return rudder_output
 
     def goal_callback(self, goal_request: Dive.Goal) -> GoalResponse:
-        # Sanity check for depth and dive that the values are not to large
-        depth_target_larger_then_max_depth = goal_request.wanted_depth > self.max_dive_depth_m
-        dive_time_larger_then_max_dive_time = self.dive_time > self.max_dive_time_sec
-
-        if any([depth_target_larger_then_max_depth, dive_time_larger_then_max_dive_time]):
+        if not is_dive_goal_valid(
+            wanted_depth=goal_request.wanted_depth,
+            dive_time=goal_request.dive_time,
+            max_depth_m=self.max_dive_depth_m,
+            max_dive_time_sec=self.max_dive_time_sec,
+        ):
             self.logger.info("Invalid request parameters, will reject goal.")
             return GoalResponse.REJECT
 

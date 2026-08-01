@@ -35,9 +35,10 @@ class DiveDemo(Node):
         self._action_client = ActionClient(self, Dive, "dive")
         self.logger = self.get_logger()
 
-    def send_goal(self, wanted_depth: float) -> None:
+    def send_goal(self, wanted_depth: float, dive_time: float = 10.0) -> None:
         goal_msg = Dive.Goal()
         goal_msg.wanted_depth = wanted_depth
+        goal_msg.dive_time = dive_time
 
         self._action_client.wait_for_server()
 
