@@ -2,6 +2,17 @@
 
 <!-- version list -->
 
+## v1.2.5 (2026-08-01)
+
+### Bug Fixes
+
+- Reject non-finite and negative dive goal values
+  ([`83a2a3a`](https://github.com/foxpoint-se/eel/commit/83a2a3a923bd0f4ee407ccc86f590884c979238b))
+
+- Validate incoming dive goal time and depth
+  ([`b85ffc0`](https://github.com/foxpoint-se/eel/commit/b85ffc0fc75df4f284f7eb616b5a41e75d99ba8b))
+
+
 ## v1.2.4 (2026-07-31)
 
 ### Bug Fixes
