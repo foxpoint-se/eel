@@ -420,6 +420,11 @@ class NavigationActionClient(Node):
             self.logger.info("Goal was cancelled")
             self.mission_status = NavigationMissionStatus.MISSION_CANCELLED
 
+        elif status == GoalStatus.STATUS_ABORTED:
+            self.logger.info("Goal was aborted, cancelling mission.")
+            self.auto_mode = False
+            self.cancel_goals_in_progress()
+
     def feedback_callback(self, feedback: NavigateFeedbackMessage) -> None:
         """Feed back message from action server sent once per second when action server gets a gps position."""
         self.meters_to_next_target = feedback.feedback.distance_to_target
