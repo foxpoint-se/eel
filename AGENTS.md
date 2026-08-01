@@ -9,9 +9,12 @@ Also set **Priority** (org issue field), **Type** (Bug / Feature / Task), and **
 
 ## Commits
 
-Use conventional commits. Write messages for **why / value / purpose**, not a file changelog.  
-Bad: `update README`, `remove unused file`.  
-Good: what improved, or why the change was needed.
+Use conventional commits. **The reader must understand why** the change was made — state the broken situation and who was affected, not what you changed in code.
+
+Bad: `fix: publish drain-to-empty tank target in status` (code mechanics; no problem stated)  
+Good: `fix: drain-to-empty showed no target on dashboard while pump was running`
+
+Body (when needed): why it mattered — e.g. "Operators could not tell the boat was executing a drain command." Root cause and file names belong in the PR.
 
 **Release types** (semantic-release on `main` — `feat`/`fix` cut a version; `chore`/`ci`/`docs` do not):
 
