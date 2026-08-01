@@ -231,7 +231,7 @@ class NavigationActionServer(Node):
         self.stop_navigation_actuators()
 
         result = Navigate.Result()
-        result.success = True
+        result.success = not goal_handle.is_cancel_requested
 
         return result
 
