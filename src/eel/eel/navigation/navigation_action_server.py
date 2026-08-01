@@ -26,6 +26,7 @@ from ..utils.topics import (
 )
 from .assignments import Assignment, SurfaceAssignment, WaypointAndDepth
 from .common import LatLon, get_2d_distance
+from .navigation_pose import has_navigation_pose
 
 if TYPE_CHECKING:
     NavigateGoalHandle: TypeAlias = ServerGoalHandle[Navigate.Goal, Navigate.Result, Navigate.Feedback, object]
@@ -102,6 +103,11 @@ class NavigationActionServer(Node):
         motor_msg.data = motor_value
         self.motor_publisher.publish(motor_msg)
 
+    def stop_navigation_actuators(self) -> None:
+        self.publish_depth_cmd(0.0)
+        self.publish_motor_cmd(0.0)
+        self.publish_rudder_cmd(0.0)
+
     def handle_accepted_callback(self, goal_handle: NavigateGoalHandle) -> None:
         if self.current_goal is None:
             self.current_goal = goal_handle
@@ -110,7 +116,7 @@ class NavigationActionServer(Node):
             self.logger.info("Goal in progress. Cancel before asking for another goal.")
 
     def goal_callback(self, goal_request: Navigate.Goal) -> GoalResponse:
-        if self.current_position is None:
+        if not has_navigation_pose(self.current_position):
             self.logger.info("No gps position has been acquired yet, rejecting goal.")
             return GoalResponse.REJECT
 
@@ -139,9 +145,7 @@ class NavigationActionServer(Node):
     def cancel_callback(self, goal_handle: NavigateGoalHandle) -> CancelResponse:
         self.logger.info("Goal cancel request received, turning off motors.")
         self.current_goal = None
-        self.publish_depth_cmd(0.0)
-        self.publish_motor_cmd(0.0)
-        self.publish_rudder_cmd(0.0)
+        self.stop_navigation_actuators()
 
         return CancelResponse.ACCEPT
 
@@ -184,8 +188,14 @@ class NavigationActionServer(Node):
         self.goal_handle.publish_feedback(feedback_msg)
 
     def execute_callback(self, goal_handle: NavigateGoalHandle) -> Navigate.Result:
-        if self.current_position is None:
-            raise TypeError("No current position. Cannot do calculations.")
+        if not has_navigation_pose(self.current_position):
+            self.logger.error("No current position at execute time, aborting goal.")
+            self.stop_navigation_actuators()
+            self.current_goal = None
+            goal_handle.abort()
+            result = Navigate.Result()
+            result.success = False
+            return result
 
         self.goal_handle = goal_handle
 
@@ -218,12 +228,10 @@ class NavigationActionServer(Node):
             goal_handle.canceled()
         self.current_goal = None
         self.logger.info("Finished goal.")
-        self.publish_motor_cmd(0.0)
-        self.publish_rudder_cmd(0.0)
-        self.publish_depth_cmd(0.0)
+        self.stop_navigation_actuators()
 
         result = Navigate.Result()
-        result.success = True
+        result.success = not goal_handle.is_cancel_requested
 
         return result
 
