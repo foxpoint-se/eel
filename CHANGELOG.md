@@ -2,6 +2,17 @@
 
 <!-- version list -->
 
+## v1.2.6 (2026-08-01)
+
+### Bug Fixes
+
+- Abort navigate goal when pose is missing at execute
+  ([`00cc839`](https://github.com/foxpoint-se/eel/commit/00cc839c24a85b5cd59804364ab2c404b93a3527))
+
+- Set navigate result.success false on cancel
+  ([`f3e4e33`](https://github.com/foxpoint-se/eel/commit/f3e4e338e9155f57bc5cb14850ba6595b4a247ef))
+
+
 ## v1.2.5 (2026-08-01)
 
 ### Bug Fixes
