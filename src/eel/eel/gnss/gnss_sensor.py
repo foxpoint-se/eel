@@ -1,3 +1,5 @@
+import threading
+
 import pynmea2
 from rclpy.logging import get_logger
 
@@ -8,6 +10,7 @@ logger = get_logger(__name__)
 
 class GnssSensor:
     def __init__(self, serial_port: str = "/dev/ttyUSB1") -> None:
+        self._position_lock = threading.Lock()
         self.current_lat: float | None = None
         self.current_lon: float | None = None
         # TODO: remove this comment if we don't seem to have problem with timeout=0
@@ -25,8 +28,10 @@ class GnssSensor:
                 logger.info(f"could not parse gnss {message=}")
 
     def update_current_position(self, lat: float, lon: float) -> None:
-        self.current_lat = lat
-        self.current_lon = lon
+        with self._position_lock:
+            self.current_lat = lat
+            self.current_lon = lon
 
     def get_current_position(self) -> tuple[float | None, float | None]:
-        return self.current_lat, self.current_lon
+        with self._position_lock:
+            return self.current_lat, self.current_lon
