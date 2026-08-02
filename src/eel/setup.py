@@ -35,8 +35,8 @@ setup(
         ],
     },
     zip_safe=True,
-    maintainer="bulingen",
-    maintainer_email="adamlecorney@gmail.com",
+    maintainer="Foxpoint marinrobotik",
+    maintainer_email="foxpoint.se@gmail.com",
     description="ROS 2 runtime nodes for the Eel AUV (simulation and Pi).",
     license="MIT",
     entry_points={

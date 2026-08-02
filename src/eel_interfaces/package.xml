@@ -4,7 +4,7 @@
   <name>eel_interfaces</name>
   <version>1.2.8</version>
   <description>ROS 2 messages, services, and actions for Eel.</description>
-  <maintainer email="adamlecorney@gmail.com">ubuntu</maintainer>
+  <maintainer email="foxpoint.se@gmail.com">Foxpoint marinrobotik</maintainer>
   <license>MIT</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>

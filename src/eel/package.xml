@@ -4,7 +4,7 @@
   <name>eel</name>
   <version>1.2.8</version>
   <description>ROS 2 runtime nodes for the Eel AUV (simulation and Pi).</description>
-  <maintainer email="adamlecorney@gmail.com">bulingen</maintainer>
+  <maintainer email="foxpoint.se@gmail.com">Foxpoint marinrobotik</maintainer>
   <license>MIT</license>
 
   <depend>rclpy</depend>
