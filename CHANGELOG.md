@@ -2,6 +2,28 @@
 
 <!-- version list -->
 
+## v1.2.9 (2026-08-02)
+
+### Bug Fixes
+
+- GNSS parse errors were swallowed with a broad except
+  ([`c654957`](https://github.com/foxpoint-se/eel/commit/c6549576a8d014c648fb7c018200e2ed38329920))
+
+### Chores
+
+- Leftover VL53/ADS scripts implied tanks still used retired hardware
+  ([`f159188`](https://github.com/foxpoint-se/eel/commit/f1591889d8096f86b1206380ecd0cd1e03e2678b))
+
+- Package metadata listed personal maintainers instead of the förening
+  ([`321791d`](https://github.com/foxpoint-se/eel/commit/321791d2b8b89614e82f889dd1ddeeb8a522dc68))
+
+- Package metadata still said TODO after license was added
+  ([`e36e495`](https://github.com/foxpoint-se/eel/commit/e36e4954ccad61ee3422773940cea05b072187d9))
+
+- Repo had no license so reuse rights were unclear
+  ([`b178675`](https://github.com/foxpoint-se/eel/commit/b17867545324e5f63632af6850bacbd3e81f2090))
+
+
 ## v1.2.8 (2026-08-02)
 
 ### Bug Fixes

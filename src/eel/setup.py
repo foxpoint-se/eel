@@ -4,7 +4,7 @@ package_name = "eel"
 
 setup(
     name=package_name,
-    version="1.2.8",
+    version="1.2.9",
     packages=find_packages(),
     data_files=[
         ("share/ament_index/resource_index/packages", ["resource/" + package_name]),
