@@ -25,10 +25,6 @@ setup(
             "RPi.GPIO>=0.7.1",
             "spidev>=3.6",
             "adafruit-circuitpython-bno055>=5.4.22,<6",
-            "adafruit-circuitpython-vl53l0x>=3.6,<4",
-            "adafruit-circuitpython-vl53l1x>=1.2,<2",
-            "adafruit-circuitpython-ads1x15>=3.0,<4",
-            "adafruit-circuitpython-mcp3xxx>=1.5,<2",
         ],
         "dev": [
             "mypy>=2.3,<3",
@@ -39,10 +35,10 @@ setup(
         ],
     },
     zip_safe=True,
-    maintainer="bulingen",
-    maintainer_email="adamlecorney@gmail.com",
-    description="TODO: Package description",
-    license="TODO: License declaration",
+    maintainer="Foxpoint marinrobotik",
+    maintainer_email="foxpoint.se@gmail.com",
+    description="ROS 2 runtime nodes for the Eel AUV (simulation and Pi).",
+    license="MIT",
     entry_points={
         "console_scripts": [
             "dive = eel.dive.dive_action_server:main",

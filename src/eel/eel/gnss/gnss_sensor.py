@@ -24,7 +24,7 @@ class GnssSensor:
                 lat = parsed.latitude
                 lon = parsed.longitude
                 self.update_current_position(lat, lon)
-            except Exception:
+            except pynmea2.ParseError:
                 logger.info(f"could not parse gnss {message=}")
 
     def update_current_position(self, lat: float, lon: float) -> None:

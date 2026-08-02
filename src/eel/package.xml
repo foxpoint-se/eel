@@ -3,9 +3,9 @@
 <package format="3">
   <name>eel</name>
   <version>1.2.8</version>
-  <description>TODO: Package description</description>
-  <maintainer email="adamlecorney@gmail.com">bulingen</maintainer>
-  <license>TODO: License declaration</license>
+  <description>ROS 2 runtime nodes for the Eel AUV (simulation and Pi).</description>
+  <maintainer email="foxpoint.se@gmail.com">Foxpoint marinrobotik</maintainer>
+  <license>MIT</license>
 
   <depend>rclpy</depend>
   <depend>eel_interfaces</depend>
