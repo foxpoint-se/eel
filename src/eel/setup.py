@@ -37,7 +37,7 @@ setup(
     zip_safe=True,
     maintainer="bulingen",
     maintainer_email="adamlecorney@gmail.com",
-    description="TODO: Package description",
+    description="ROS 2 runtime nodes for the Eel AUV (simulation and Pi).",
     license="MIT",
     entry_points={
         "console_scripts": [

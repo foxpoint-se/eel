@@ -3,7 +3,7 @@
 <package format="3">
   <name>eel_bringup</name>
   <version>1.2.8</version>
-  <description>TODO: Package description</description>
+  <description>Launch files and bringup for the Eel AUV.</description>
   <maintainer email="adamlecorney@gmail.com">ubuntu</maintainer>
   <license>MIT</license>
 
