@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## v1.2.7 (2026-08-02)
+
+### Bug Fixes
+
+- Drain-to-empty showed no target on dashboard while pump was running
+  ([`b5e5d3b`](https://github.com/foxpoint-se/eel/commit/b5e5d3b3428ac416ae0e4ab96ec28fac3d0f8a4e))
+
+### Chores
+
+- Agents wrote commit messages that hid why a change was made
+  ([`2fa0a29`](https://github.com/foxpoint-se/eel/commit/2fa0a2963622a5bbb8eab619037e0351072826b2))
+
+
 ## v1.2.6 (2026-08-01)
 
 ### Bug Fixes
