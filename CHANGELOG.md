@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.2.8 (2026-08-02)
+
+### Bug Fixes
+
+- GNSS could publish lat/lon from different fixes
+  ([`e8b23f0`](https://github.com/foxpoint-se/eel/commit/e8b23f07b2a9747ff00daad904ef635b677c6fc3))
+
+
 ## v1.2.7 (2026-08-02)
 
 ### Bug Fixes
