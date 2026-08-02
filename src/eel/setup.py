@@ -42,7 +42,7 @@ setup(
     maintainer="bulingen",
     maintainer_email="adamlecorney@gmail.com",
     description="TODO: Package description",
-    license="TODO: License declaration",
+    license="MIT",
     entry_points={
         "console_scripts": [
             "dive = eel.dive.dive_action_server:main",
