@@ -253,7 +253,7 @@ class TankNode(Node):
             msg = TankStatus()
             msg.current_level = float(current_level)
             msg.target_level = []
-            if self.target_level:
+            if self.target_level is not None:
                 msg.target_level.append(self.target_level)
             msg.is_autocorrecting = self.is_autocorrecting
             msg.target_status = self.target_status
