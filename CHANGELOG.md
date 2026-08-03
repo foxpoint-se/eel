@@ -2,6 +2,31 @@
 
 <!-- version list -->
 
+## v1.2.10 (2026-08-03)
+
+### Bug Fixes
+
+- Cancelled dive still reported success after surfacing
+  ([`8fd99af`](https://github.com/foxpoint-se/eel/commit/8fd99afcd2c58b6cd2d7af5747a4c2965f753a4d))
+
+- LED pin stayed claimed after node restart
+  ([`faa2e03`](https://github.com/foxpoint-se/eel/commit/faa2e03854e7d71151aca0ba45573af7a5f35ca4))
+
+- Modem node crashed when registration or signal was zero
+  ([`d94e752`](https://github.com/foxpoint-se/eel/commit/d94e7520b711eeaf720308481fc83579dacccc2c))
+
+- Overlapping navigate goals were accepted but never ran
+  ([`ef8704e`](https://github.com/foxpoint-se/eel/commit/ef8704e66b93680d171d04b2a2a1a12a64f0ac75))
+
+- Tank pump could run forever when level never reached target
+  ([`c615108`](https://github.com/foxpoint-se/eel/commit/c6151082e3a4bc35d66dbd785e79b773a783bf40))
+
+### Chores
+
+- Nav client half-wired leak abort looked like unfinished work
+  ([`73ee797`](https://github.com/foxpoint-se/eel/commit/73ee797af1071560e38331aab9a0ae94e5dffb89))
+
+
 ## v1.2.9 (2026-08-02)
 
 ### Bug Fixes

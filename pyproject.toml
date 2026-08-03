@@ -1,6 +1,6 @@
 [project]
 name = "eel-workspace"
-version = "1.2.9"
+version = "1.2.10"
 
 [tool.mypy]
 python_version = "3.10"
