@@ -135,7 +135,6 @@ class DiveActionServer(Node):
         # Action server will do two things, first dive to a depth for X sec
         while time.time() - start_ts < self.dive_time:
             if goal_handle.is_cancel_requested:
-                goal_handle.canceled()
                 self.logger.info("Goal cancelled will start to ascend")
                 break
 
@@ -173,7 +172,10 @@ class DiveActionServer(Node):
                 goal_handle.publish_feedback(feedback_msg)
 
         self.send_rudder_msg(0.0)
-        goal_handle.succeed()
+        if goal_handle.is_cancel_requested:
+            goal_handle.canceled()
+        else:
+            goal_handle.succeed()
 
         result.final_depth = self.current_depth
         result.action_time = time.time() - start_ts
