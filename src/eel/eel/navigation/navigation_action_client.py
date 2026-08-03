@@ -27,7 +27,6 @@ from ..utils.node_runner import spin_node_until_shutdown
 from ..utils.topics import (
     BATTERY_STATUS,
     GNSS_STATUS,
-    LEAKAGE_STATUS,
     LOCALIZATION_STATUS,
     NAVIGATION_CMD,
     NAVIGATION_LOAD_MISSION,
@@ -229,8 +228,6 @@ class NavigationActionClient(Node):
             BatteryStatus, BATTERY_STATUS, self.handle_battery_status, 10
         )
 
-        self.leakage_status_subscriber = self.create_subscription(Bool, LEAKAGE_STATUS, self.handle_leakage_status, 10)
-
         self.pressure_status_subscriber = self.create_subscription(
             PressureStatus, PRESSURE_STATUS, self.handle_pressure_status, 10
         )
@@ -248,7 +245,6 @@ class NavigationActionClient(Node):
         self.updater = self.create_timer(1.0, self.publish_status)
 
         self.last_seen_battery_level = 100.0
-        self.last_seen_leakage = False
 
         self.current_position: Coordinate | None = None
 
@@ -323,16 +319,11 @@ class NavigationActionClient(Node):
         """Updates the last seen battery level variable."""
         self.last_seen_battery_level = msg.voltage_percent
 
-    def handle_leakage_status(self, msg: Bool) -> None:
-        self.last_seen_leakage = msg.data
-
     def handle_localization_update(self, msg: Coordinate) -> None:
         self.current_position = msg
 
     def check_mission_abort_status(self) -> None:
-        """Smelly function that does two things, first check incoming leakage status message,
-        then checks battery level and mission time. These are all sources for mission aborts,
-        if any of them is in a trigger state then cancel current mission."""
+        """Cancel the mission when battery, GNSS, depth, or time limits are exceeded."""
         battery_level_threshold = 0.10
         battery_level_low = self.last_seen_battery_level < battery_level_threshold
 
@@ -343,7 +334,7 @@ class NavigationActionClient(Node):
 
         gnss_timeout = (time() - self.last_gnss_update_time) > GNSS_TIMEOUT_S
 
-        # TODO: add leakage detected to this check
+        # Leak is alert-only (leakage/status → MQTT). Not a mission abort trigger.
         if any([battery_level_low, mission_time_exceeded, gnss_timeout, self.is_too_deep]) and self.goals_in_progress:
             self.logger.info(
                 f"Battery low: {battery_level_low}\t"
