@@ -34,12 +34,14 @@ class LED(Node):
         self.declare_parameter(SIMULATE_PARAM, False)
         self.should_simulate = bool(self.get_parameter(SIMULATE_PARAM).value)
 
+        self._led_control = None
         if self.should_simulate:
             self.led_control: LEDBackend = LEDSimulator()
         else:
             from .led_control import LEDControl
 
-            self.led_control = LEDControl()
+            self._led_control = LEDControl()
+            self.led_control = self._led_control
 
         self.navigation_status_subscription = self.create_subscription(
             NavigationStatus, NAVIGATION_STATUS, self.update_mission_status, 10
@@ -60,11 +62,15 @@ class LED(Node):
         if nof_pulses is not None and pulse_length is not None:
             self.led_control.sequence(nof_pulses, pulse_length)
 
+    def shutdown(self) -> None:
+        if self._led_control is not None:
+            self._led_control.close()
+
 
 def main(args: Optional[list[str]] = None) -> None:
     rclpy.init(args=args)
     node = LED()
-    spin_node_until_shutdown(node)
+    spin_node_until_shutdown(node, cleanup=node.shutdown)
 
 
 if __name__ == "__main__":

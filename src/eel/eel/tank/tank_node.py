@@ -272,11 +272,18 @@ class TankNode(Node):
         if self.target_level is None:
             return
 
-        level_error = abs(level_average - self.target_level)
-
-        if level_error < 0.01:
+        if is_at_floor(level_average) and self.target_level <= level_average:
             self.tank.stop()
             self.tank_motor_pid.reset_cumulative_error()
+            self.target_status = "floor_reached"
+        elif is_at_ceiling(level_average) and self.target_level >= level_average:
+            self.tank.stop()
+            self.tank_motor_pid.reset_cumulative_error()
+            self.target_status = "ceiling_reached"
+        elif is_within_accepted_target_boundaries(level_average, self.target_level):
+            self.tank.stop()
+            self.tank_motor_pid.reset_cumulative_error()
+            self.target_status = "target_reached"
         else:
             if self.clamp_value <= self.clamp_max_value:
                 self.clamp_value += 0.05

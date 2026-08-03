@@ -34,7 +34,7 @@ class ModemNode(Node):
 
         reg_status = self.sensor.get_registration_status()
         signal_strength = self.sensor.get_received_signal_strength_indicator()
-        if not reg_status or not signal_strength:
+        if reg_status is None or signal_strength is None:
             raise Exception("Could not start modem node. Not getting registration status and/or signal strength.")
 
         self.update_modem_timer = self.create_timer(2.0, self.read_and_publish_modem_status)

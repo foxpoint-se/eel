@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+from threading import Lock
 from time import sleep, time
 from typing import TYPE_CHECKING, Optional, TypeAlias
 
@@ -45,6 +46,8 @@ class NavigationActionServer(Node):
         super().__init__("navigation_action_server", parameter_overrides=[])
         self.logger = self.get_logger()
         self.current_goal: NavigateGoalHandle | None = None
+        self._goal_in_progress = False
+        self._goal_lock = Lock()
 
         self._action_server = ActionServer(
             self,
@@ -109,13 +112,15 @@ class NavigationActionServer(Node):
         self.publish_rudder_cmd(0.0)
 
     def handle_accepted_callback(self, goal_handle: NavigateGoalHandle) -> None:
-        if self.current_goal is None:
-            self.current_goal = goal_handle
-            self.current_goal.execute()
-        else:
-            self.logger.info("Goal in progress. Cancel before asking for another goal.")
+        self.current_goal = goal_handle
+        self.current_goal.execute()
 
     def goal_callback(self, goal_request: Navigate.Goal) -> GoalResponse:
+        with self._goal_lock:
+            if self._goal_in_progress:
+                self.logger.info("Goal in progress. Rejecting new goal.")
+                return GoalResponse.REJECT
+
         if not has_navigation_pose(self.current_position):
             self.logger.info("No gps position has been acquired yet, rejecting goal.")
             return GoalResponse.REJECT
@@ -130,9 +135,13 @@ class NavigationActionServer(Node):
 
         # Simple sanity check that the target is not to far away, could be removed
         if distance_to_target < TARGET_DISTANCE_LIMIT:
+            with self._goal_lock:
+                if self._goal_in_progress:
+                    self.logger.info("Goal in progress. Rejecting new goal.")
+                    return GoalResponse.REJECT
+                self._goal_in_progress = True
             self.logger.info(f"Accepted new target, lat: {goal_request.goal.lat} lon: {goal_request.goal.lon}")
             self.logger.info(f"Distance to new target: {distance_to_target}m")
-
             return GoalResponse.ACCEPT
         else:
             self.logger.info(
@@ -144,7 +153,6 @@ class NavigationActionServer(Node):
 
     def cancel_callback(self, goal_handle: NavigateGoalHandle) -> CancelResponse:
         self.logger.info("Goal cancel request received, turning off motors.")
-        self.current_goal = None
         self.stop_navigation_actuators()
 
         return CancelResponse.ACCEPT
@@ -188,52 +196,52 @@ class NavigationActionServer(Node):
         self.goal_handle.publish_feedback(feedback_msg)
 
     def execute_callback(self, goal_handle: NavigateGoalHandle) -> Navigate.Result:
-        if not has_navigation_pose(self.current_position):
-            self.logger.error("No current position at execute time, aborting goal.")
-            self.stop_navigation_actuators()
-            self.current_goal = None
-            goal_handle.abort()
-            result = Navigate.Result()
-            result.success = False
-            return result
-
-        self.goal_handle = goal_handle
-
-        goal_request: Navigate.Goal = goal_handle.request
-        self.assignment = self.create_assignment(goal_request)
-
-        next_coordinate = goal_request.goal
-        # TODO: print distance to target here.
-        self.logger.info(
-            f"Executing new goal, target set to {next_coordinate.lat=} "
-            f"{next_coordinate.lon=}, {self.distance_to_target=}"
-        )
-
-        self.assignment.start()
-
-        while not goal_handle.is_cancel_requested and not self.assignment.get_is_done():
-            progress = self.assignment.step(
-                current_position=LatLon(lat=self.current_position.lat, lon=self.current_position.lon),
-                current_heading=self.current_heading,
-                current_depth=self.current_depth,
-                current_time_seconds=time(),
-            )
-            goal_handle.publish_feedback(Navigate.Feedback(distance_to_target=progress["distance_to_target"]))
-
-            sleep(SLEEP_TIME)
-
-        if not goal_handle.is_cancel_requested:
-            goal_handle.succeed()
-        else:
-            goal_handle.canceled()
-        self.current_goal = None
-        self.logger.info("Finished goal.")
-        self.stop_navigation_actuators()
-
         result = Navigate.Result()
-        result.success = not goal_handle.is_cancel_requested
+        try:
+            if not has_navigation_pose(self.current_position):
+                self.logger.error("No current position at execute time, aborting goal.")
+                goal_handle.abort()
+                result.success = False
+                return result
 
-        return result
+            self.goal_handle = goal_handle
+
+            goal_request: Navigate.Goal = goal_handle.request
+            self.assignment = self.create_assignment(goal_request)
+
+            next_coordinate = goal_request.goal
+            # TODO: print distance to target here.
+            self.logger.info(
+                f"Executing new goal, target set to {next_coordinate.lat=} "
+                f"{next_coordinate.lon=}, {self.distance_to_target=}"
+            )
+
+            self.assignment.start()
+
+            while not goal_handle.is_cancel_requested and not self.assignment.get_is_done():
+                progress = self.assignment.step(
+                    current_position=LatLon(lat=self.current_position.lat, lon=self.current_position.lon),
+                    current_heading=self.current_heading,
+                    current_depth=self.current_depth,
+                    current_time_seconds=time(),
+                )
+                goal_handle.publish_feedback(Navigate.Feedback(distance_to_target=progress["distance_to_target"]))
+
+                sleep(SLEEP_TIME)
+
+            if not goal_handle.is_cancel_requested:
+                goal_handle.succeed()
+            else:
+                goal_handle.canceled()
+
+            result.success = not goal_handle.is_cancel_requested
+            return result
+        finally:
+            with self._goal_lock:
+                self._goal_in_progress = False
+            self.current_goal = None
+            self.stop_navigation_actuators()
+            self.logger.info("Finished goal.")
 
 
 def main(args: Optional[list[str]] = None) -> None:

@@ -25,6 +25,10 @@ class LEDControl:
     def off(self) -> None:
         GPIO.output(self.led_pin, LED_OFF_LEVEL)
 
+    def close(self) -> None:
+        self.off()
+        GPIO.cleanup((self.led_pin,))
+
 
 if __name__ == "__main__":
     led_controller = LEDControl()
