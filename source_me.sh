@@ -24,8 +24,11 @@ echo "Using $FILE_EXT"
 
 # Auto-detect or use ROS_DISTRO
 if [ -z "$ROS_DISTRO" ]; then
-  # Try to find the latest installed ROS distro
-  ROS_DISTRO=$(ls /opt/ros | sort | tail -n 1)
+  [ "$(ls /opt/ros 2>/dev/null | wc -l)" -eq 1 ] || {
+    echo "Set ROS_DISTRO first (found: $(ls /opt/ros 2>/dev/null)). e.g. export ROS_DISTRO=jazzy && source source_me.sh"
+    return 1 2>/dev/null || exit 1
+  }
+  ROS_DISTRO=$(ls /opt/ros)
   echo "Auto-detected ROS_DISTRO: $ROS_DISTRO"
 fi
 
