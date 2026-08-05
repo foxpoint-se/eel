@@ -81,7 +81,7 @@ class ImuOffsetsMqtt(TypedDict):
 
 
 class BatteryStatusMqtt(TypedDict):
-    voltage_percent: float
+    voltage_ratio: float
 
 
 class FloatMsgMqtt(TypedDict):
@@ -126,7 +126,7 @@ SubscriberCallback = Callable[[str, bytes, bool, object, bool], None]
 
 
 def transform_battery_msg(msg: BatteryStatus) -> BatteryStatusMqtt:
-    return {"voltage_percent": msg.voltage_percent}
+    return {"voltage_ratio": msg.voltage_ratio}
 
 
 def transform_imu_msg(msg: ImuStatus) -> ImuStatusMqtt:

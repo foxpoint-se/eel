@@ -1,6 +1,6 @@
-float32 voltage
-float32 current
-float32 power
-float32 supply_voltage
-float32 shunt_voltage
-float32 voltage_percent
+float32 voltage_v
+float32 current_a
+float32 power_w
+float32 supply_voltage_v
+float32 shunt_voltage_v
+float32 voltage_ratio

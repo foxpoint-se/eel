@@ -25,12 +25,12 @@ class BatteryNode(Node):
 
         sensor: BatterySensor | BatterySimulator
         sensor = BatterySensor() if not self.should_simulate else BatterySimulator(parent_node=self)
-        self.get_voltage = sensor.get_voltage
-        self.get_current = sensor.get_current
-        self.get_power = sensor.get_power
-        self.get_supply_voltage = sensor.get_supply_voltage
-        self.get_shunt_voltage = sensor.get_shunt_voltage
-        self.get_voltage_percent = sensor.get_voltage_percent
+        self.get_voltage_v = sensor.get_voltage_v
+        self.get_current_a = sensor.get_current_a
+        self.get_power_w = sensor.get_power_w
+        self.get_supply_voltage_v = sensor.get_supply_voltage_v
+        self.get_shunt_voltage_v = sensor.get_shunt_voltage_v
+        self.get_voltage_ratio = sensor.get_voltage_ratio
 
         self.updater = self.create_timer(1.0 / self.update_frequency, self.publish_battery)
 
@@ -38,12 +38,12 @@ class BatteryNode(Node):
 
     def publish_battery(self) -> None:
         msg = BatteryStatus()
-        msg.voltage = self.get_voltage()
-        msg.current = self.get_current()
-        msg.power = self.get_power()
-        msg.supply_voltage = self.get_supply_voltage()
-        msg.shunt_voltage = self.get_shunt_voltage()
-        msg.voltage_percent = self.get_voltage_percent()
+        msg.voltage_v = self.get_voltage_v()
+        msg.current_a = self.get_current_a()
+        msg.power_w = self.get_power_w()
+        msg.supply_voltage_v = self.get_supply_voltage_v()
+        msg.shunt_voltage_v = self.get_shunt_voltage_v()
+        msg.voltage_ratio = self.get_voltage_ratio()
 
         self.status_publisher.publish(msg)
 
