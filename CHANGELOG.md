@@ -2,6 +2,34 @@
 
 <!-- version list -->
 
+## v1.2.11 (2026-08-05)
+
+### Bug Fixes
+
+- Bare GNSS and pressure runs could grab the same USB port
+  ([`b94b470`](https://github.com/foxpoint-se/eel/commit/b94b4703f2d9794ab2cd64964179ffa02609d037))
+
+- Battery fields named percent/power but units were wrong
+  ([`75f0824`](https://github.com/foxpoint-se/eel/commit/75f0824e739e08c7de614949a5ee6a8496cbb821))
+
+- LED mission pulses blocked the ROS executor for seconds
+  ([`d3b73cc`](https://github.com/foxpoint-se/eel/commit/d3b73cc5daa7990bde50af55aff88cea3eb3e4cd))
+
+- Motor kept last speed when teleop or nav went silent
+  ([`1684f49`](https://github.com/foxpoint-se/eel/commit/1684f492a9110bc9173fd2c380ed09a8c05ef64f))
+
+- Pressure treated a real zero depth reading as missing
+  ([`a085144`](https://github.com/foxpoint-se/eel/commit/a085144e14aa0cdf85c32b69f68e3efc094e47ff))
+
+### Chores
+
+- Pressure sim still pretended tanks drove depth
+  ([`b298d2d`](https://github.com/foxpoint-se/eel/commit/b298d2d23f711e34bac7d733e119fe1b5ce347f8))
+
+- Source_me silently picked a ROS distro when several were installed
+  ([`cc6dde8`](https://github.com/foxpoint-se/eel/commit/cc6dde8a2af580b251265f6dd060ea81e3c918f4))
+
+
 ## v1.2.10 (2026-08-03)
 
 ### Bug Fixes
