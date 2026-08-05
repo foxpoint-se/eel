@@ -154,6 +154,7 @@ class WaypointAndDepth(Assignment):
         next_rudder_turn = get_next_rudder_turn(current_heading, desired_heading)
 
         self.on_set_rudder(next_rudder_turn)
+        self.on_set_motor(1.0)
 
         return {"distance_to_target": distance_to_target}
 

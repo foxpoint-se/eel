@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from time import monotonic
 from typing import Callable, Optional
 
 import rclpy
@@ -10,15 +11,23 @@ from ..utils.node_runner import spin_node_until_shutdown
 from ..utils.topics import MOTOR_CMD
 from ..utils.utils import clamp
 from .motor_sim import MotorSimulator
+from .motor_watchdog import command_is_stale, require_positive_cmd_timeout
+
+MOTOR_CMD_TIMEOUT_PARAM = "cmd_timeout_s"
+DEFAULT_MOTOR_CMD_TIMEOUT_S = 1.0
+WATCHDOG_CHECK_PERIOD_S = 0.2
 
 
 class Motor(Node):
     def __init__(self) -> None:
         super().__init__("motor_node")
         self.declare_parameter(SIMULATE_PARAM, False)
+        self.declare_parameter(MOTOR_CMD_TIMEOUT_PARAM, DEFAULT_MOTOR_CMD_TIMEOUT_S)
         self.should_simulate = self.get_parameter(SIMULATE_PARAM).value
+        self.cmd_timeout_s = require_positive_cmd_timeout(float(self.get_parameter(MOTOR_CMD_TIMEOUT_PARAM).value))
 
         self.motor_subscription = self.create_subscription(Float32, MOTOR_CMD, self.handle_motor_msg, 10)
+        self._last_cmd_at: float | None = None
 
         stop: Callable[[], None]
         forward: Callable[[float], None]
@@ -41,7 +50,14 @@ class Motor(Node):
         self.forward = forward
         self.backward = backward
 
-        self.get_logger().info("{}Motor node started.".format("SIMULATE " if self.should_simulate else ""))
+        self.create_timer(WATCHDOG_CHECK_PERIOD_S, self._watchdog_tick)
+
+        self.get_logger().info(
+            "{}Motor node started (cmd_timeout_s={}).".format(
+                "SIMULATE " if self.should_simulate else "",
+                self.cmd_timeout_s,
+            )
+        )
 
     def shutdown(self) -> None:
         self.stop()
@@ -52,10 +68,19 @@ class Motor(Node):
         motor_value = clamp(msg.data, -1, 1)
         if motor_value == 0:
             self.stop()
-        elif motor_value > 0:
+            self._last_cmd_at = None
+            return
+        self._last_cmd_at = monotonic()
+        if motor_value > 0:
             self.forward(signal=motor_value)
-        elif motor_value < 0:
+        else:
             self.backward(signal=abs(motor_value))
+
+    def _watchdog_tick(self) -> None:
+        if command_is_stale(self._last_cmd_at, monotonic(), self.cmd_timeout_s):
+            self.get_logger().warning("motor/cmd stale; stopping motor")
+            self.stop()
+            self._last_cmd_at = None
 
 
 def main(args: Optional[list[str]] = None) -> None:
