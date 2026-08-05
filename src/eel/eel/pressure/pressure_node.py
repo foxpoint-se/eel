@@ -5,6 +5,7 @@ from typing import Optional
 
 import rclpy
 from rclpy.node import Node
+from rclpy.parameter import Parameter
 
 from eel_interfaces.msg import ImuStatus, PressureStatus
 
@@ -36,7 +37,7 @@ def get_depth_velocity(
     return velocity
 
 
-def get_pressure_sensor(should_simulate: bool, parent_node: Node, serial_port: str) -> PressureSource:
+def get_pressure_sensor(should_simulate: bool, parent_node: Node, serial_port: str | None = None) -> PressureSource:
     if should_simulate:
         from .pressure_sim import PressureSensorSimulator
 
@@ -44,22 +45,25 @@ def get_pressure_sensor(should_simulate: bool, parent_node: Node, serial_port: s
     else:
         from .pressure_sensor import PressureSensor
 
+        if serial_port is None:
+            raise ValueError("serial_port is required when not simulating")
         return PressureSensor(parent_node=parent_node, serial_port=serial_port)
 
 
-# example usage: ros2 run eel pressure
+# example usage: ros2 run eel pressure --ros-args -p serial_port:=/dev/ttyUSB0
 class PressureNode(Node):
     def __init__(self) -> None:
         super().__init__("pressure_node")
         self.declare_parameter(SIMULATE_PARAM, False)
         self.should_simulate = bool(self.get_parameter(SIMULATE_PARAM).value)
 
-        # At the time of writing, Ålen uses /dev/ttyUSB1 (which is why it's the default)
-        # and we don't really know which one Tvålen should use.
-        self.declare_parameter("serial_port", "/dev/ttyUSB1")
-        serial_port = self.get_parameter("serial_port").get_parameter_value().string_value
-
-        self.sensor = get_pressure_sensor(self.should_simulate, self, serial_port)
+        if self.should_simulate:
+            self.sensor = get_pressure_sensor(True, self)
+        else:
+            self.declare_parameter("serial_port", Parameter.Type.STRING)
+            # ROS string params are "" when unset — not Python None.
+            serial_port = self.get_parameter("serial_port").get_parameter_value().string_value or None
+            self.sensor = get_pressure_sensor(False, self, serial_port)
 
         self.current_pitch = 0.0
 

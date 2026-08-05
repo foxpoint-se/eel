@@ -244,7 +244,7 @@ class NavigationActionClient(Node):
 
         self.updater = self.create_timer(1.0, self.publish_status)
 
-        self.last_seen_battery_level = 100.0
+        self.last_seen_battery_level = 1.0
 
         self.current_position: Coordinate | None = None
 
@@ -317,7 +317,7 @@ class NavigationActionClient(Node):
 
     def handle_battery_status(self, msg: BatteryStatus) -> None:
         """Updates the last seen battery level variable."""
-        self.last_seen_battery_level = msg.voltage_percent
+        self.last_seen_battery_level = msg.voltage_ratio
 
     def handle_localization_update(self, msg: Coordinate) -> None:
         self.current_position = msg

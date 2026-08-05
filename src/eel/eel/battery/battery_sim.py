@@ -2,7 +2,7 @@ from time import time
 
 from rclpy.node import Node
 
-from .battery_utils import calculate_voltage_percent
+from .battery_utils import calculate_voltage_ratio
 
 BATTERY_MAX_VOLTAGE = 16.8
 DEGENERATION_TIME_S = 30
@@ -12,11 +12,11 @@ DEGEN_RATE_PERCENT = 0.00
 class BatterySimulator:
     def __init__(self, parent_node: Node) -> None:
         self.start_time = time()
-        self.voltage = BATTERY_MAX_VOLTAGE
-        self.current = 2.56
-        self.power = self.voltage * self.current
-        self.supply_voltage = self.voltage
-        self.shunt_voltage = self.voltage
+        self.voltage_v = BATTERY_MAX_VOLTAGE
+        self.current_a = 2.56
+        self.power_w = self.voltage_v * self.current_a
+        self.supply_voltage_v = self.voltage_v
+        self.shunt_voltage_v = 0.0
 
         self.last_update = self.start_time
 
@@ -30,24 +30,24 @@ class BatterySimulator:
         now = time()
 
         if (int(now) - int(self.start_time)) % DEGENERATION_TIME_S == 0:
-            self.voltage = self.voltage - (BATTERY_MAX_VOLTAGE * DEGEN_RATE_PERCENT)
+            self.voltage_v = self.voltage_v - (BATTERY_MAX_VOLTAGE * DEGEN_RATE_PERCENT)
+            self.supply_voltage_v = self.voltage_v
+            self.power_w = self.voltage_v * self.current_a
 
-    def get_voltage(self) -> float:
-        return self.voltage
+    def get_voltage_v(self) -> float:
+        return self.voltage_v
 
-    def get_voltage_percent(self) -> float:
-        voltage = self.get_voltage()
-        percent = calculate_voltage_percent(voltage)
-        return float(percent / 100)
+    def get_voltage_ratio(self) -> float:
+        return calculate_voltage_ratio(self.get_voltage_v())
 
-    def get_current(self) -> float:
-        return self.current
+    def get_current_a(self) -> float:
+        return self.current_a
 
-    def get_power(self) -> float:
-        return self.power
+    def get_power_w(self) -> float:
+        return self.power_w
 
-    def get_supply_voltage(self) -> float:
-        return self.supply_voltage
+    def get_supply_voltage_v(self) -> float:
+        return self.supply_voltage_v
 
-    def get_shunt_voltage(self) -> float:
-        return self.shunt_voltage
+    def get_shunt_voltage_v(self) -> float:
+        return self.shunt_voltage_v

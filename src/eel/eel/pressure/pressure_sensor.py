@@ -25,15 +25,15 @@ class PressureSensor(PressureSource):
 
         self.atmosphere_offset = self._get_initial_depth(retries=number_of_retries)
 
-        if not self.atmosphere_offset:
-            raise Exception(f"Could not determine atmosphere offset after {number_of_retries} retries.")
+        if self.atmosphere_offset is None:
+            raise RuntimeError(f"Could not determine atmosphere offset after {number_of_retries} retries.")
 
-        self.logger.info(f"Sensor initialized, fluid density set to 997 km/m3, offset is {self.atmosphere_offset} m")
+        self.logger.info(f"Sensor initialized, fluid density set to 997 kg/m3, offset is {self.atmosphere_offset} m")
 
     def _get_initial_depth(self, retries: int = 10, sleep_time: float = 0.2) -> float | None:
         for i in range(retries):
             depth = self._get_depth_reading()
-            if depth:
+            if depth is not None:
                 return depth
             self.logger.info("Retrying getting initial depth...")
             time.sleep(sleep_time)
@@ -61,6 +61,6 @@ class PressureSensor(PressureSource):
 
     def get_current_depth(self) -> float | None:
         depth = self._get_depth_reading()
-        if depth and self.atmosphere_offset:
+        if depth is not None and self.atmosphere_offset is not None:
             return depth - self.atmosphere_offset
         return None

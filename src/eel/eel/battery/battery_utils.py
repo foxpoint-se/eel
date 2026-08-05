@@ -23,12 +23,11 @@ percent_voltage_map = {
 }
 
 
-def calculate_voltage_percent(voltage: float) -> float:
+def calculate_voltage_ratio(voltage: float) -> float:
     percent = 0.0
 
     if voltage >= percent_voltage_map[100]:
-        percent = 100.0
-        return percent
+        return 1.0
 
     for mapped_percent, mapped_voltage in percent_voltage_map.items():
         if voltage < mapped_voltage:
@@ -37,4 +36,4 @@ def calculate_voltage_percent(voltage: float) -> float:
             percent = mapped_percent
             break
 
-    return percent
+    return percent / 100.0

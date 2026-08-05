@@ -9,7 +9,7 @@ logger = get_logger(__name__)
 
 
 class GnssSensor:
-    def __init__(self, serial_port: str = "/dev/ttyUSB1") -> None:
+    def __init__(self, serial_port: str) -> None:
         self._position_lock = threading.Lock()
         self.current_lat: float | None = None
         self.current_lon: float | None = None

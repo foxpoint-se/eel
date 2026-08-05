@@ -1,4 +1,4 @@
-from .battery_utils import calculate_voltage_percent
+from .battery_utils import calculate_voltage_ratio
 
 
 class BatterySensor:
@@ -10,34 +10,20 @@ class BatterySensor:
         self.ina = INA226(busnum=1, max_expected_amps=16, log_level=logging.INFO)
         self.ina.configure()
 
-    # TODO: not percent. change name to get_voltage_ratio
-    def get_voltage_percent(self) -> float:
-        voltage = self.ina.voltage()
-        percent = calculate_voltage_percent(voltage)
-        return float(percent / 100)
+    def get_voltage_ratio(self) -> float:
+        return calculate_voltage_ratio(self.ina.voltage())
 
-    # NOTE: unit is V
-    # TODO: include unit in name
-    def get_voltage(self) -> float:
+    def get_voltage_v(self) -> float:
         return float(self.ina.voltage())
 
-    # NOTE: unit is mA
-    # TODO: include unit in name
-    def get_current(self) -> float:
-        return float(self.ina.current())
+    def get_current_a(self) -> float:
+        return float(self.ina.current()) / 1000.0
 
-    # NOTE: unit is mW
-    # TODO: divide by 1000 so that unit is W
-    # TODO: include unit in name
-    def get_power(self) -> float:
-        return float(self.ina.power())
+    def get_power_w(self) -> float:
+        return float(self.ina.power()) / 1000.0
 
-    # NOTE: unit is V
-    # TODO: include unit in name
-    def get_supply_voltage(self) -> float:
+    def get_supply_voltage_v(self) -> float:
         return float(self.ina.supply_voltage())
 
-    # NOTE: unit is V
-    # TODO: include unit in name
-    def get_shunt_voltage(self) -> float:
-        return float(self.ina.shunt_voltage())
+    def get_shunt_voltage_v(self) -> float:
+        return float(self.ina.shunt_voltage()) / 1000.0

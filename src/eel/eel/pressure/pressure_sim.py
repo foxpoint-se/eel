@@ -1,54 +1,20 @@
-import random
 from math import radians, tan
 from time import time
 
 from rclpy.node import Node
 from std_msgs.msg import Float32
 
-from eel_interfaces.msg import ImuStatus, TankStatus
+from eel_interfaces.msg import ImuStatus
 
-from ..utils.topics import FRONT_TANK_STATUS, IMU_STATUS, MOTOR_CMD, REAR_TANK_STATUS
+from ..utils.topics import IMU_STATUS, MOTOR_CMD
 from .pressure_source import PressureSource
 
-NEUTRAL_LEVEL = 0.5
-NEUTRAL_TOLERANCE = 0.02
 TERMINAL_VELOCITY_MPS = 0.3
+# Slight positive buoyancy: float up when not actively diving (rudder depth-control era).
+FLOAT_VELOCITY_MPS = -0.05
 
 MAX_DEPTH = 10.0
 MIN_DEPTH = 0.0
-
-# TODO: remove this completely, if it turns out that we don't get OSErrors anymore
-OS_ERROR_RATE = 0.0
-
-
-def should_raise_oserror() -> bool:
-    return random.random() < OS_ERROR_RATE
-
-
-def get_neutral_offset(tank_level: float, neutral_level: float, neutral_tolerance: float) -> float:
-    neutral_ceiling = neutral_level + neutral_tolerance
-    neutral_floor = neutral_level - neutral_tolerance
-    if tank_level < neutral_floor:
-        return tank_level - neutral_floor
-    if tank_level > neutral_ceiling:
-        return tank_level - neutral_ceiling
-    return 0
-
-
-def get_average_bouyancy(
-    front_tank_level: float,
-    rear_tank_level: float,
-    neutral_level: float,
-    neutral_tolerance: float,
-) -> float:
-    front_offset = get_neutral_offset(front_tank_level, neutral_level, neutral_tolerance)
-    rear_offset = get_neutral_offset(rear_tank_level, neutral_level, neutral_tolerance)
-    offset_average = (front_offset + rear_offset) / 2
-    return offset_average
-
-
-def get_velocity(terminal_velocity: float, fraction_of_velocity: float) -> float:
-    return terminal_velocity * fraction_of_velocity
 
 
 def get_pitch_speed_velocity(terminal_velocity: float, pitch: float) -> float:
@@ -69,29 +35,15 @@ def cap_depth(depth: float, min_depth: float, max_depth: float) -> float:
 
 class PressureSensorSimulator(PressureSource):
     def __init__(self, parent_node: Node) -> None:
-        parent_node.create_subscription(TankStatus, FRONT_TANK_STATUS, self._handle_front_tank_msg, 10)
-        parent_node.create_subscription(TankStatus, REAR_TANK_STATUS, self._handle_rear_tank_msg, 10)
-
         parent_node.create_subscription(ImuStatus, IMU_STATUS, self._handle_imu_msg, 10)
-
         parent_node.create_subscription(Float32, MOTOR_CMD, self.handle_motor_msg, 10)
 
         self._last_updated_at = time()
         self._current_motor_speed = 0.0
         self._current_depth = 0.0
-        self._front_tank_level = 0.0
-        self._rear_tank_level = 0.0
         self._current_pitch = 0.0
 
         self.logger = parent_node.get_logger()
-
-    def _handle_front_tank_msg(self, msg: TankStatus) -> None:
-        self._front_tank_level = msg.current_level
-        self._calculate_depth()
-
-    def _handle_rear_tank_msg(self, msg: TankStatus) -> None:
-        self._rear_tank_level = msg.current_level
-        self._calculate_depth()
 
     def _handle_imu_msg(self, msg: ImuStatus) -> None:
         self._current_pitch = msg.pitch
@@ -102,33 +54,20 @@ class PressureSensorSimulator(PressureSource):
         self._calculate_depth()
 
     def _calculate_depth(self) -> None:
-        _ = get_average_bouyancy(
-            self._front_tank_level,
-            self._rear_tank_level,
-            NEUTRAL_LEVEL,
-            NEUTRAL_TOLERANCE,
-        )
-        # NOTE: setting to negative here, so it will float up when motor not running
-        tank_velocity = -0.05  # get_velocity(TERMINAL_VELOCITY_MPS, average_bouyancy)
         pitch_speed_velocity = (
             get_pitch_speed_velocity(TERMINAL_VELOCITY_MPS, self._current_pitch) * self._current_motor_speed
         )
-        velocity = tank_velocity + pitch_speed_velocity
+        velocity = FLOAT_VELOCITY_MPS + pitch_speed_velocity
 
+        now = time()
         if velocity != 0:
-            now = time()
             time_delta = now - self._last_updated_at
             position_delta = calculate_position_delta(velocity, time_delta)
             new_position = self._current_depth + position_delta
-            capped_depth = cap_depth(new_position, MIN_DEPTH, MAX_DEPTH)
-            self._current_depth = capped_depth
+            self._current_depth = cap_depth(new_position, MIN_DEPTH, MAX_DEPTH)
 
-        self._last_updated_at = time()
+        self._last_updated_at = now
 
     def get_current_depth(self) -> float:
         self._calculate_depth()
-
-        if should_raise_oserror():
-            raise OSError("Simulating OSError")
-
         return self._current_depth
