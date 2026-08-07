@@ -1,7 +1,7 @@
 from time import time
-from typing import TYPE_CHECKING
 
 from geometry_msgs.msg import Vector3
+from rclpy.node import Node
 from std_msgs.msg import Float32
 
 from eel_interfaces.msg import TankStatus
@@ -14,10 +14,6 @@ from ..utils.topics import (
     RUDDER_STATUS,
 )
 from .types import CalibrationOffsets
-
-if TYPE_CHECKING:
-    from .imu_node import ImuNode
-
 
 TERMINAL_PITCH_ANGULAR_VELOCITY_DEGPS = 12.5
 MOMENTUM_TOLERANCE = 0.03
@@ -63,7 +59,7 @@ def calculate_angle_delta(angular_velocity: float, time_in_s: float) -> float:
 
 
 class ImuSimulator:
-    def __init__(self, parent_node: "ImuNode") -> None:
+    def __init__(self, parent_node: Node, update_frequency_hz: float) -> None:
         self.current_rudder_status = Vector3()
         self.current_heading = float(0)
         self.speed = 0.0
@@ -83,7 +79,7 @@ class ImuSimulator:
         parent_node.create_subscription(TankStatus, FRONT_TANK_STATUS, self._handle_front_tank_msg, 10)
         parent_node.create_subscription(TankStatus, REAR_TANK_STATUS, self._handle_rear_tank_msg, 10)
 
-        self.imu_updater = parent_node.create_timer(1.0 / (parent_node.update_frequency * 2), self._loop)
+        self.imu_updater = parent_node.create_timer(1.0 / (update_frequency_hz * 2), self._loop)
 
     def _handle_rudder_msg(self, msg: Vector3) -> None:
         self.current_rudder_status = msg
