@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import math
 from enum import Enum
+from time import monotonic
 from typing import Optional
 
 import rclpy
@@ -10,6 +11,8 @@ from std_msgs.msg import Float32
 
 from eel_interfaces.msg import ImuStatus
 
+from ..motor.motor_watchdog import command_is_stale, require_positive_cmd_timeout
+from ..utils.actuator_bounds import bounded_unit_cmd
 from ..utils.constants import SIMULATE_PARAM
 from ..utils.node_runner import spin_node_until_shutdown
 from ..utils.topics import (
@@ -25,6 +28,10 @@ from ..utils.topics import (
 from ..utils.utils import clamp
 from .actuator.actuator import get_xy_rudder
 from .actuator.types import Vector2d
+
+RUDDER_CMD_TIMEOUT_PARAM = "cmd_timeout_s"
+DEFAULT_RUDDER_CMD_TIMEOUT_S = 1.0
+WATCHDOG_CHECK_PERIOD_S = 0.2
 
 
 class Rudders(Enum):
@@ -46,7 +53,9 @@ class Rudder(Node):
         super().__init__("rudder_node")
 
         self.declare_parameter(SIMULATE_PARAM, False)
+        self.declare_parameter(RUDDER_CMD_TIMEOUT_PARAM, DEFAULT_RUDDER_CMD_TIMEOUT_S)
         self.should_simulate = bool(self.get_parameter(SIMULATE_PARAM).value)
+        self.cmd_timeout_s = require_positive_cmd_timeout(float(self.get_parameter(RUDDER_CMD_TIMEOUT_PARAM).value))
         self.logger = self.get_logger()
 
         pigpiod_host_parameter = "pigpiod_host"
@@ -65,13 +74,21 @@ class Rudder(Node):
 
         self.current_x_cmd: float = float()
         self.current_y_cmd: float = float()
+        self._last_cmd_at: float | None = None
 
         self.current_roll = 0.0
         self.current_rudder_status: Vector2d = {"x": 0.0, "y": 0.0}
 
         self.xy_rudder = get_xy_rudder({"simulate": self.should_simulate, "pigpiod_host": self.pigpiod_host})
 
-        self.logger.info("{}Rudder node started.".format("SIMULATE " if self.should_simulate else ""))
+        self.create_timer(WATCHDOG_CHECK_PERIOD_S, self._watchdog_tick)
+
+        self.logger.info(
+            "{}Rudder node started (cmd_timeout_s={}).".format(
+                "SIMULATE " if self.should_simulate else "",
+                self.cmd_timeout_s,
+            )
+        )
 
         # Send the initial offset values for rudder x and y for front end to pick up
         self.publish_rudder_offset_value(Rudders.RUDDER_X)
@@ -85,7 +102,12 @@ class Rudder(Node):
         self.merge_and_handle_commands()
 
     def handle_x_cmd(self, msg: Float32) -> None:
-        self.current_x_cmd = msg.data
+        bounded = bounded_unit_cmd(msg.data)
+        if bounded is None:
+            self.logger.warning(f"Rejecting invalid rudder x cmd {msg.data}")
+            return
+        self.current_x_cmd = bounded
+        self._refresh_cmd_watchdog()
         self.merge_and_handle_commands()
 
     def publish_rudder_offset_value(self, rudder_type: Rudders) -> None:
@@ -120,7 +142,27 @@ class Rudder(Node):
         pass
 
     def handle_y_cmd(self, msg: Float32) -> None:
-        self.current_y_cmd = msg.data
+        bounded = bounded_unit_cmd(msg.data)
+        if bounded is None:
+            self.logger.warning(f"Rejecting invalid rudder y cmd {msg.data}")
+            return
+        self.current_y_cmd = bounded
+        self._refresh_cmd_watchdog()
+        self.merge_and_handle_commands()
+
+    def _refresh_cmd_watchdog(self) -> None:
+        if self.current_x_cmd == 0 and self.current_y_cmd == 0:
+            self._last_cmd_at = None
+            return
+        self._last_cmd_at = monotonic()
+
+    def _watchdog_tick(self) -> None:
+        if not command_is_stale(self._last_cmd_at, monotonic(), self.cmd_timeout_s):
+            return
+        self.logger.warning("rudder cmd stale; centering rudder")
+        self.current_x_cmd = 0.0
+        self.current_y_cmd = 0.0
+        self._last_cmd_at = None
         self.merge_and_handle_commands()
 
     def handle_y_offset(self, msg: Float32) -> None:

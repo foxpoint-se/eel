@@ -1,29 +1,35 @@
-from typing import List, TypedDict
-
 from eel_interfaces.msg import (
     Coordinate,
     SubmergedCoordinate,
     TracedRoute,
 )
 
+from .payload_types import (
+    AssignmentMqtt,
+    BoolMsgMqtt,
+    CoordinateMqtt,
+    DepthControlCmdMqtt,
+    FloatMsgMqtt,
+    NavigationMissionMqtt,
+    StringMqtt,
+    SubmergedCoordinateMqtt,
+    TracedRouteMqtt,
+)
 
-class CoordinateMqtt(TypedDict):
-    lat: float
-    lon: float
-
-
-class SubmergedCoordinateMqtt(TypedDict):
-    coordinate: CoordinateMqtt
-    depth: float
-
-
-class TracedRouteMqtt(TypedDict):
-    path: List[SubmergedCoordinateMqtt]
-    started_at: str
-    ended_at: str
-    duration_seconds: float
-    xy_distance_covered_meters: float
-    average_depth_meters: float
+__all__ = [
+    "AssignmentMqtt",
+    "BoolMsgMqtt",
+    "CoordinateMqtt",
+    "DepthControlCmdMqtt",
+    "FloatMsgMqtt",
+    "NavigationMissionMqtt",
+    "StringMqtt",
+    "SubmergedCoordinateMqtt",
+    "TracedRouteMqtt",
+    "to_submerged_coord_mqtt",
+    "to_traced_route_mqtt",
+    "transform_coordinate_msg",
+]
 
 
 def transform_coordinate_msg(msg: Coordinate) -> CoordinateMqtt:

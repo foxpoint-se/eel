@@ -8,6 +8,7 @@ from std_msgs.msg import Float32
 
 from eel_interfaces.msg import Coordinate, ImuStatus, PressureStatus
 
+from ..utils.actuator_bounds import is_valid_coordinate
 from ..utils.node_runner import spin_node_until_shutdown
 from ..utils.sim import LINEAR_VELOCITY
 from ..utils.topics import (
@@ -19,10 +20,31 @@ from ..utils.topics import (
     MOTOR_CMD,
     PRESSURE_STATUS,
 )
+from .gnss_blackout import DEFAULT_GNSS_BLACKOUT_CONFIG, GnssBlackoutConfig, require_valid_gnss_blackout_config
 from .localizer import Localizer
+
+GNSS_BLACKOUT_ENTER_DEPTH_PARAM = "gnss_blackout_enter_depth_m"
+GNSS_BLACKOUT_EXIT_DEPTH_PARAM = "gnss_blackout_exit_depth_m"
+GNSS_REACQUIRE_CLUSTER_RADIUS_PARAM = "gnss_reacquire_cluster_radius_m"
+GNSS_REACQUIRE_FIXES_REQUIRED_PARAM = "gnss_reacquire_fixes_required"
+GNSS_REACQUIRE_MAX_OUTLIER_DISTANCE_PARAM = "gnss_reacquire_max_outlier_distance_m"
+GNSS_REACQUIRE_TIMEOUT_PARAM = "gnss_reacquire_timeout_sec"
 
 FORWARD_MAX_SPEED = LINEAR_VELOCITY
 REVERSE_MAX_SPEED = 0.2 * FORWARD_MAX_SPEED
+
+
+def gnss_blackout_config_from_node(node: Node) -> GnssBlackoutConfig:
+    return require_valid_gnss_blackout_config(
+        GnssBlackoutConfig(
+            enter_depth_m=float(node.get_parameter(GNSS_BLACKOUT_ENTER_DEPTH_PARAM).value),
+            exit_depth_m=float(node.get_parameter(GNSS_BLACKOUT_EXIT_DEPTH_PARAM).value),
+            cluster_radius_m=float(node.get_parameter(GNSS_REACQUIRE_CLUSTER_RADIUS_PARAM).value),
+            fixes_required=int(node.get_parameter(GNSS_REACQUIRE_FIXES_REQUIRED_PARAM).value),
+            max_outlier_distance_m=float(node.get_parameter(GNSS_REACQUIRE_MAX_OUTLIER_DISTANCE_PARAM).value),
+            reacquire_timeout_sec=float(node.get_parameter(GNSS_REACQUIRE_TIMEOUT_PARAM).value),
+        )
+    )
 
 
 def calculate_speed_from_motor_mps(motor_speed: float) -> float:
@@ -36,6 +58,15 @@ def calculate_speed_from_motor_mps(motor_speed: float) -> float:
 class Localization(Node):
     def __init__(self) -> None:
         super().__init__("localization", parameter_overrides=[])
+        self.declare_parameter(GNSS_BLACKOUT_ENTER_DEPTH_PARAM, DEFAULT_GNSS_BLACKOUT_CONFIG.enter_depth_m)
+        self.declare_parameter(GNSS_BLACKOUT_EXIT_DEPTH_PARAM, DEFAULT_GNSS_BLACKOUT_CONFIG.exit_depth_m)
+        self.declare_parameter(GNSS_REACQUIRE_CLUSTER_RADIUS_PARAM, DEFAULT_GNSS_BLACKOUT_CONFIG.cluster_radius_m)
+        self.declare_parameter(GNSS_REACQUIRE_FIXES_REQUIRED_PARAM, DEFAULT_GNSS_BLACKOUT_CONFIG.fixes_required)
+        self.declare_parameter(
+            GNSS_REACQUIRE_MAX_OUTLIER_DISTANCE_PARAM,
+            DEFAULT_GNSS_BLACKOUT_CONFIG.max_outlier_distance_m,
+        )
+        self.declare_parameter(GNSS_REACQUIRE_TIMEOUT_PARAM, DEFAULT_GNSS_BLACKOUT_CONFIG.reacquire_timeout_sec)
         self.update_frequency_hz = 5
         self.gnss_subscription = self.create_subscription(Coordinate, GNSS_STATUS, self.handle_gnss_msg, 10)
         self.motor_subscription = self.create_subscription(Float32, MOTOR_CMD, self.handle_motor_msg, 10)
@@ -54,11 +85,14 @@ class Localization(Node):
         )
         self.status_publisher = self.create_publisher(Coordinate, LOCALIZATION_STATUS, 10)
 
-        self.localizer = Localizer()
+        self.localizer = Localizer(gnss_config=gnss_blackout_config_from_node(self))
         self.loop = self.create_timer(1.0 / self.update_frequency_hz, self.do_work)
         self.get_logger().info(f"Localization node started. {LINEAR_VELOCITY} m/s")
 
     def handle_gnss_msg(self, msg: Coordinate) -> None:
+        if not is_valid_coordinate(msg.lat, msg.lon):
+            self.get_logger().warning(f"Rejecting invalid gnss coordinate lat={msg.lat} lon={msg.lon}")
+            return
         self.current_gnss_status = msg
         self.localizer.update_known_position({"lat": msg.lat, "lon": msg.lon})
 

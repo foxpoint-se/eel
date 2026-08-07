@@ -4,6 +4,7 @@ Longer / maybe-stale bring-up notes live here so the main README stays lean. Age
 
 | Doc | About |
 | --- | ----- |
+| [pressure-depth.md](./pressure-depth.md) | Bar02 → i2c-proxy → eel (binary float serial link) |
 | [gnss-pi-uart-console.md](./gnss-pi-uart-console.md) | Pi miniUART / serial console vs GPS (may be obsolete for USB-only GPS) |
 | [modem-wifi-fallback.md](./modem-wifi-fallback.md) | Idea: start cellular modem if wifi never comes up |
 

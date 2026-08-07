@@ -12,6 +12,7 @@ from eel_interfaces.msg import (
     PressureStatus,
 )
 
+from ..utils.actuator_bounds import bounded_depth_target
 from ..utils.node_runner import spin_node_until_shutdown
 from ..utils.pid_controller import PidController
 from ..utils.topics import (
@@ -36,8 +37,12 @@ class DepthControlNode(Node):
         self.max_dive_angle = 30.0
         self.max_rudder_output = 1.0
 
-        self.inner_pid_target_angle = PidController(0.0, kP=-35.0, kD=-10.0)
-        self.out_pid_rudder_output = PidController(0.0, kP=1 / 30)
+        self.inner_pid_target_angle = PidController(
+            0.0, kP=-35.0, kD=-10.0, output_min=-self.max_dive_angle, output_max=self.max_dive_angle
+        )
+        self.out_pid_rudder_output = PidController(
+            0.0, kP=1 / 30, output_min=-self.max_rudder_output, output_max=self.max_rudder_output
+        )
 
         self.current_pitch = 0.0
         self.current_depth = 0.0
@@ -76,25 +81,22 @@ class DepthControlNode(Node):
         self.current_depth = msg.depth
 
     def handle_cmd_msg(self, msg: DepthControlCmd) -> None:
-        self.depth_target = msg.depth_target
-        self.inner_pid_target_angle.update_set_point(msg.depth_target)
+        depth_target = bounded_depth_target(msg.depth_target)
+        if depth_target is None:
+            self.logger.warning(f"Rejecting invalid depth control cmd depth={msg.depth_target}")
+            return
+        if depth_target != msg.depth_target:
+            self.logger.warning(f"Clamped depth control cmd depth={msg.depth_target}->{depth_target}")
+        self.depth_target = depth_target
+        self.inner_pid_target_angle.update_set_point(depth_target)
 
     def compute_new_target_angle(self) -> float:
         pid_angle_output = self.inner_pid_target_angle.compute(self.current_depth)
-
-        if abs(pid_angle_output) > self.max_dive_angle:
-            pid_angle_output = self.max_dive_angle if pid_angle_output > 0 else -1 * self.max_dive_angle
-
         return -1 * pid_angle_output
 
     def compute_new_rudder_output(self, new_target_angle: float) -> float:
         self.out_pid_rudder_output.update_set_point(new_target_angle)
-        rudder_output = self.out_pid_rudder_output.compute(self.current_pitch)
-
-        if abs(rudder_output) > self.max_rudder_output:
-            rudder_output = self.max_rudder_output if rudder_output > 0 else -1.0 * self.max_rudder_output
-
-        return rudder_output
+        return self.out_pid_rudder_output.compute(self.current_pitch)
 
 
 def main(args: Optional[list[str]] = None) -> None:

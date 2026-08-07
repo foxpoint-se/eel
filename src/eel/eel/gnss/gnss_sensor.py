@@ -13,11 +13,9 @@ class GnssSensor:
         self._position_lock = threading.Lock()
         self.current_lat: float | None = None
         self.current_lon: float | None = None
-        # TODO: remove this comment if we don't seem to have problem with timeout=0
         self.serial = SerialReaderWriter(serial_port, baudrate=9600, on_message=self.handle_message)
 
     def handle_message(self, message: str) -> None:
-        # TODO: remove this comment if GGA seems to work instead of GPRMC
         if "GGA" in message:
             try:
                 parsed = pynmea2.parse(message)

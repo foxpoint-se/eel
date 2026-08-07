@@ -3,8 +3,11 @@ import time
 from typing import Callable, Optional
 
 import serial
+from rclpy.logging import get_logger
 
 SLEEP_TIME = 0.01
+
+logger = get_logger(__name__)
 
 
 class SerialReaderWriter:
@@ -26,20 +29,10 @@ class SerialReaderWriter:
     def send(self, message: str) -> None:
         self._write_one_message(message)
 
-    # TODO: remove or use? it could be interesting to see if there's ever anything in in_waiting or out_waiting
-    # def _flush_if_necessary(self):
-    #     in_waiting = self._ser.in_waiting
-    #     out_waiting = self._ser.out_waiting
-    #     if in_waiting > 0 or out_waiting > 0:
-    #         print("in_waiting", in_waiting, "out_waiting", out_waiting)
-    #         self._ser.flush()
-
     def _write_one_message(self, message: str) -> None:
         msg_line = "{}\n".format(message)
         self._ser.write(bytes(msg_line, "utf-8"))
         self._ser.flush()
-        # TODO: remove or use?
-        # self._flush_if_necessary()
 
     def _loop(self) -> None:
         while True:
@@ -48,9 +41,7 @@ class SerialReaderWriter:
                 try:
                     self._on_message(msg.decode("utf-8").strip())
                 except UnicodeDecodeError:
-                    print("Unicode decode error. Ignoring", msg)
+                    logger.warning("Unicode decode error, ignoring serial line: %r", msg)
 
             self._ser.flush()
-            # TODO: remove or use?
-            # self._flush_if_necessary()
             time.sleep(SLEEP_TIME)

@@ -47,19 +47,16 @@ from ..utils.topics import (
     RUDDER_X_CMD,
     RUDDER_Y_CMD,
 )
+from .inbound_validation import (
+    parse_bool_payload,
+    parse_coordinate_payload,
+    parse_depth_control_payload,
+    parse_float_payload,
+    parse_mission_payload,
+    parse_string_payload,
+)
 from .mqtt_sim import LoggingMqttBackend, MqttBackend
-from .types import CoordinateMqtt, to_traced_route_mqtt, transform_coordinate_msg
-
-
-class DepthControlCmdMqtt(TypedDict):
-    depth_target: float
-    pitch_target: float
-    depth_pid_type: str
-    pitch_pid_type: str
-
-
-class StringMqtt(TypedDict):
-    data: str
+from .types import BoolMsgMqtt, CoordinateMqtt, to_traced_route_mqtt, transform_coordinate_msg
 
 
 class ImuStatusMqtt(TypedDict):
@@ -84,30 +81,12 @@ class BatteryStatusMqtt(TypedDict):
     voltage_ratio: float
 
 
-class FloatMsgMqtt(TypedDict):
-    data: float
-
-
-class BoolMsgMqtt(TypedDict):
-    data: bool
-
-
-class AssignmentMqtt(TypedDict):
-    coordinate: CoordinateMqtt
-    target_depth: float
-    sync_after: bool
-
-
 class NavigationStatusMqtt(TypedDict):
     meters_to_target: float
     auto_mode_enabled: bool
     waypoints_left: List[CoordinateMqtt]
     count_goals_left: int
     mission_total_meters: float
-
-
-class NavigationMissionMqtt(TypedDict):
-    assignments: List[AssignmentMqtt]
 
 
 class TankStatusMqtt(TypedDict):
@@ -307,9 +286,12 @@ class MqttBridge(Node):
         retain: bool,
         **_kwargs: object,
     ) -> None:
-        converted = cast(FloatMsgMqtt, json.loads(payload))
+        value = parse_float_payload(payload)
+        if value is None:
+            self.get_logger().warning("Dropping invalid MQTT front tank cmd payload")
+            return
         msg = Float32()
-        msg.data = converted["data"]
+        msg.data = value
         self.front_tank_cmd_publisher.publish(msg)
 
     def handle_incoming_rear_tank_cmd(
@@ -321,9 +303,12 @@ class MqttBridge(Node):
         retain: bool,
         **_kwargs: object,
     ) -> None:
-        converted = cast(FloatMsgMqtt, json.loads(payload))
+        value = parse_float_payload(payload)
+        if value is None:
+            self.get_logger().warning("Dropping invalid MQTT rear tank cmd payload")
+            return
         msg = Float32()
-        msg.data = converted["data"]
+        msg.data = value
         self.rear_tank_cmd_publisher.publish(msg)
 
     def handle_incoming_motor_cmd(
@@ -335,10 +320,12 @@ class MqttBridge(Node):
         retain: bool,
         **_kwargs: object,
     ) -> None:
-        converted = cast(FloatMsgMqtt, json.loads(payload))
-        motor_value = float(converted["data"])
+        value = parse_float_payload(payload)
+        if value is None:
+            self.get_logger().warning("Dropping invalid MQTT motor cmd payload")
+            return
         motor_msg = Float32()
-        motor_msg.data = motor_value
+        motor_msg.data = value
         self.motor_publisher.publish(motor_msg)
 
     def handle_incoming_navigation_cmd(
@@ -350,9 +337,12 @@ class MqttBridge(Node):
         retain: bool,
         **_kwargs: object,
     ) -> None:
-        converted = cast(BoolMsgMqtt, json.loads(payload))
+        value = parse_bool_payload(payload)
+        if value is None:
+            self.get_logger().warning("Dropping invalid MQTT navigation cmd payload")
+            return
         msg = Bool()
-        msg.data = bool(converted["data"])
+        msg.data = value
         self.nav_cmd_publisher.publish(msg)
 
     def handle_incoming_depth_control_cmd(
@@ -364,7 +354,10 @@ class MqttBridge(Node):
         retain: bool,
         **_kwargs: object,
     ) -> None:
-        converted = cast(DepthControlCmdMqtt, json.loads(payload))
+        converted = parse_depth_control_payload(payload)
+        if converted is None:
+            self.get_logger().warning("Dropping invalid MQTT depth control cmd payload")
+            return
         msg = DepthControlCmd()
         msg.depth_pid_type = converted["depth_pid_type"]
         msg.depth_target = converted["depth_target"]
@@ -381,8 +374,10 @@ class MqttBridge(Node):
         retain: bool,
         **_kwargs: object,
     ) -> None:
-        converted = cast(FloatMsgMqtt, json.loads(payload))
-        value = float(converted["data"])
+        value = parse_float_payload(payload)
+        if value is None:
+            self.get_logger().warning("Dropping invalid MQTT rudder x cmd payload")
+            return
         msg = Float32()
         msg.data = value
         self.rudder_horizontal_publisher.publish(msg)
@@ -396,8 +391,10 @@ class MqttBridge(Node):
         retain: bool,
         **_kwargs: object,
     ) -> None:
-        converted = cast(FloatMsgMqtt, json.loads(payload))
-        value = float(converted["data"])
+        value = parse_float_payload(payload)
+        if value is None:
+            self.get_logger().warning("Dropping invalid MQTT rudder y cmd payload")
+            return
         msg = Float32()
         msg.data = value
         self.rudder_vertical_publisher.publish(msg)
@@ -411,17 +408,20 @@ class MqttBridge(Node):
         retain: bool,
         **_kwargs: object,
     ) -> None:
-        converted = cast(NavigationMissionMqtt, json.loads(payload))
+        converted = parse_mission_payload(payload)
+        if converted is None:
+            self.get_logger().warning("Dropping invalid MQTT mission payload")
+            return
         msg = NavigationMission()
         ros_assignments: List[NavigationAssignment] = []
         for assignment in converted["assignments"]:
             ros_assignment = NavigationAssignment()
             coord = Coordinate()
-            coord.lat = float(assignment["coordinate"]["lat"])
-            coord.lon = float(assignment["coordinate"]["lon"])
+            coord.lat = assignment["coordinate"]["lat"]
+            coord.lon = assignment["coordinate"]["lon"]
             ros_assignment.coordinate = coord
-            ros_assignment.sync_after = bool(assignment["sync_after"])
-            ros_assignment.target_depth = float(assignment["target_depth"])
+            ros_assignment.sync_after = assignment["sync_after"]
+            ros_assignment.target_depth = assignment["target_depth"]
             ros_assignments.append(ros_assignment)
         msg.assignments = ros_assignments
         self.mission_publisher.publish(msg)
@@ -435,9 +435,12 @@ class MqttBridge(Node):
         retain: bool,
         **_kwargs: object,
     ) -> None:
-        converted = cast(StringMqtt, json.loads(payload))
+        value = parse_string_payload(payload)
+        if value is None:
+            self.get_logger().warning("Dropping invalid MQTT named mission payload")
+            return
         msg = String()
-        msg.data = converted["data"]
+        msg.data = value
         self.named_mission_publisher.publish(msg)
 
     def handle_incoming_gnss_status(
@@ -449,7 +452,10 @@ class MqttBridge(Node):
         retain: bool,
         **_kwargs: object,
     ) -> None:
-        converted = cast(CoordinateMqtt, json.loads(payload))
+        converted = parse_coordinate_payload(payload)
+        if converted is None:
+            self.get_logger().warning("Dropping invalid MQTT gnss status payload")
+            return
         msg = Coordinate()
         msg.lat = converted["lat"]
         msg.lon = converted["lon"]

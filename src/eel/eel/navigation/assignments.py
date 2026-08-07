@@ -3,6 +3,8 @@ from math import radians, sin
 from time import time
 from typing import Callable, TypedDict
 
+from rclpy.logging import get_logger
+
 from ..utils.nav import get_next_rudder_turn
 from .common import (
     TOLERANCE_IN_METERS,
@@ -10,6 +12,8 @@ from .common import (
     get_2d_distance,
     get_relative_bearing,
 )
+
+logger = get_logger(__name__)
 
 
 def cap_value(value: float, floor: float, ceiling: float) -> float:
@@ -107,8 +111,6 @@ def get_desired_heading_with_cte_correction(
     return desired_heading
 
 
-# TODO: the start_pos should optimally be the start of the route, rather than current position.
-# If there is one, that is. for the first segment, the start_pos has to be current position.
 class WaypointAndDepth(Assignment):
     def __init__(
         self,
@@ -141,7 +143,7 @@ class WaypointAndDepth(Assignment):
         vehicle_pos = (current_position["lat"], current_position["lon"])
         has_passed = has_passed_waypoint(self._prev_wp, self._curr_wp, vehicle_pos)
         if has_passed:
-            print("HAS PASSED WAYPOINT?", has_passed)
+            logger.debug("Passed waypoint between %s and %s", self._prev_wp, self._curr_wp)
 
         if distance_to_target <= TOLERANCE_IN_METERS or has_passed:
             self.is_done = True
@@ -210,7 +212,7 @@ class SurfaceAssignment(Assignment):
             self.seconds_at_surface = 0.0
 
         if self.seconds_at_surface >= 25.0:
-            print("HAS SYNCED FOR X SECONDS. DONE.")
+            logger.debug("Surface sync complete after %.1fs at target", self.seconds_at_surface)
             self.is_done = True
             return {"distance_to_target": distance_to_target}
 
@@ -218,7 +220,7 @@ class SurfaceAssignment(Assignment):
         vehicle_pos = (current_position["lat"], current_position["lon"])
         has_passed = has_passed_waypoint(self._prev_wp, self._curr_wp, vehicle_pos)
         if has_passed:
-            print("HAS PASSED WAYPOINT?", has_passed)
+            logger.debug("Passed waypoint between %s and %s", self._prev_wp, self._curr_wp)
 
         if distance_to_target <= TOLERANCE_IN_METERS or has_passed:
             next_motor = 0.0

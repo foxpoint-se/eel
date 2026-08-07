@@ -63,6 +63,36 @@
 
 # Kp 0.08000000000000002 Ki 0 Kd 0.12700000000000003
 
+from typing import Literal, cast
+
+PidType = Literal[
+    "classic_PID",
+    "P",
+    "PI",
+    "PD",
+    "pessen_integration",
+    "some_overshoot",
+    "no_overshoot",
+]
+
+VALID_PID_TYPES: frozenset[str] = frozenset(
+    (
+        "classic_PID",
+        "P",
+        "PI",
+        "PD",
+        "pessen_integration",
+        "some_overshoot",
+        "no_overshoot",
+    )
+)
+
+
+def parse_pid_type(value: object) -> PidType | None:
+    if not isinstance(value, str) or value not in VALID_PID_TYPES:
+        return None
+    return cast(PidType, value)
+
 
 def get_simulation_pid_settings() -> tuple[float, float, float, float]:
     depth_Ku = 8.0
@@ -88,7 +118,7 @@ def get_Kd(Kp: float, Td: float) -> float:
     return Kp * Td
 
 
-def lookup_zieglernichols_gains(Ku: float, Tu: float, pid_type: str) -> tuple[float, float, float]:
+def lookup_zieglernichols_gains(Ku: float, Tu: float, pid_type: PidType) -> tuple[float, float, float]:
     if pid_type == "classic_PID":
         Kp = 0.6 * Ku
         Ti = Tu / 2
