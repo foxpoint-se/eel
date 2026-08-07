@@ -6,10 +6,10 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float32
 
+from ..utils.actuator_bounds import bounded_unit_cmd
 from ..utils.constants import SIMULATE_PARAM
 from ..utils.node_runner import spin_node_until_shutdown
 from ..utils.topics import MOTOR_CMD
-from ..utils.utils import clamp
 from .motor_sim import MotorSimulator
 from .motor_watchdog import command_is_stale, require_positive_cmd_timeout
 
@@ -65,7 +65,10 @@ class Motor(Node):
             self._motor_control.close()
 
     def handle_motor_msg(self, msg: Float32) -> None:
-        motor_value = clamp(msg.data, -1, 1)
+        motor_value = bounded_unit_cmd(msg.data)
+        if motor_value is None:
+            self.get_logger().warning(f"Rejecting invalid motor cmd {msg.data}")
+            return
         if motor_value == 0:
             self.stop()
             self._last_cmd_at = None

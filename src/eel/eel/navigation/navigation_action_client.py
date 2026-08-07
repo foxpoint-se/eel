@@ -8,6 +8,7 @@ import rclpy
 from action_msgs.msg import GoalStatus
 from rclpy.action import ActionClient
 from rclpy.action.client import ClientGoalHandle
+from rclpy.logging import get_logger
 from rclpy.node import Node
 from rclpy.task import Future
 from std_msgs.msg import Bool, String
@@ -23,6 +24,7 @@ from eel_interfaces.msg import (
 )
 
 from ..utils.constants import NavigationMissionStatus
+from ..utils.navigation_mission_bounds import is_navigation_mission_valid
 from ..utils.node_runner import spin_node_until_shutdown
 from ..utils.topics import (
     BATTERY_STATUS,
@@ -35,6 +37,9 @@ from ..utils.topics import (
     PRESSURE_STATUS,
 )
 from .common import get_2d_distance_from_coords
+from .named_missions import parse_named_mission
+
+logger = get_logger(__name__)
 
 if TYPE_CHECKING:
     from rclpy.type_support import GetResultServiceResponse
@@ -153,9 +158,7 @@ def create_surface_goal(next_coordinate: Coordinate, start: Coordinate) -> Navig
     result.start = start
     result.goal = next_coordinate
     result.type = Navigate.Goal.TYPE_SURFACE_SYNC
-    # TODO: I don't think this is used in server?
     result.optional_sync_time = [6.0]
-    # TODO: bad name. since it is not used when surface
     result.next_coordinate_depth = []
     return result
 
@@ -179,7 +182,7 @@ def create_goals(assignments: Sequence[NavigationAssignment], current_position: 
             next = assignments[index + 1]
             result.append(create_surface_goal(next.coordinate, elem.coordinate))
 
-    print("goals", result)
+    logger.debug("Built %d navigation goals from %d assignments", len(result), len(assignments))
 
     return result
 
@@ -274,6 +277,10 @@ class NavigationActionClient(Node):
 
     def set_mission(self, msg: NavigationMission) -> None:
         """Takes a list of coordinates and converts them to a list of navigation goals."""
+        if not is_navigation_mission_valid(msg, max_depth_m=MAX_DEPTH_METERS):
+            self.logger.info("Rejecting invalid navigation mission")
+            return
+
         coordinates: Sequence[NavigationAssignment] = msg.assignments
 
         if len(coordinates) == 0:
@@ -290,11 +297,11 @@ class NavigationActionClient(Node):
         self.logger.info(f"Set mission with {len(self.goals)} goals over {self.mission_total_meters} meters.")
 
     def load_named_mission(self, msg: String) -> None:
-        if msg.data == "rotholmen_runt_2025":
-            mission = create_rotholmen_runt_2025_mission()
-            self.set_mission(mission)
-        else:
-            self.logger.info(f"Unknown mission name {msg.data}")
+        mission_name = parse_named_mission(msg.data)
+        if mission_name == "rotholmen_runt_2025":
+            self.set_mission(create_rotholmen_runt_2025_mission())
+            return
+        self.logger.info(f"Unknown mission name {msg.data}")
 
     def handle_nav_cmd(self, msg: Bool) -> None:
         """Handler for nav cmd messages, either automode or manual as bool."""

@@ -52,9 +52,13 @@ class DiveActionServer(Node):
         self.max_dive_time_sec = 120.0
 
         self.angle_pid_output = 0.0
-        self.angle_pid_controller = PidController(0.0, kP=-35, kD=-5)  # Inner PID
+        self.angle_pid_controller = PidController(
+            0.0, kP=-35, kD=-5, output_min=-self.max_dive_angle, output_max=self.max_dive_angle
+        )
+        self.rudder_pid_controller = PidController(
+            0.0, kP=1 / 15, output_min=-self.max_rudder_output, output_max=self.max_rudder_output
+        )
         self.rudder_pid_output = 0.0
-        self.rudder_pid_controller = PidController(0.0, kP=1 / 15)
 
         self.current_depth = 0.0
         self.current_pitch = 0.0
@@ -85,28 +89,11 @@ class DiveActionServer(Node):
 
     def compute_new_target_angle(self) -> float:
         pid_angle_output = self.angle_pid_controller.compute(self.current_depth)
-
-        # Check if the PID is requesting angles larger then max value
-        if abs(pid_angle_output) > self.max_dive_angle:
-            if pid_angle_output > 0:
-                pid_angle_output = self.max_dive_angle
-            else:
-                pid_angle_output = -1 * self.max_dive_angle
-
         return -1 * pid_angle_output
 
     def compute_new_rudder_output(self, target_angle: float) -> float:
         self.rudder_pid_controller.update_set_point(target_angle)
-        rudder_output = self.rudder_pid_controller.compute(self.current_pitch)
-
-        # Check if the PID is requesting servo values larger then max value
-        if abs(rudder_output) > self.max_rudder_output:
-            if rudder_output > 0:
-                rudder_output = self.max_rudder_output
-            else:
-                rudder_output = -1 * self.max_rudder_output
-
-        return rudder_output
+        return self.rudder_pid_controller.compute(self.current_pitch)
 
     def goal_callback(self, goal_request: Dive.Goal) -> GoalResponse:
         if not is_dive_goal_valid(

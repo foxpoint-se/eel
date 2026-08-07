@@ -16,6 +16,7 @@ from eel_interfaces.msg import (
     TankStatus,
 )
 
+from ..utils.actuator_bounds import parse_depth_control_targets
 from ..utils.node_runner import spin_node_until_shutdown
 from ..utils.pid_controller import PidController
 from ..utils.pid_tuning import get_production_pid_settings
@@ -59,8 +60,6 @@ def is_within_accepted_target_boundaries(current_level: float, target_level: flo
     return is_within_target
 
 
-# TODO: Remove or move somewhere else. Can be useful for when getting depth at center when
-# sensor is placed at one end of the vehicle.
 SIMULATION_VEHICLE_LENGTH = 1  # meters
 
 SIMULATION_PRESSURE_SENSOR_REAR_DISPLACEMENT = 0.5 - SIMULATION_VEHICLE_LENGTH
@@ -82,8 +81,6 @@ class DepthControlNode(Node):
         self.current_front_tank_level: float | None = None
         self.current_rear_tank_level: float | None = None
 
-        # TODO: conditionally set pid settings, based on what we find when tuning hardware
-        # depth_Ku, depth_Tu, pitch_Ku, pitch_Tu = get_simulation_pid_settings()
         depth_Ku, depth_Tu, pitch_Ku, pitch_Tu = get_production_pid_settings()
         self.depth_Ku = depth_Ku
         self.depth_Tu = depth_Tu
@@ -101,7 +98,6 @@ class DepthControlNode(Node):
 
         self.publisher = self.create_publisher(DepthControlStatus, DEPTH_CONTROL_STATUS, 10)
 
-        # TODO: enable these conditionally, for use when tuning PID
         self.pid_publisher = self.create_publisher(Float32, "pid_error", 10)
         self.pid_publisher_base = self.create_publisher(Float32, "pid_error_target", 10)
         self.front_tank_depth_publisher = self.create_publisher(Float32, "front_depth_pid", 10)
@@ -167,16 +163,21 @@ class DepthControlNode(Node):
         )
 
     def handle_cmd_msg(self, msg: DepthControlCmd) -> None:
-        self.depth_target = msg.depth_target
-        self.pitch_target = msg.pitch_target
+        bounded = parse_depth_control_targets(msg.depth_target, msg.pitch_target)
+        if bounded is None:
+            self.logger.warning(
+                f"Rejecting invalid depth control cmd depth={msg.depth_target} pitch={msg.pitch_target}"
+            )
+            return
+        depth_target, pitch_target = bounded
+        if depth_target != msg.depth_target or pitch_target != msg.pitch_target:
+            self.logger.warning(
+                "Clamped depth control cmd "
+                f"depth={msg.depth_target}->{depth_target} pitch={msg.pitch_target}->{pitch_target}"
+            )
+        self.depth_target = depth_target
+        self.pitch_target = pitch_target
 
-        # TODO: Think about fluctuating sensor values — PID noise may cause constant updates.
-        # Maybe kill PIDs inside an accepted target range and re-init when the vehicle drifts.
-        # Or make simulators return fluctuating values so we can test that logic in simulation.
-
-        # depth_Kp, depth_Ki, depth_Kd = lookup_zieglernichols_gains(
-        #     depth_Ku, depth_Tu, msg.depth_pid_type
-        # )
         depth_Kp = 0.25
         depth_Ki = 0.0
         depth_Kd = 0.0
@@ -324,14 +325,6 @@ class DepthControlNode(Node):
 
             self.front_tank_pub.publish(front_msg)
             self.rear_tank_pub.publish(rear_msg)
-
-            # TODO add to status: current depth velocity, current target depth
-            # TODO add to status: current pitch velocity, current target pitch
-            # TODO add to status: status --> going to target, target reached etc
-            # status_msg = DepthControlStatus()
-            # status_msg.is_adjusting_depth = self.should_control_depth
-            # status_msg.is_adjusting_pitch = self.should_control_pitch
-            # self.publisher.publish(status_msg)
 
     def publish_debug_values(self, depth_front_tank: float, pitch_front_tank: float) -> None:
         depth_front_msg = Float32()
