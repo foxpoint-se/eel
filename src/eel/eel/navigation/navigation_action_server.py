@@ -210,7 +210,6 @@ class NavigationActionServer(Node):
             self.assignment = self.create_assignment(goal_request)
 
             next_coordinate = goal_request.goal
-            # TODO: print distance to target here.
             self.logger.info(
                 f"Executing new goal, target set to {next_coordinate.lat=} "
                 f"{next_coordinate.lon=}, {self.distance_to_target=}"
