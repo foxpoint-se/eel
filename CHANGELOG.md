@@ -2,6 +2,41 @@
 
 <!-- version list -->
 
+## v1.2.12 (2026-08-07)
+
+### Bug Fixes
+
+- PID integral kept growing while rudder and tank outputs were saturated
+  ([`94148f6`](https://github.com/foxpoint-se/eel/commit/94148f6983783eb788adb5a0bf9bd9f579024406))
+
+- Pressure serial short reads could permanently misalign depth floats
+  ([`e0eded0`](https://github.com/foxpoint-se/eel/commit/e0eded0ea1f1b2929acb503bef06e8682fc3d9c9))
+
+- Remote actuator commands reached nodes with little range checking
+  ([`f7f533a`](https://github.com/foxpoint-se/eel/commit/f7f533abb47e67fcb0010eb429920792486aa077))
+
+- Surfacing snapped pose to first GNSS fix with no gate or hysteresis
+  ([`f70e1d6`](https://github.com/foxpoint-se/eel/commit/f70e1d614c41a1743c021a71b60abcef29d16cc3))
+
+- Tank stop rules had no unit tests and dead velocity code
+  ([`9aa7210`](https://github.com/foxpoint-se/eel/commit/9aa72102c9d05de8350f6c192bb12ea7f9d370fa))
+
+### Chores
+
+- Inline TODOs replaced with tracked issues so they do not rot in code
+  ([`a24e3b1`](https://github.com/foxpoint-se/eel/commit/a24e3b10147cc1bc2a4012475ea4350c97cae1e9))
+
+### Documentation
+
+- Pressure path through i2c-proxy was not documented in-repo
+  ([`0301ce7`](https://github.com/foxpoint-se/eel/commit/0301ce7e52e8b93ac165e948d440230df47b7513))
+
+### Refactoring
+
+- IMU sim and node circular import blocked clean strict typing
+  ([`8f2cea5`](https://github.com/foxpoint-se/eel/commit/8f2cea5606834cc50438a3ac4d7dfd8bda989d0d))
+
+
 ## v1.2.11 (2026-08-05)
 
 ### Bug Fixes
