@@ -8,6 +8,7 @@ from std_msgs.msg import Float32
 
 from eel_interfaces.msg import TankStatus
 
+from ..utils.actuator_bounds import bounded_tank_level
 from ..utils.constants import (
     CMD_TOPIC_PARAM,
     DIRECTION_PIN_PARAM,
@@ -21,14 +22,14 @@ from ..utils.constants import (
 from ..utils.node_runner import spin_node_until_shutdown
 from ..utils.pid_controller import PidController
 from ..utils.utils import clamp
+from .tank_target import (
+    DEFAULT_TANK_TARGET_CONFIG,
+    RunningAverage,
+    tank_stop_reason,
+)
 from .tank_utils.create_tank import create_tank
 
 TANK_FILL_TIME_S = 22
-# change depending on how big of an error we accept
-TARGET_TOLERANCE = 0.02
-
-LEVEL_FLOOR = 0.0
-LEVEL_CEILING = 1.0
 
 # TANK_RANGE_MM = TANK_CEILING_MM - TANK_FLOOR_MM
 # TANK_FILL_VELOCITY_MMPS = TANK_RANGE_MM / TANK_FILL_TIME_S
@@ -51,51 +52,7 @@ UPDATE_FREQUENCY = 10
 
 TANK_CALIBRATION_UNSET = float("nan")
 
-
 TargetStatus = Literal["target_reached", "ceiling_reached", "floor_reached", "no_target", "adjusting"]
-
-
-# TODO:
-# '<=' not supported between instances of 'float' and 'NoneType'
-def is_within_accepted_target_boundaries(current_level: Optional[float], target_level: Optional[float]) -> bool:
-    if current_level is None or target_level is None:
-        return False
-    low_threshold = target_level - (TARGET_TOLERANCE / 2)
-    high_threshold = target_level + (TARGET_TOLERANCE / 2)
-    is_within_target = low_threshold <= current_level <= high_threshold
-    return is_within_target
-
-
-def is_above_target(current_level: float, target_level: float) -> bool:
-    high_threshold = target_level + (TARGET_TOLERANCE / 2)
-    return current_level > high_threshold
-
-
-def is_below_target(current_level: float, target_level: float) -> bool:
-    low_threshold = target_level - (TARGET_TOLERANCE / 2)
-    return current_level < low_threshold
-
-
-def is_at_floor(current_level: float) -> bool:
-    return current_level <= (LEVEL_FLOOR + TARGET_TOLERANCE)
-
-
-def is_at_ceiling(current_level: float) -> bool:
-    return current_level >= (LEVEL_CEILING - TARGET_TOLERANCE)
-
-
-def get_level_velocity(
-    level: float,
-    previous_level: Optional[float],
-    now: float,
-    previous_level_at: Optional[float],
-) -> float:
-    if previous_level is None or previous_level_at is None:
-        return 0.0
-    level_delta = level - previous_level
-    time_delta = now - previous_level_at
-    velocity = level_delta / time_delta
-    return velocity
 
 
 # NOTE: example usage
@@ -110,20 +67,6 @@ def get_level_velocity(
 # ros2 run eel tank --ros-args -p simulate:=False -p cmd_topic:=/tank_front/cmd \
 #   -p status_topic:=/tank_front/status -p motor_pin:=23 -p direction_pin:=18 \
 #   -p tank_floor_value:=4736 -p tank_ceiling_value:=18256 -p distance_sensor_channel:=1
-
-
-class RunningAverage:
-    def __init__(self, size: int) -> None:
-        self.size = size
-        self.samples = [0.0] * size
-        self.index = 0
-
-    def add_sample(self, value: float) -> None:
-        self.samples[self.index] = value
-        self.index = (self.index + 1) % self.size
-
-    def get_average(self) -> float:
-        return sum(self.samples) / self.size
 
 
 class TankNode(Node):
@@ -157,13 +100,6 @@ class TankNode(Node):
         self.target_status: TargetStatus = "no_target"
 
         self.current_level: Optional[float] = None
-        self.current_velocity: float = float()
-        self.previous_level: Optional[float] = None
-        self.previous_level_at: Optional[float] = None
-
-        self.sample_index = 0
-        self.sample_size = 10
-        self.level_samples = [0.0 for _ in range(self.sample_size)]
 
         self.clamp_value = 0.0
         self.clamp_max_value = 1.0
@@ -177,7 +113,7 @@ class TankNode(Node):
         # GUNNAR
         # self.tank_motor_pid = PidController(0.0, kP=2.0, kI=0.1, kD=0.75)
         # self.tank_motor_pid = PidController(0.0, kP=4.0, kI=0.2, kD=1.2)
-        self.tank_motor_pid = PidController(0.0, kP=8.0, kI=0.5, kD=2.5)
+        self.tank_motor_pid = PidController(0.0, kP=8.0, kI=0.5, kD=2.5, output_min=-1.0, output_max=1.0)
 
         # DAVID
         # self.tank_motor_pid = PidController(0.0, kP=1.0, kI=0.2, kD=0.75)
@@ -230,8 +166,16 @@ class TankNode(Node):
         self.is_autocorrecting = False
 
     def handle_tank_cmd(self, msg: Float32) -> None:
-        requested_target_level = msg.data
-        target_level = clamp(requested_target_level, LEVEL_FLOOR, LEVEL_CEILING)
+        bounded_level = bounded_tank_level(msg.data)
+        if bounded_level is None:
+            self.get_logger().warning(f"Rejecting invalid tank target level {msg.data}")
+            return
+        requested_target_level = bounded_level
+        target_level = clamp(
+            requested_target_level,
+            DEFAULT_TANK_TARGET_CONFIG.level_floor,
+            DEFAULT_TANK_TARGET_CONFIG.level_ceiling,
+        )
 
         self.target_status = "adjusting"
         self.target_level = target_level
@@ -266,32 +210,22 @@ class TankNode(Node):
 
         level_average = self.running_average.get_average()
 
-        # TODO: maybe publish both average and momentary level
         self.publish_status(self.current_level)
 
         if self.target_level is None:
             return
 
-        if is_at_floor(level_average) and self.target_level <= level_average:
+        stop_reason = tank_stop_reason(level_average, self.target_level)
+        if stop_reason is not None:
             self.tank.stop()
             self.tank_motor_pid.reset_cumulative_error()
-            self.target_status = "floor_reached"
-        elif is_at_ceiling(level_average) and self.target_level >= level_average:
-            self.tank.stop()
-            self.tank_motor_pid.reset_cumulative_error()
-            self.target_status = "ceiling_reached"
-        elif is_within_accepted_target_boundaries(level_average, self.target_level):
-            self.tank.stop()
-            self.tank_motor_pid.reset_cumulative_error()
-            self.target_status = "target_reached"
+            self.target_status = stop_reason
         else:
-            if self.clamp_value <= self.clamp_max_value:
-                self.clamp_value += 0.05
+            if self.clamp_value < self.clamp_max_value:
+                self.clamp_value = min(self.clamp_value + 0.05, self.clamp_max_value)
+            self.tank_motor_pid.update_output_limits(-self.clamp_value, self.clamp_value)
             pid_value = self.tank_motor_pid.compute(level_average)
-            if abs(pid_value) > 1.0:
-                self.tank_motor_pid.reset_cumulative_error()
-
-            next_value = clamp(pid_value, -self.clamp_value, self.clamp_value)
+            next_value = pid_value
 
             # Debounce log: only log once every 10 cycles
             self._next_value_log_counter += 1
