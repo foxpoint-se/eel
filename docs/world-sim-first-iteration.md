@@ -4,52 +4,58 @@
 
 Related: [#212](https://github.com/foxpoint-se/eel/issues/212)
 
-## Idea
+## Target architecture (path 3)
 
-Same pattern as Stonefish/Gazebo: a **plant** owns the fake world (vehicle pose, crude dynamics). Sensor nodes stay ordinary and only read plant state. Later we can swap our plant for Stonefish behind the same kind of ROS edge.
+Same idea as TurtleBot / Clearpath / Stonefish / Gazebo bringups:
 
-## Phase 1 — Plant home (additive)
+1. **Plant** — owns fake-world physics (depth first).
+2. **Device I/O** — chip drivers only (Bar02, BNO055, …). Started on the **boat**, not in full world-sim.
+3. **Robot logic** — always runs (center depth, velocity, `PressureStatus`, nav, …).
 
-**Goal:** new lightweight package + a plant that owns the depth physics we lift from pressure. Easy to run. Existing stack keeps working as today (old built-in sims still there); you run the world plant *as well*.
+In sim: **don’t start chip I/O**. Plant (or later Gazebo/Stonefish) supplies **raw/sensor-level** data. Logic keeps publishing eel topics (`pressure/status`, …).
 
-- [x] New in-repo package `eel_world_sim` (clear home for plant)
-- [ ] Plant node runs today’s depth math (logic taken from pressure sim)
-- [ ] Plant publishes depth on a clear topic (contract can be rough)
-- [ ] Simple launch: start plant alone, and/or alongside existing sim stack
-- [ ] Nothing broken — pressure / CI / normal sim still behave as now
-- [ ] Sanity check: `ros2 topic echo` (or graph) shows plant depth moving when cmds change
+**Not the goal:** every device node subscribes to plant topics and stuffs values in (path 1 — today’s `pressure_sim` mess).  
+**Not the long-term story alone:** in-memory DI drivers in one process (path 2) — fine as an *implementation detail* for our small plant, but Gazebo/Stonefish are other processes that speak ROS topics / plugins.
 
-Out of Phase 1: gutting pressure physics, stub-only pressure, GUI, standard-msg edge, URDF.
+**Plant edge:** prefer standard ROS msgs where practical (`sensor_msgs/FluidPressure`, later `Imu`, …), with a thin adapt into eel msgs. That prepares switching to Stonefish/Gazebo.
 
-## Goals (full first iteration)
+## Phase 1 — Plant + start pressure split (path 3)
 
-- **Launch** — New bringup launch for robot graph + plant. Grow it over time. Sibling launches later for real HW / our sim / other sims (same pattern). Not “one launch for everything” in this slice.
-- **Depth only** — Plant holds vehicle state and the dive model (e.g. thrust + pitch → depth). Publishes depth; pressure path does not invent physics or subscribe to motor/IMU.
-- **Pressure stub without physics** — `simulate:=true` (or equivalent) still runs off-Pi for CI / integration tests, with no cross-topic physics — dumb readings only. Plant is what makes depth move when you want a fake world.
-- **Clean graph** — Plant is the busy node. Pressure no longer looks like it secretly owns the boat.
-- **Move physics out of pressure** — Delete the cross-topic sim math from the pressure sim path (after the additive step above).
-- **Topic contract** — Write down: plant subscribes to X, publishes Y; who publishes `pressure/status`. Pick one story and stick to it.
-- **Standard msgs at the plant edge** — Prefer common ROS types where we can (e.g. `sensor_msgs/FluidPressure`, later `Imu` / `Odometry`), with a thin translation to eel topics/msgs (`pressure/status`, …). Either start that way early, or ship a simpler plant first and refactor to this pattern once it works — decide when we hit the contract.
-- **Minimal GUI** — Show depth + driving cmds; controls publish the **real** cmd topics (not a private channel). Enough to demo without only reading logs.
-- **One real consumer** — Something besides the GUI still sees depth (e.g. depth control / localization).
-- **Package** — Clear package boundary in this repo (e.g. plant + GUI). Stay in eel for now; own repo later if needed.
-- **Lightly reusable** — Think “water-world plant,” but don’t build a multi-robot framework in v1.
+**Goal:** Plant owns depth physics. Begin separating pressure **chip I/O** from **logic** so we don’t build the wrong habit. Boat/CI still work.
 
-## Non-goals
+- [x] New in-repo package `eel_world_sim`
+- [ ] Plant runs today’s depth math (lifted from pressure sim); math separate from ROS I/O
+- [ ] Plant publishes **raw** depth (aim toward standard msg; not `pressure/status`)
+- [ ] Start pressure SoC split: clear boundary between “get raw depth” (I/O / source) and “build `PressureStatus`” (logic). Hardware and stub sources; **no** dive physics in pressure.
+- [ ] Stub/CI: pressure logic still runs with dumb raw depth (no plant, no hardware)
+- [ ] Simple launch: plant alone; optional plant + pressure-logic path for sanity
+- [ ] Sanity: plant depth moves with cmds; pressure logic can consume raw depth without `pressure_sim` physics
 
-Full mission stack, IMU/GNSS/tanks plant, Stonefish integration, fancy GUI, new repo, URDF-driven physics.
+Out of Phase 1: full IMU/etc. splits, GUI, Stonefish/Gazebo, URDF, polished multi-sim bringups.
+
+## Later phases (same iteration / follow-ups)
+
+- **Finish path-3 bringup** — sim launch: plant + logic, no chip drivers. Sibling launches: real / our world / (later) Stonefish|Gazebo.
+- **Delete dead pressure sim physics** — if anything remains after the split.
+- **Minimal GUI** — depth + cmds on real cmd topics.
+- **Contract written** — plant in/out; who publishes what.
+
+## Non-goals (now)
+
+Full mission stack, full IMU/GNSS/tanks plant, Stonefish/Gazebo integration, fancy GUI, new repo, URDF-driven physics, ros2_control.
 
 ## Later / discuss
 
-- **URDF** — A simple robot model (e.g. cylinder + mass) that the plant actually *uses* for dynamics — not RViz-only eye candy — and that could feed Gazebo/Stonefish later. Stonefish won’t take URDF as drop-in; parsing URDF into our crude plant is a real chunk of work. Park for now; likely spin out a separate issue when we revisit.
+- **URDF** — model the plant could *use* for dynamics (not RViz-only). Stonefish won’t take URDF as drop-in. Spin out an issue when relevant.
+- **ros2_control** — for motors/actuators later? Helps a lot with **Gazebo**; Stonefish is topic-based natively, so less automatic win. Revisit: when/whether it helps eel (few actuators, Python-first, Stonefish-oriented) vs cost.
 
-## Done when
+## Done when (first iteration)
 
-- [ ] Sim launch entry exists and is clearly the place to grow
-- [ ] World plant can run alongside existing stack without breaking normal sim
-- [ ] Depth comes from plant when using the world; pressure sim has no physics (stub only for CI)
-- [ ] Graph and publisher story match the written contract
-- [ ] Tiny GUI: state + cmds on real topics
-- [ ] At least one non-GUI consumer still works
-- [ ] In-repo package boundary; no new repo
+- [ ] Plant owns depth physics; pressure has no cross-topic dive math
+- [ ] Path 3 shape clear: chip I/O vs logic vs plant (even if only pressure is split)
+- [ ] Sim can run plant + logic without relying on `pressure_sim` physics
+- [ ] Stub/CI path still works without hardware or plant physics
+- [ ] Written topic/msg contract at the plant edge
+- [ ] Tiny GUI optional but useful
 - [ ] This doc deleted before merge
+- [ ] Interactive rebase (or similar) so the branch commits read cleanly for the changelog before merge
