@@ -14,6 +14,8 @@ TARGETS = (
     REPO_ROOT / "src" / "eel" / "package.xml",
     REPO_ROOT / "src" / "eel_interfaces" / "package.xml",
     REPO_ROOT / "src" / "eel_bringup" / "package.xml",
+    REPO_ROOT / "src" / "eel_world_sim" / "setup.py",
+    REPO_ROOT / "src" / "eel_world_sim" / "package.xml",
 )
 
 _SECTION_HEADER = re.compile(r"^\[([^\]]+)\]")

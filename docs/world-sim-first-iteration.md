@@ -12,7 +12,7 @@ Same pattern as Stonefish/Gazebo: a **plant** owns the fake world (vehicle pose,
 
 **Goal:** new lightweight package + a plant that owns the depth physics we lift from pressure. Easy to run. Existing stack keeps working as today (old built-in sims still there); you run the world plant *as well*.
 
-- [ ] New in-repo package (clear home for plant; name TBD)
+- [x] New in-repo package `eel_world_sim` (clear home for plant)
 - [ ] Plant node runs today’s depth math (logic taken from pressure sim)
 - [ ] Plant publishes depth on a clear topic (contract can be rough)
 - [ ] Simple launch: start plant alone, and/or alongside existing sim stack
