@@ -20,6 +20,7 @@ Additive: run the world plant **as well**. Existing nodes keep their built-in si
 - **Clean graph** — Plant is the busy node. Pressure no longer looks like it secretly owns the boat.
 - **Move physics out of pressure** — Delete the cross-topic sim math from the pressure sim path (after the additive step above).
 - **Topic contract** — Write down: plant subscribes to X, publishes Y; who publishes `pressure/status`. Pick one story and stick to it.
+- **Standard msgs at the plant edge** — Prefer common ROS types where we can (e.g. `sensor_msgs/FluidPressure`, later `Imu` / `Odometry`), with a thin translation to eel topics/msgs (`pressure/status`, …). Either start that way early, or ship a simpler plant first and refactor to this pattern once it works — decide when we hit the contract.
 - **Minimal GUI** — Show depth + driving cmds; controls publish the **real** cmd topics (not a private channel). Enough to demo without only reading logs.
 - **One real consumer** — Something besides the GUI still sees depth (e.g. depth control / localization).
 - **Package** — Clear package boundary in this repo (e.g. plant + GUI). Stay in eel for now; own repo later if needed.
@@ -27,7 +28,11 @@ Additive: run the world plant **as well**. Existing nodes keep their built-in si
 
 ## Non-goals
 
-Full mission stack, IMU/GNSS/tanks plant, Stonefish integration, fancy GUI, new repo.
+Full mission stack, IMU/GNSS/tanks plant, Stonefish integration, fancy GUI, new repo, URDF-driven physics.
+
+## Later / discuss
+
+- **URDF** — A simple robot model (e.g. cylinder + mass) that the plant actually *uses* for dynamics — not RViz-only eye candy — and that could feed Gazebo/Stonefish later. Stonefish won’t take URDF as drop-in; parsing URDF into our crude plant is a real chunk of work. Park for now; likely spin out a separate issue when we revisit.
 
 ## Done when
 
