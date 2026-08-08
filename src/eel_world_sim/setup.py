@@ -16,4 +16,9 @@ setup(
     maintainer_email="foxpoint.se@gmail.com",
     description="Simple fake-world simulation for local eel development.",
     license="MIT",
+    entry_points={
+        "console_scripts": [
+            "world_sim = eel_world_sim.world_sim_node:main",
+        ],
+    },
 )
