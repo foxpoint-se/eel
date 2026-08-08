@@ -8,11 +8,20 @@ Related: [#212](https://github.com/foxpoint-se/eel/issues/212)
 
 Same pattern as Stonefish/Gazebo: a **plant** owns the fake world (vehicle pose, crude dynamics). Sensor nodes stay ordinary and only read plant state. Later we can swap our plant for Stonefish behind the same kind of ROS edge.
 
-## First mergeable step
+## Phase 1 — Plant home (additive)
 
-Additive: run the world plant **as well**. Existing nodes keep their built-in sim; everything still works as today. No big-bang cutover.
+**Goal:** new lightweight package + a plant that owns the depth physics we lift from pressure. Easy to run. Existing stack keeps working as today (old built-in sims still there); you run the world plant *as well*.
 
-## Goals
+- [ ] New in-repo package (clear home for plant; name TBD)
+- [ ] Plant node runs today’s depth math (logic taken from pressure sim)
+- [ ] Plant publishes depth on a clear topic (contract can be rough)
+- [ ] Simple launch: start plant alone, and/or alongside existing sim stack
+- [ ] Nothing broken — pressure / CI / normal sim still behave as now
+- [ ] Sanity check: `ros2 topic echo` (or graph) shows plant depth moving when cmds change
+
+Out of Phase 1: gutting pressure physics, stub-only pressure, GUI, standard-msg edge, URDF.
+
+## Goals (full first iteration)
 
 - **Launch** — New bringup launch for robot graph + plant. Grow it over time. Sibling launches later for real HW / our sim / other sims (same pattern). Not “one launch for everything” in this slice.
 - **Depth only** — Plant holds vehicle state and the dive model (e.g. thrust + pitch → depth). Publishes depth; pressure path does not invent physics or subscribe to motor/IMU.
