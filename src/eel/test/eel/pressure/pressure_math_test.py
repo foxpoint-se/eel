@@ -9,7 +9,7 @@ def test__when_pitch_is_zero__should_return_sensor_depth() -> None:
 
 def test__when_pitch_ninety__should_apply_lever_arm() -> None:
     expected = 2.0 - (0.375 * math.sin(math.radians(90.0)))
-    assert calculate_center_depth(2.0, 90.0, 0.375) == expected
+    assert math.isclose(calculate_center_depth(2.0, 90.0, 0.375), expected)
 
 
 def test__when_no_previous_sample__should_report_zero_velocity() -> None:

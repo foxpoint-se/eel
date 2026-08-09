@@ -1,4 +1,4 @@
-from math import radians, tan
+from math import isclose, radians, tan
 
 from eel_world_sim.depth_model import (
     FLOAT_VELOCITY_MPS,
@@ -21,7 +21,7 @@ def test__when_motor_idle__should_float_up_slowly() -> None:
     model.depth_m = 1.0
     model.set_motor_cmd(0.0)
     depth = model.step(1.0)
-    assert depth == 1.0 + FLOAT_VELOCITY_MPS
+    assert isclose(depth, 1.0 + FLOAT_VELOCITY_MPS)
 
 
 def test__when_diving_nose_down__should_go_deeper() -> None:
@@ -30,7 +30,7 @@ def test__when_diving_nose_down__should_go_deeper() -> None:
     model.set_pitch_deg(45.0)
     dive = tan(radians(45.0)) * TERMINAL_VELOCITY_MPS
     expected = FLOAT_VELOCITY_MPS + dive
-    assert model.step(1.0) == expected
+    assert isclose(model.step(1.0), expected)
 
 
 def test__when_depth_would_exceed_max__should_cap() -> None:
