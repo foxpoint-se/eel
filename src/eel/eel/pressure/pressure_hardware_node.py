@@ -20,7 +20,7 @@ class PressureHardwareNode(Node):
         self.declare_parameter("serial_port", Parameter.Type.STRING)
         serial_port = self.get_parameter("serial_port").get_parameter_value().string_value or None
         if not serial_port:
-            raise ValueError("serial_port is required, e.g. -p serial_port:=/dev/ttyUSB0")
+            raise ValueError("serial_port is required, e.g. --ros-args -p serial_port:=/dev/ttyUSB0")
 
         self._driver = PressureSerialDriver(serial_port)
         self._logged_calibration = False
