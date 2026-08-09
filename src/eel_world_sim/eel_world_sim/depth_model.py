@@ -37,9 +37,7 @@ class DepthModel:
         if dt_s <= 0.0:
             return self.depth_m
 
-        dive_velocity_mps = (
-            _pitch_speed_velocity_mps(TERMINAL_VELOCITY_MPS, self.pitch_deg) * self.motor_cmd
-        )
+        dive_velocity_mps = _pitch_speed_velocity_mps(TERMINAL_VELOCITY_MPS, self.pitch_deg) * self.motor_cmd
         velocity_mps = FLOAT_VELOCITY_MPS + dive_velocity_mps
         if velocity_mps != 0.0:
             self.depth_m = _cap_depth_m(self.depth_m + velocity_mps * dt_s)

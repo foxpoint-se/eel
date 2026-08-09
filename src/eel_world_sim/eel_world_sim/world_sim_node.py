@@ -8,10 +8,10 @@ from time import time
 from typing import Optional
 
 import rclpy
-from eel_interfaces.msg import ImuStatus
 from rclpy.node import Node
 from std_msgs.msg import Float32
 
+from eel_interfaces.msg import ImuStatus
 from eel_world_sim.depth_model import DepthModel
 
 # Temporary: same names as the live boat topics.
