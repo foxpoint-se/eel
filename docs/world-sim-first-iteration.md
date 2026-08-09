@@ -59,3 +59,4 @@ Full mission stack, full IMU/GNSS/tanks plant, Stonefish/Gazebo integration, fan
 - [ ] Tiny GUI optional but useful
 - [ ] This doc deleted before merge
 - [ ] Interactive rebase (or similar) so the branch commits read cleanly for the changelog before merge
+- [ ] Clean up redundant files left by the parallel path (e.g. old `pressure_sensor.py` / `pressure_sim` physics once the new I/O + logic + plant path is confirmed)
