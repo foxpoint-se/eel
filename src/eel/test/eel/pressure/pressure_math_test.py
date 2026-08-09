@@ -18,3 +18,11 @@ def test__when_no_previous_sample__should_report_zero_velocity() -> None:
 
 def test__when_depth_increases_over_time__should_report_positive_velocity() -> None:
     assert get_depth_velocity(2.0, previous_depth=1.0, now=2.0, previous_depth_at=1.0) == 1.0
+
+
+def test__when_time_delta_is_zero__should_report_zero_velocity() -> None:
+    assert get_depth_velocity(2.0, previous_depth=1.0, now=1.0, previous_depth_at=1.0) == 0.0
+
+
+def test__when_clock_goes_backwards__should_report_zero_velocity() -> None:
+    assert get_depth_velocity(2.0, previous_depth=1.0, now=0.5, previous_depth_at=1.0) == 0.0

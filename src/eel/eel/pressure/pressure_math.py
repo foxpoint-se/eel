@@ -16,6 +16,7 @@ def get_depth_velocity(
 ) -> float:
     if previous_depth is None or previous_depth_at is None:
         return 0.0
-    depth_delta = depth - previous_depth
     time_delta = now - previous_depth_at
-    return depth_delta / time_delta
+    if time_delta <= 0.0:
+        return 0.0
+    return (depth - previous_depth) / time_delta
