@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import math
 from time import time
 from typing import Optional
 
@@ -12,29 +11,11 @@ from eel_interfaces.msg import ImuStatus, PressureStatus
 from ..utils.constants import SIMULATE_PARAM
 from ..utils.node_runner import spin_node_until_shutdown
 from ..utils.topics import IMU_STATUS, PRESSURE_STATUS
+from .pressure_math import calculate_center_depth, get_depth_velocity
 from .pressure_source import PressureSource
 
 PUBLISH_FREQUENCY = 5
 DEPTH_MOVEMENT_TOLERANCE = 0.2  # meters
-
-
-def calculate_center_depth(main_depth: float, pitch_deg: float, displacement: float = 0.375) -> float:
-    pitch_rad = math.radians(pitch_deg)
-    return main_depth - (displacement * math.sin(pitch_rad))
-
-
-def get_depth_velocity(
-    depth: float,
-    previous_depth: float | None,
-    now: float,
-    previous_depth_at: float | None,
-) -> float:
-    if previous_depth is None or previous_depth_at is None:
-        return 0.0
-    depth_delta = depth - previous_depth
-    time_delta = now - previous_depth_at
-    velocity = depth_delta / time_delta
-    return velocity
 
 
 def get_pressure_sensor(should_simulate: bool, parent_node: Node, serial_port: str | None = None) -> PressureSource:

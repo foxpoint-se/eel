@@ -35,6 +35,7 @@ REAR_TANK_CMD = "tank_rear/cmd"
 REAR_TANK_STATUS = "tank_rear/status"
 
 # Pressure
+PRESSURE_DEPTH_M = "pressure/depth_m"
 PRESSURE_STATUS = "pressure/status"
 
 # Depth control

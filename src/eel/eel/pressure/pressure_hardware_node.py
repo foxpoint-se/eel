@@ -8,9 +8,9 @@ from rclpy.parameter import Parameter
 from std_msgs.msg import Float32
 
 from ..utils.node_runner import spin_node_until_shutdown
+from ..utils.topics import PRESSURE_DEPTH_M
 from .pressure_serial_driver import PressureSerialDriver
 
-DEPTH_M_TOPIC = "pressure/depth_m"
 PUBLISH_HZ = 5.0
 
 
@@ -24,7 +24,7 @@ class PressureHardwareNode(Node):
 
         self._driver = PressureSerialDriver(serial_port)
         self._logged_calibration = False
-        self._pub = self.create_publisher(Float32, DEPTH_M_TOPIC, 10)
+        self._pub = self.create_publisher(Float32, PRESSURE_DEPTH_M, 10)
         self.create_timer(1.0 / PUBLISH_HZ, self._publish_depth)
         self.get_logger().info(f"Waiting for first depth sample on {serial_port}")
 
