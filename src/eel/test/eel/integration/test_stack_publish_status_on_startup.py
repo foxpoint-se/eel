@@ -10,6 +10,7 @@ from eel.utils.topics import (
     GNSS_STATUS,
     IMU_STATUS,
     LEAKAGE_STATUS,
+    LOCALIZATION_STATUS,
     MODEM_STATUS,
     NAVIGATION_STATUS,
     PRESSURE_STATUS,
@@ -37,17 +38,18 @@ from eel_interfaces.msg import (
 
 TOPIC_TIMEOUT_SEC = 20.0
 
-# Sim nodes that publish a status topic we can wait on at startup.
+# Nodes that publish a status topic we can wait on at startup.
 STATUS_PUBLISHERS: list[tuple[str, str, type]] = [
-    ("imu_node", IMU_STATUS, ImuStatus),
-    ("battery_node", BATTERY_STATUS, BatteryStatus),
-    ("pressure_node", PRESSURE_STATUS, PressureStatus),
-    ("gnss_node", GNSS_STATUS, Coordinate),
+    ("imu", IMU_STATUS, ImuStatus),
+    ("battery", BATTERY_STATUS, BatteryStatus),
+    ("pressure", PRESSURE_STATUS, PressureStatus),
+    ("gnss", GNSS_STATUS, Coordinate),
+    ("localization", LOCALIZATION_STATUS, Coordinate),
     ("front_tank", FRONT_TANK_STATUS, TankStatus),
     ("rear_tank", REAR_TANK_STATUS, TankStatus),
-    ("leakage_node", LEAKAGE_STATUS, Bool),
-    ("modem_node", MODEM_STATUS, ModemStatus),
-    ("rudder_node", RUDDER_STATUS, Vector3),
+    ("leakage", LEAKAGE_STATUS, Bool),
+    ("modem", MODEM_STATUS, ModemStatus),
+    ("rudder", RUDDER_STATUS, Vector3),
     ("depth_control_rudder_node", DEPTH_CONTROL_STATUS, DepthControlStatus),
     ("navigation_action_client", NAVIGATION_STATUS, NavigationStatus),
 ]
@@ -64,7 +66,7 @@ def _assert_no_process_crashed(proc_info) -> None:
 def generate_test_description():
     launch_file = os.path.join(
         os.path.dirname(__file__),
-        "integration_all_sim_nodes_startup.launch.py",
+        "integration_stack_startup.launch.py",
     )
     return (
         launch.LaunchDescription(
@@ -77,8 +79,8 @@ def generate_test_description():
     )
 
 
-class TestAllSimNodesPublishStatusOnStartup(unittest.TestCase):
-    def test__when_all_sim_nodes_start__should_publish_status_on_startup(self, proc_info) -> None:
+class TestStackPublishStatusOnStartup(unittest.TestCase):
+    def test__when_stack_starts__should_publish_status_on_startup(self, proc_info) -> None:
         topics = [(topic, msg_type) for _node_name, topic, msg_type in STATUS_PUBLISHERS]
         with WaitForTopics(topics, timeout=TOPIC_TIMEOUT_SEC):
             pass

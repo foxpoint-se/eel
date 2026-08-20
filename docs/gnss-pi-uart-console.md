@@ -32,4 +32,4 @@ sudo adduser ${USER} dialout
 
 6. Reboot.
 
-Current boats typically pass the GPS device via `serial_port` (Ålen `/dev/ttyUSB1`, Tvålen `/dev/ttyUSB0`) — see the main README and compose templates.
+Current boats typically pass the GPS device via `serial_port` (Ålen `/dev/ttyUSB1`, Tvålen `/dev/ttyUSB0`) — see the main README and `boat_configs.py`.

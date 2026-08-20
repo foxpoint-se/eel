@@ -1,0 +1,24 @@
+version: "3.9"
+services:
+  boat:
+    image: foxpoint/eel:jazzy
+    command: >
+      ros2 launch eel_bringup boat.launch.py
+      boat:=tvalen
+      pigpiod_host:=pigpiod
+    privileged: true
+    devices:
+      - /dev/i2c-1:/dev/i2c-1
+      - /dev/ttyUSB0:/dev/ttyUSB0
+      - /dev/ttyUSB1:/dev/ttyUSB1
+      - /dev/ttyUSB4:/dev/ttyUSB4
+    volumes:
+      - ../../fleet/local_certs_and_config/:/home/ubuntu/fleet/local_certs_and_config/:ro
+    network_mode: ${NETWORK_MODE:-bridge}
+
+  ros_bag:
+    image: foxpoint/eel:jazzy
+    command: bash -c "ros2 bag record --all --storage mcap --output ros_bags/$(date +'%Y-%m-%d_%H-%M-%S')"
+    volumes:
+      - ../ros_bags/:/eel/ros_bags/:rw
+    network_mode: ${NETWORK_MODE:-bridge}
