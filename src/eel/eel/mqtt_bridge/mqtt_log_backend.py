@@ -1,7 +1,7 @@
 import json
 from typing import Mapping, Protocol
 
-SIM_ROBOT_NAME = "sim_robot"
+DEFAULT_ROBOT_NAME = "robot"
 
 
 class MqttBackend(Protocol):
@@ -26,15 +26,15 @@ class _Logger(Protocol):
 
 
 class LoggingMqttBackend:
-    def __init__(self, logger: _Logger, robot_name: str = SIM_ROBOT_NAME) -> None:
+    def __init__(self, logger: _Logger, robot_name: str = DEFAULT_ROBOT_NAME) -> None:
         self.robot_name = robot_name
         self._logger = logger
 
     def connect(self) -> None:
-        self._logger.info(f"SIMULATE MQTT backend ready for {self.robot_name}")
+        self._logger.info(f"MQTT log backend ready for {self.robot_name}")
 
     def publish(self, topic: str, message: Mapping[str, object]) -> None:
-        self._logger.debug(f"SIMULATE MQTT publish {topic}: {json.dumps(message)}")
+        self._logger.debug(f"MQTT log publish {topic}: {json.dumps(message)}")
 
     def subscribe(self, topic: str, callback: object) -> None:
-        self._logger.debug(f"SIMULATE MQTT subscribe {topic}")
+        self._logger.debug(f"MQTT log subscribe {topic}")

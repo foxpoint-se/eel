@@ -1,102 +1,63 @@
-#!/usr/bin/env python3
-import math
+"""Pressure logic: raw depth_m + IMU → PressureStatus."""
+
 from time import time
 from typing import Optional
 
 import rclpy
 from rclpy.node import Node
-from rclpy.parameter import Parameter
+from std_msgs.msg import Float32
 
 from eel_interfaces.msg import ImuStatus, PressureStatus
 
-from ..utils.constants import SIMULATE_PARAM
 from ..utils.node_runner import spin_node_until_shutdown
-from ..utils.topics import IMU_STATUS, PRESSURE_STATUS
-from .pressure_source import PressureSource
+from ..utils.topics import IMU_STATUS, PRESSURE_DEPTH_M, PRESSURE_STATUS
+from .pressure_math import calculate_center_depth, get_depth_velocity
 
-PUBLISH_FREQUENCY = 5
-DEPTH_MOVEMENT_TOLERANCE = 0.2  # meters
-
-
-def calculate_center_depth(main_depth: float, pitch_deg: float, displacement: float = 0.375) -> float:
-    pitch_rad = math.radians(pitch_deg)
-    return main_depth - (displacement * math.sin(pitch_rad))
+PUBLISH_HZ = 5.0
 
 
-def get_depth_velocity(
-    depth: float,
-    previous_depth: float | None,
-    now: float,
-    previous_depth_at: float | None,
-) -> float:
-    if previous_depth is None or previous_depth_at is None:
-        return 0.0
-    depth_delta = depth - previous_depth
-    time_delta = now - previous_depth_at
-    velocity = depth_delta / time_delta
-    return velocity
-
-
-def get_pressure_sensor(should_simulate: bool, parent_node: Node, serial_port: str | None = None) -> PressureSource:
-    if should_simulate:
-        from .pressure_sim import PressureSensorSimulator
-
-        return PressureSensorSimulator(parent_node=parent_node)
-    else:
-        from .pressure_sensor import PressureSensor
-
-        if serial_port is None:
-            raise ValueError("serial_port is required when not simulating")
-        return PressureSensor(parent_node=parent_node, serial_port=serial_port)
-
-
-# example usage: ros2 run eel pressure --ros-args -p serial_port:=/dev/ttyUSB0
 class PressureNode(Node):
     def __init__(self) -> None:
-        super().__init__("pressure_node")
-        self.declare_parameter(SIMULATE_PARAM, False)
-        self.should_simulate = bool(self.get_parameter(SIMULATE_PARAM).value)
+        super().__init__("pressure")
 
-        if self.should_simulate:
-            self.sensor = get_pressure_sensor(True, self)
-        else:
-            self.declare_parameter("serial_port", Parameter.Type.STRING)
-            # ROS string params are "" when unset — not Python None.
-            serial_port = self.get_parameter("serial_port").get_parameter_value().string_value or None
-            self.sensor = get_pressure_sensor(False, self, serial_port)
+        self._sensor_depth_m: float | None = None
+        self._pitch_deg = 0.0
+        self._last_center_depth_m: float | None = None
+        self._last_center_at: float | None = None
 
-        self.current_pitch = 0.0
+        self.create_subscription(Float32, PRESSURE_DEPTH_M, self._handle_depth_m, 10)
+        self.create_subscription(ImuStatus, IMU_STATUS, self._handle_imu, 10)
+        self._pub = self.create_publisher(PressureStatus, PRESSURE_STATUS, 10)
+        self.create_timer(1.0 / PUBLISH_HZ, self._publish_status)
 
-        self.last_depth_reading: float | None = None
-        self.last_depth_at: float | None = None
+        self.get_logger().info(f"Pressure started (listening on {PRESSURE_DEPTH_M})")
 
-        self.create_subscription(ImuStatus, IMU_STATUS, self.handle_imu_msg, 10)
+    def _handle_depth_m(self, msg: Float32) -> None:
+        self._sensor_depth_m = float(msg.data)
 
-        self.publisher = self.create_publisher(PressureStatus, PRESSURE_STATUS, 10)
-        self.updater = self.create_timer(1.0 / PUBLISH_FREQUENCY, self.publish_status)
+    def _handle_imu(self, msg: ImuStatus) -> None:
+        self._pitch_deg = float(msg.pitch)
 
-        self.get_logger().info("{}Pressure node started.".format("SIMULATE " if self.should_simulate else ""))
+    def _publish_status(self) -> None:
+        if self._sensor_depth_m is None:
+            return
 
-    def handle_imu_msg(self, msg: ImuStatus) -> None:
-        self.current_pitch = msg.pitch
+        center_depth_m = calculate_center_depth(self._sensor_depth_m, self._pitch_deg)
+        now = time()
+        depth_velocity = get_depth_velocity(
+            center_depth_m,
+            self._last_center_depth_m,
+            now,
+            self._last_center_at,
+        )
 
-    def publish_status(self) -> None:
-        depth_reading = self.sensor.get_current_depth()
+        out = PressureStatus()
+        out.depth = center_depth_m
+        out.depth_velocity = depth_velocity
+        self._pub.publish(out)
 
-        if depth_reading is not None:
-            current_depth = calculate_center_depth(depth_reading, self.current_pitch)
-
-            now = time()
-
-            depth_velocity = get_depth_velocity(current_depth, self.last_depth_reading, now, self.last_depth_at)
-
-            msg = PressureStatus()
-            msg.depth = current_depth
-            msg.depth_velocity = depth_velocity
-
-            self.last_depth_reading = current_depth
-            self.last_depth_at = now
-            self.publisher.publish(msg)
+        self._last_center_depth_m = center_depth_m
+        self._last_center_at = now
 
 
 def main(args: Optional[list[str]] = None) -> None:

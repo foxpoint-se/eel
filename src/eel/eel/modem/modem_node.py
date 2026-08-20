@@ -1,69 +1,55 @@
-#!/usr/bin/env python3
+"""Modem logic: ModemRaw → threshold + ping → ModemStatus.
+
+Ping is injected at startup (HTTP on boat; no-op for CI).
+"""
+
+from collections.abc import Callable
 from typing import Optional
 
 import rclpy
 from rclpy.node import Node
 
-from eel_interfaces.msg import ModemStatus
+from eel_interfaces.msg import ModemRaw, ModemStatus
 
-from ..utils.constants import SIMULATE_PARAM
 from ..utils.node_runner import spin_node_until_shutdown
-from ..utils.topics import MODEM_STATUS
-from .modem_source import ModemSource
+from ..utils.topics import MODEM_RAW, MODEM_STATUS
+from .modem_ping import http_ping
+
+
+def noop_ping() -> bool:
+    return False
 
 
 class ModemNode(Node):
-    def __init__(self) -> None:
-        super().__init__("modem_node")
-        self.declare_parameter(SIMULATE_PARAM, False)
-        self.should_simulate = self.get_parameter(SIMULATE_PARAM).value
-        self.modem_publisher = self.create_publisher(ModemStatus, MODEM_STATUS, 10)
-        self.logger = self.get_logger()
+    def __init__(self, ping: Callable[[], bool]) -> None:
+        super().__init__("modem")
+        self._ping = ping
+        self.create_subscription(ModemRaw, MODEM_RAW, self._handle_raw, 10)
+        self._pub = self.create_publisher(ModemStatus, MODEM_STATUS, 10)
+        self.get_logger().info(f"Modem started (listening on {MODEM_RAW})")
 
-        sensor: ModemSource
-        if not self.should_simulate:
-            from .modem_sensor import ModemSensor
-
-            sensor = ModemSensor()
-        else:
-            from .modem_simulator import ModemSimulator
-
-            sensor = ModemSimulator(self)
-
-        self.sensor = sensor
-
-        reg_status = self.sensor.get_registration_status()
-        signal_strength = self.sensor.get_received_signal_strength_indicator()
-        if reg_status is None or signal_strength is None:
-            raise Exception("Could not start modem node. Not getting registration status and/or signal strength.")
-
-        self.update_modem_timer = self.create_timer(2.0, self.read_and_publish_modem_status)
-
-        self.logger.info(f"{'Simulate ' if self.should_simulate else ''}Modem node started")
-
-    def read_and_publish_modem_status(self) -> None:
-        reg_status = self.sensor.get_registration_status()
-        signal_strength = self.sensor.get_received_signal_strength_indicator()
-        if reg_status is None or signal_strength is None:
-            return
-
+    def _handle_raw(self, msg: ModemRaw) -> None:
+        reg_status = int(msg.reg_status)
+        signal_strength = int(msg.signal_strength)
         check_connectivity = reg_status == 1 and signal_strength > 10
-        if check_connectivity:
-            connectivity = self.sensor.ping()
-        else:
-            connectivity = False
+        connectivity = self._ping() if check_connectivity else False
 
-        msg = ModemStatus()
-        msg.reg_status = reg_status
-        msg.signal_strength = signal_strength
-        msg.connectivity = connectivity
-
-        self.modem_publisher.publish(msg)
+        out = ModemStatus()
+        out.reg_status = reg_status
+        out.signal_strength = signal_strength
+        out.connectivity = connectivity
+        self._pub.publish(out)
 
 
 def main(args: Optional[list[str]] = None) -> None:
     rclpy.init(args=args)
-    node = ModemNode()
+    node = ModemNode(ping=http_ping)
+    spin_node_until_shutdown(node)
+
+
+def main_ci(args: Optional[list[str]] = None) -> None:
+    rclpy.init(args=args)
+    node = ModemNode(ping=noop_ping)
     spin_node_until_shutdown(node)
 
 
