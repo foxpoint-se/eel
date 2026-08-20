@@ -4,7 +4,7 @@ from typing import Optional
 
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Float32
+from std_msgs.msg import Bool, Float32
 
 from eel_interfaces.msg import (
     DepthControlCmd,
@@ -22,6 +22,7 @@ from ..utils.pid_controller import PidController
 from ..utils.pid_tuning import get_production_pid_settings
 from ..utils.topics import (
     DEPTH_CONTROL_CMD,
+    DEPTH_CONTROL_ENABLED_CMD,
     DEPTH_CONTROL_STATUS,
     FRONT_TANK_CMD,
     FRONT_TANK_STATUS,
@@ -30,6 +31,7 @@ from ..utils.topics import (
     REAR_TANK_CMD,
     REAR_TANK_STATUS,
 )
+from .enable import DepthEnable
 
 UPDATE_FREQUENCY = 5
 
@@ -72,6 +74,7 @@ class DepthControlNode(Node):
 
         self.should_control_depth = False
         self.should_control_pitch = False
+        self._enable = DepthEnable()
         self.depth_target: float | None = None
         self.target_pitch: float | None = None
         self.current_depth = 0.0
@@ -104,6 +107,7 @@ class DepthControlNode(Node):
         self.front_tank_pitch_publisher = self.create_publisher(Float32, "front_pitch_pid", 10)
 
         self.create_subscription(DepthControlCmd, DEPTH_CONTROL_CMD, self.handle_cmd_msg, 10)
+        self.create_subscription(Bool, DEPTH_CONTROL_ENABLED_CMD, self.handle_enabled_cmd, 10)
 
         self.create_subscription(PidDepthCmd, "pid_depth/cmd", self.handle_pid_depth_msg, 10)
 
@@ -207,6 +211,18 @@ class DepthControlNode(Node):
             pitch_Ki,
             pitch_Kd,
         )
+        self._enable.handle_depth_cmd()
+
+    def handle_enabled_cmd(self, msg: Bool) -> None:
+        was_enabled = self._enable.is_enabled
+        self._enable.handle_enabled_cmd(bool(msg.data))
+        if was_enabled and not self._enable.is_enabled:
+            self._hold_tanks_at_current_levels()
+
+    def _hold_tanks_at_current_levels(self) -> None:
+        if self.current_front_tank_level is None or self.current_rear_tank_level is None:
+            return
+        self.message_tanks(self.current_front_tank_level, self.current_rear_tank_level)
 
     def handle_imu_msg(self, msg: ImuStatus) -> None:
         self.current_pitch = msg.pitch
@@ -281,7 +297,21 @@ class DepthControlNode(Node):
         elif self.current_front_tank_level is not None and self.current_rear_tank_level is not None:
             self.message_tanks(self.current_front_tank_level, self.current_rear_tank_level)
 
+    def publish_status(self) -> None:
+        is_controlling = (
+            self._enable.is_enabled and self.depth_pid_controller is not None and self.pitch_pid_controller is not None
+        )
+        status_msg = DepthControlStatus()
+        status_msg.depth_target = self.depth_target if self.depth_target is not None else 0.0
+        status_msg.is_enabled = self._enable.is_enabled
+        status_msg.is_adjusting_depth = is_controlling
+        status_msg.is_adjusting_pitch = is_controlling
+        self.publisher.publish(status_msg)
+
     def loop(self) -> None:
+        self.publish_status()
+        if not self._enable.is_enabled:
+            return
         if self.pitch_pid_controller and self.depth_pid_controller:
             # if self.last_pitch_controller_output and abs(self.pitch_target - self.current_pitch) <= 1.5:
             #     pitch_controller_output = self.last_pitch_controller_output

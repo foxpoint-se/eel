@@ -3,7 +3,7 @@ from typing import Optional
 
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Float32
+from std_msgs.msg import Bool, Float32
 
 from eel_interfaces.msg import (
     DepthControlCmd,
@@ -17,11 +17,13 @@ from ..utils.node_runner import spin_node_until_shutdown
 from ..utils.pid_controller import PidController
 from ..utils.topics import (
     DEPTH_CONTROL_CMD,
+    DEPTH_CONTROL_ENABLED_CMD,
     DEPTH_CONTROL_STATUS,
     IMU_STATUS,
     PRESSURE_STATUS,
     RUDDER_Y_CMD,
 )
+from .enable import DepthEnable
 
 UPDATE_FREQUENCY = 5
 
@@ -33,6 +35,7 @@ class DepthControlNode(Node):
         self.logger.info("Depth control node started!!")
 
         self.depth_target = 0.0
+        self._enable = DepthEnable()
 
         self.max_dive_angle = 30.0
         self.max_rudder_output = 1.0
@@ -50,6 +53,7 @@ class DepthControlNode(Node):
         self.create_subscription(ImuStatus, IMU_STATUS, self.handle_imu_msg, 10)
         self.create_subscription(PressureStatus, PRESSURE_STATUS, self.handle_pressure_msg, 10)
         self.create_subscription(DepthControlCmd, DEPTH_CONTROL_CMD, self.handle_cmd_msg, 10)
+        self.create_subscription(Bool, DEPTH_CONTROL_ENABLED_CMD, self.handle_enabled_cmd, 10)
 
         self.rudder_publisher = self.create_publisher(Float32, RUDDER_Y_CMD, 10)
         self.status_publisher = self.create_publisher(DepthControlStatus, DEPTH_CONTROL_STATUS, 10)
@@ -57,21 +61,23 @@ class DepthControlNode(Node):
         self.updater = self.create_timer(1.0 / UPDATE_FREQUENCY, self.compute_and_send)
 
     def compute_and_send(self) -> None:
-        angle_pid_output = self.compute_new_target_angle()
-        # self.logger.info(f"Current inner pid output = {angle_pid_output} degrees")
+        self.publish_status()
+        if not self._enable.is_enabled:
+            return
 
+        angle_pid_output = self.compute_new_target_angle()
         rudder_pid_output = self.compute_new_rudder_output(angle_pid_output)
-        # self.logger.info(f"Current outer pid output = {rudder_pid_output} rudder")
 
         rudder_msg = Float32()
         rudder_msg.data = float(rudder_pid_output)
         self.rudder_publisher.publish(rudder_msg)
 
-        self.publish_status()
-
     def publish_status(self) -> None:
         status_msg = DepthControlStatus()
         status_msg.depth_target = self.depth_target
+        status_msg.is_enabled = self._enable.is_enabled
+        status_msg.is_adjusting_depth = self._enable.is_enabled
+        status_msg.is_adjusting_pitch = self._enable.is_enabled
         self.status_publisher.publish(status_msg)
 
     def handle_imu_msg(self, msg: ImuStatus) -> None:
@@ -89,6 +95,10 @@ class DepthControlNode(Node):
             self.logger.warning(f"Clamped depth control cmd depth={msg.depth_target}->{depth_target}")
         self.depth_target = depth_target
         self.inner_pid_target_angle.update_set_point(depth_target)
+        self._enable.handle_depth_cmd()
+
+    def handle_enabled_cmd(self, msg: Bool) -> None:
+        self._enable.handle_enabled_cmd(bool(msg.data))
 
     def compute_new_target_angle(self) -> float:
         pid_angle_output = self.inner_pid_target_angle.compute(self.current_depth)
