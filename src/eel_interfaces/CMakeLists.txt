@@ -19,6 +19,7 @@ find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/ImuStatus.msg"
+  "msg/ImuRaw.msg"
   "msg/ImuOffsets.msg"
   "msg/Coordinate.msg"
   "msg/NavigationStatus.msg"
@@ -27,9 +28,11 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/DepthControlStatus.msg"
   "msg/DepthControlCmd.msg"
   "msg/BatteryStatus.msg"
+  "msg/BatteryRaw.msg"
   "msg/PidDepthCmd.msg"
   "msg/PidPitchCmd.msg"
   "msg/ModemStatus.msg"
+  "msg/ModemRaw.msg"
   "msg/NavigationAssignment.msg"
   "msg/NavigationMission.msg"
   "msg/SubmergedCoordinate.msg"

@@ -34,7 +34,7 @@ make install
 source source_me.sh   # ROS + venv (+ install/ after the first build)
 make build
 make test
-ros2 run eel imu --ros-args -p simulate:=true
+ros2 launch eel_bringup world_sim.launch.py
 ```
 
 `make install` sets up pip deps, rosdep, and `pi_ina226` (battery). Source `source_me.sh` in every new shell before `make build`, `make test`, or `ros2 run`. After sourcing, `make setup` re-runs install + build.
@@ -78,13 +78,13 @@ cd docker
 
 Builds and tags both `foxpoint/eel:<distro>` (moving) and `foxpoint/eel:<distro>-<version>` (pinned from root `pyproject.toml`). Compose / day-to-day can keep using `:jazzy`; pin a release with e.g. `:jazzy-0.1.0`.
 
-Single node in simulation:
+Single node is not enough for sim anymore — use the full launch:
 
 ```bash
-docker run --rm foxpoint/eel:jazzy ros2 run eel imu --ros-args -p simulate:=true
+docker run --rm foxpoint/eel:jazzy ros2 launch eel_bringup world_sim.launch.py
 ```
 
-Full stacks: compose templates in `docker/` (e.g. `simulation-template.yml`, `alen-template.yml`).
+Full boat stacks: thin compose in `docker/` (e.g. `alen.yml`) runs `boat.launch.py`. Sim: `ros2 launch eel_bringup world_sim.launch.py`.
 
 ## Hardware bring-up
 
@@ -103,14 +103,14 @@ Detect devices: `make detect-i2c`.
 
 ### IMU
 
-BNO055 over I2C. Needs I2C tools/permissions: `make install-i2c`, reboot, then `source source_me.sh && ros2 run eel imu`.
+BNO055 over I2C. Needs I2C tools/permissions: `make install-i2c`, reboot, then `source source_me.sh && ros2 run eel imu_hardware`.
 
 ### GNSS
 
-USB serial GPS. Pass the port (Ålen `/dev/ttyUSB1`, Tvålen `/dev/ttyUSB0`; also in compose templates). User should be in `dialout`.
+USB serial GPS. Pass the port (Ålen `/dev/ttyUSB1`, Tvålen `/dev/ttyUSB0`; also in `boat_configs.py`). User should be in `dialout`.
 
 ```bash
-ros2 run eel gnss --ros-args -p serial_port:=/dev/ttyUSB1
+ros2 run eel gnss_hardware --ros-args -p serial_port:=/dev/ttyUSB1
 ```
 
 If the Pi serial console fights a UART GPS, see [docs/gnss-pi-uart-console.md](docs/gnss-pi-uart-console.md) (may be obsolete for USB-only GPS).
@@ -125,11 +125,11 @@ sudo adduser ${USER} dialout
 sudo reboot
 ```
 
-Then run without `simulate:=true`.
+Then run the hardware node (e.g. `ros2 run eel motor_hardware`), or full stack via `boat.launch.py`.
 
 ### Rudder
 
-Needs `pigpiod` for servos. If you see connection errors to `localhost:8888`, run `make start-pigpio`, then `ros2 run eel rudder`.
+Needs `pigpiod` for servos. If you see connection errors to `localhost:8888`, run `make start-pigpio`, then `ros2 run eel rudder_hardware`.
 
 ### Modem (cellular)
 

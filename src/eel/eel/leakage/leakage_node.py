@@ -1,49 +1,31 @@
-#!/usr/bin/env python3
+"""Leakage logic: leakage/raw → leakage/status (pass-through)."""
+
 from typing import Optional
 
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Bool
 
-from ..utils.constants import SIMULATE_PARAM
 from ..utils.node_runner import spin_node_until_shutdown
-from ..utils.topics import LEAKAGE_STATUS
-from .leakage_source import LeakageSource
+from ..utils.topics import LEAKAGE_RAW, LEAKAGE_STATUS
 
 
-class Leakage(Node):
+class LeakageNode(Node):
     def __init__(self) -> None:
-        super().__init__("leakage_node")
-        self.declare_parameter(SIMULATE_PARAM, False)
-        self.should_simulate = self.get_parameter(SIMULATE_PARAM).value
+        super().__init__("leakage")
+        self.create_subscription(Bool, LEAKAGE_RAW, self._handle_raw, 10)
+        self._pub = self.create_publisher(Bool, LEAKAGE_STATUS, 10)
+        self.get_logger().info(f"Leakage started (listening on {LEAKAGE_RAW})")
 
-        self.update_frequency = 1
-        self.publisher = self.create_publisher(Bool, LEAKAGE_STATUS, 10)
-
-        sensor: LeakageSource
-        if not self.should_simulate:
-            from .leakage_sensor import LeakageSensor
-
-            sensor = LeakageSensor()
-        else:
-            from .leakage_sim import LeakageSimulator
-
-            sensor = LeakageSimulator()
-
-        self.sensor = sensor
-
-        self.poller = self.create_timer(1.0 / self.update_frequency, self.read_and_publish_sensor_value)
-        self.get_logger().info(f"{'Simulate' if self.should_simulate else ''} Leakage node started.")
-
-    def read_and_publish_sensor_value(self) -> None:
-        msg = Bool()
-        msg.data = self.sensor.read_sensor()
-        self.publisher.publish(msg)
+    def _handle_raw(self, msg: Bool) -> None:
+        out = Bool()
+        out.data = bool(msg.data)
+        self._pub.publish(out)
 
 
 def main(args: Optional[list[str]] = None) -> None:
     rclpy.init(args=args)
-    node = Leakage()
+    node = LeakageNode()
     spin_node_until_shutdown(node)
 
 

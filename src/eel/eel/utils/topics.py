@@ -1,5 +1,6 @@
 # Rudder
 RUDDER_STATUS = "rudder/status"
+RUDDER_SETPOINT = "rudder/setpoint"
 RUDDER_X_CMD = "rudder/cmd_x"
 RUDDER_X_SET_OFFSET = "rudder/offset_x/cmd"
 RUDDER_X_OFFSET = "rudder/offset_x/status"
@@ -9,8 +10,10 @@ RUDDER_Y_OFFSET = "rudder/offset_y/status"
 
 # Motor
 MOTOR_CMD = "motor/cmd"
+MOTOR_SETPOINT = "motor/setpoint"
 
 # GNSS
+GNSS_FIX = "gnss/fix"
 GNSS_STATUS = "gnss/status"
 
 # Localization
@@ -19,6 +22,7 @@ LOCALIZATION_DRIFT_SPEED = "localization/drift_speed"
 LOCALIZATION_DRIFT_BEARING = "localization/drift_bearing"
 
 # IMU
+IMU_RAW = "imu/raw"
 IMU_STATUS = "imu/status"
 IMU_OFFSETS = "imu/offsets"
 
@@ -35,20 +39,28 @@ REAR_TANK_CMD = "tank_rear/cmd"
 REAR_TANK_STATUS = "tank_rear/status"
 
 # Pressure
+PRESSURE_DEPTH_M = "pressure/depth_m"
 PRESSURE_STATUS = "pressure/status"
 
 # Depth control
 DEPTH_CONTROL_STATUS = "depth_control/status"
 DEPTH_CONTROL_CMD = "depth_control/cmd"
+DEPTH_CONTROL_ENABLED_CMD = "depth_control/enabled/cmd"
 
 # Battery
+BATTERY_RAW = "battery/raw"
 BATTERY_STATUS = "battery/status"
 
 # History
 ROUTE_TRACING_UPDATES = "route_tracing/updates"
 
 # Modem
+MODEM_RAW = "modem/raw"
 MODEM_STATUS = "modem/status"
 
 # Leakage
+LEAKAGE_RAW = "leakage/raw"
 LEAKAGE_STATUS = "leakage/status"
+
+# LED
+LED_SETPOINT = "led/setpoint"

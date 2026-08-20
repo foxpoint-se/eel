@@ -1,0 +1,5 @@
+float32 voltage_v
+float32 current_a
+float32 power_w
+float32 supply_voltage_v
+float32 shunt_voltage_v

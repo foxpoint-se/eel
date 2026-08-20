@@ -29,6 +29,10 @@ Prefer `chore:` / `ci:` for infra-only work that never touches application sourc
 
 Before committing, ask: **what changelog entry should this merge produce?** Match commit type and count to that — squash PR wiring into the meaningful commit.
 
+## Build / environment
+
+After `source source_me.sh`, use the **Makefile** for workspace builds and tests (`make build`, `make test`, …). Do not invoke bare `colcon` — entrypoints and Python deps must come from the active project environment (`python3 -m colcon …` only if you need a narrower package selection than `make build` provides).
+
 ## Before commit
 
 ```bash

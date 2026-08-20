@@ -30,7 +30,7 @@ tag_format = "v{version}"
 commit_parser = "conventional"
 build_command = """
 python3 scripts/sync_version.py
-git add src/eel/setup.py src/eel/package.xml src/eel_interfaces/package.xml src/eel_bringup/package.xml
+git add src/eel/setup.py src/eel/package.xml src/eel_interfaces/package.xml src/eel_bringup/package.xml src/eel_world_sim/setup.py src/eel_world_sim/package.xml
 """
 
 [tool.semantic_release.branches.main]
@@ -40,6 +40,7 @@ match = "^main$"
 mode = "update"
 
 [tool.pytest.ini_options]
+pythonpath = ["src/eel_world_sim"]
 markers = [
     "launch_test: ROS launch test (requires sourced ROS + built workspace)",
 ]

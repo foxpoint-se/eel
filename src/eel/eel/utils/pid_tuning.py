@@ -94,14 +94,6 @@ def parse_pid_type(value: object) -> PidType | None:
     return cast(PidType, value)
 
 
-def get_simulation_pid_settings() -> tuple[float, float, float, float]:
-    depth_Ku = 8.0
-    depth_Tu = 43.0
-    pitch_Ku = 0.5
-    pitch_Tu = 28.0
-    return depth_Ku, depth_Tu, pitch_Ku, pitch_Tu
-
-
 def get_production_pid_settings() -> tuple[float, float, float, float]:
     depth_Ku = 0.0
     depth_Tu = 0.0

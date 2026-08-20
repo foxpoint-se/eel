@@ -1,0 +1,87 @@
+import os
+import unittest
+
+import launch
+import pytest
+from eel.utils.topics import (
+    BATTERY_STATUS,
+    DEPTH_CONTROL_STATUS,
+    FRONT_TANK_STATUS,
+    GNSS_STATUS,
+    IMU_STATUS,
+    LEAKAGE_STATUS,
+    LOCALIZATION_STATUS,
+    MODEM_STATUS,
+    NAVIGATION_STATUS,
+    PRESSURE_STATUS,
+    REAR_TANK_STATUS,
+    RUDDER_STATUS,
+)
+from geometry_msgs.msg import Vector3
+from launch.actions import IncludeLaunchDescription
+from launch.events.process.process_exited import ProcessExited
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch_testing.actions import ReadyToTest
+from launch_testing_ros import WaitForTopics
+from std_msgs.msg import Bool
+
+from eel_interfaces.msg import (
+    BatteryStatus,
+    Coordinate,
+    DepthControlStatus,
+    ImuStatus,
+    ModemStatus,
+    NavigationStatus,
+    PressureStatus,
+    TankStatus,
+)
+
+TOPIC_TIMEOUT_SEC = 20.0
+
+# Nodes that publish a status topic we can wait on at startup.
+STATUS_PUBLISHERS: list[tuple[str, str, type]] = [
+    ("imu", IMU_STATUS, ImuStatus),
+    ("battery", BATTERY_STATUS, BatteryStatus),
+    ("pressure", PRESSURE_STATUS, PressureStatus),
+    ("gnss", GNSS_STATUS, Coordinate),
+    ("localization", LOCALIZATION_STATUS, Coordinate),
+    ("front_tank", FRONT_TANK_STATUS, TankStatus),
+    ("rear_tank", REAR_TANK_STATUS, TankStatus),
+    ("leakage", LEAKAGE_STATUS, Bool),
+    ("modem", MODEM_STATUS, ModemStatus),
+    ("rudder", RUDDER_STATUS, Vector3),
+    ("depth_control_rudder_node", DEPTH_CONTROL_STATUS, DepthControlStatus),
+    ("navigation_action_client", NAVIGATION_STATUS, NavigationStatus),
+]
+
+
+def _assert_no_process_crashed(proc_info) -> None:
+    for event in proc_info:
+        if isinstance(event, ProcessExited) and event.returncode != 0:
+            name = getattr(event.action, "name", str(event.action))
+            raise AssertionError(f"{name} exited with code {event.returncode}")
+
+
+@pytest.mark.launch_test
+def generate_test_description():
+    launch_file = os.path.join(
+        os.path.dirname(__file__),
+        "integration_stack_startup.launch.py",
+    )
+    return (
+        launch.LaunchDescription(
+            [
+                IncludeLaunchDescription(PythonLaunchDescriptionSource(launch_file)),
+                ReadyToTest(),
+            ]
+        ),
+        {},
+    )
+
+
+class TestStackPublishStatusOnStartup(unittest.TestCase):
+    def test__when_stack_starts__should_publish_status_on_startup(self, proc_info) -> None:
+        topics = [(topic, msg_type) for _node_name, topic, msg_type in STATUS_PUBLISHERS]
+        with WaitForTopics(topics, timeout=TOPIC_TIMEOUT_SEC):
+            pass
+        _assert_no_process_crashed(proc_info)

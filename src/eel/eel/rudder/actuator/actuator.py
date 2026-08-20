@@ -1,15 +1,4 @@
-from typing import TypedDict
-
 from .types import ServoOptions
-from .xy_rudder_base import XYRudder
-from .xy_rudder_sim import XYRudderSim
-from .xy_rudder_with_servos import XYRudderWithServos
-
-
-class ActuatorOptions(TypedDict):
-    simulate: bool
-    pigpiod_host: str
-
 
 default_x_options: ServoOptions = {
     "pin": 13,
@@ -29,17 +18,3 @@ default_y_options: ServoOptions = {
     "cap_max": 0.75,
     "offset": 0.0,  # Offset value should be as max_cap > value < min_cap
 }
-
-
-def get_xy_rudder(options: ActuatorOptions) -> XYRudder:
-    if options["simulate"]:
-        return XYRudderSim(
-            x_options=default_x_options,
-            y_options=default_y_options,
-        )
-
-    return XYRudderWithServos(
-        x_options=default_x_options,
-        y_options=default_y_options,
-        pigpiod_host=options["pigpiod_host"],
-    )

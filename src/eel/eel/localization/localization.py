@@ -8,16 +8,16 @@ from std_msgs.msg import Float32
 
 from eel_interfaces.msg import Coordinate, ImuStatus, PressureStatus
 
+from ..motion.planar_motion import DEFAULT_FORWARD_CRUISE_MPS, motor_to_speed_mps
 from ..utils.actuator_bounds import is_valid_coordinate
 from ..utils.node_runner import spin_node_until_shutdown
-from ..utils.sim import LINEAR_VELOCITY
 from ..utils.topics import (
     GNSS_STATUS,
     IMU_STATUS,
     LOCALIZATION_DRIFT_BEARING,
     LOCALIZATION_DRIFT_SPEED,
     LOCALIZATION_STATUS,
-    MOTOR_CMD,
+    MOTOR_SETPOINT,
     PRESSURE_STATUS,
 )
 from .gnss_blackout import DEFAULT_GNSS_BLACKOUT_CONFIG, GnssBlackoutConfig, require_valid_gnss_blackout_config
@@ -29,9 +29,6 @@ GNSS_REACQUIRE_CLUSTER_RADIUS_PARAM = "gnss_reacquire_cluster_radius_m"
 GNSS_REACQUIRE_FIXES_REQUIRED_PARAM = "gnss_reacquire_fixes_required"
 GNSS_REACQUIRE_MAX_OUTLIER_DISTANCE_PARAM = "gnss_reacquire_max_outlier_distance_m"
 GNSS_REACQUIRE_TIMEOUT_PARAM = "gnss_reacquire_timeout_sec"
-
-FORWARD_MAX_SPEED = LINEAR_VELOCITY
-REVERSE_MAX_SPEED = 0.2 * FORWARD_MAX_SPEED
 
 
 def gnss_blackout_config_from_node(node: Node) -> GnssBlackoutConfig:
@@ -45,14 +42,6 @@ def gnss_blackout_config_from_node(node: Node) -> GnssBlackoutConfig:
             reacquire_timeout_sec=float(node.get_parameter(GNSS_REACQUIRE_TIMEOUT_PARAM).value),
         )
     )
-
-
-def calculate_speed_from_motor_mps(motor_speed: float) -> float:
-    if motor_speed > 0:
-        return motor_speed * FORWARD_MAX_SPEED
-    elif motor_speed < 0:
-        return motor_speed * REVERSE_MAX_SPEED
-    return 0
 
 
 class Localization(Node):
@@ -69,7 +58,7 @@ class Localization(Node):
         self.declare_parameter(GNSS_REACQUIRE_TIMEOUT_PARAM, DEFAULT_GNSS_BLACKOUT_CONFIG.reacquire_timeout_sec)
         self.update_frequency_hz = 5
         self.gnss_subscription = self.create_subscription(Coordinate, GNSS_STATUS, self.handle_gnss_msg, 10)
-        self.motor_subscription = self.create_subscription(Float32, MOTOR_CMD, self.handle_motor_msg, 10)
+        self.motor_subscription = self.create_subscription(Float32, MOTOR_SETPOINT, self.handle_motor_msg, 10)
         self.imu_subscription = self.create_subscription(ImuStatus, IMU_STATUS, self.handle_imu_msg, 10)
         self.pressure_subscription = self.create_subscription(
             PressureStatus,
@@ -87,7 +76,7 @@ class Localization(Node):
 
         self.localizer = Localizer(gnss_config=gnss_blackout_config_from_node(self))
         self.loop = self.create_timer(1.0 / self.update_frequency_hz, self.do_work)
-        self.get_logger().info(f"Localization node started. {LINEAR_VELOCITY} m/s")
+        self.get_logger().info(f"Localization node started. {DEFAULT_FORWARD_CRUISE_MPS} m/s")
 
     def handle_gnss_msg(self, msg: Coordinate) -> None:
         if not is_valid_coordinate(msg.lat, msg.lon):
@@ -97,7 +86,7 @@ class Localization(Node):
         self.localizer.update_known_position({"lat": msg.lat, "lon": msg.lon})
 
     def handle_motor_msg(self, msg: Float32) -> None:
-        current_speed_mps = calculate_speed_from_motor_mps(motor_speed=msg.data)
+        current_speed_mps = motor_to_speed_mps(msg.data)
         self.localizer.update_speed_mps(current_speed_mps)
 
     def handle_imu_msg(self, msg: ImuStatus) -> None:

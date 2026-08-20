@@ -1,3 +1,4 @@
 bool is_adjusting_depth
 bool is_adjusting_pitch
 float32 depth_target
+bool is_enabled
