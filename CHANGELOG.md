@@ -2,6 +2,34 @@
 
 <!-- version list -->
 
+## v2.0.0 (2026-08-20)
+
+### Bug Fixes
+
+- Modem ping and hardware nodes could hang or hold stale setpoints
+  ([`d5644ee`](https://github.com/foxpoint-se/eel/commit/d5644eedee536f79526b9fa43e070e54f3fa1976))
+
+### Features
+
+- Boat and sim had no single launch entrypoint per scenario
+  ([`c052ab2`](https://github.com/foxpoint-se/eel/commit/c052ab22bc69b8223e0dfe3a4d07adeebf5e23c8))
+
+- Depth control fought sim teleop until operators could turn it off
+  ([`c949b4a`](https://github.com/foxpoint-se/eel/commit/c949b4ad0e6a4823217c413138140a472082d985))
+
+- Operators could not run a local fake world without scattered sim physics
+  ([`a7f505f`](https://github.com/foxpoint-se/eel/commit/a7f505f260a95ec5891a8d5bdc76b9da46264141))
+
+- Operators must use split hardware nodes; old simulate path removed
+  ([`fff94c0`](https://github.com/foxpoint-se/eel/commit/fff94c07247c06ec5350c5211f1c51680c4f1666))
+
+- Sim operators had to drive the plant from topic CLI
+  ([`455d670`](https://github.com/foxpoint-se/eel/commit/455d6702dff3af19cb44ced25b5e6c0059aaa6d4))
+
+- Sim plant and boat localization disagreed on cruise speed from throttle
+  ([`28599ce`](https://github.com/foxpoint-se/eel/commit/28599cee3d7a70947bd438fa5b84be7d79afd53c))
+
+
 ## v1.2.12 (2026-08-07)
 
 ### Bug Fixes
