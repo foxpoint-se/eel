@@ -1,3 +1,4 @@
+import pytest
 from eel.tank.tank_topics import tank_level_topic, tank_pump_setpoint_topic
 
 
@@ -7,8 +8,5 @@ def test__when_status_topic__should_derive_mid_topics() -> None:
 
 
 def test__when_status_topic_missing_suffix__should_raise() -> None:
-    try:
+    with pytest.raises(ValueError):
         tank_level_topic("tank_front")
-    except ValueError:
-        return
-    raise AssertionError("expected ValueError")

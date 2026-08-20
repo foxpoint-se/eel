@@ -1,12 +1,14 @@
 """Pure tank I/O: distance sensor → level; pump_setpoint → GPIO pump."""
 
 import math
+from time import monotonic
 from typing import Optional
 
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float32
 
+from ..motor.motor_watchdog import command_is_stale, require_positive_cmd_timeout
 from ..utils.constants import (
     DIRECTION_PIN_PARAM,
     DISTANCE_SENSOR_CHANNEL_PARAM,
@@ -22,6 +24,9 @@ from .tank_utils.real_pump import RealPump
 
 PUBLISH_HZ = 10.0
 TANK_CALIBRATION_UNSET = float("nan")
+SETPOINT_TIMEOUT_PARAM = "setpoint_timeout_s"
+DEFAULT_SETPOINT_TIMEOUT_S = 1.0
+WATCHDOG_CHECK_PERIOD_S = 0.2
 
 
 class TankHardwareNode(Node):
@@ -41,6 +46,13 @@ class TankHardwareNode(Node):
         motor_pin = int(self.get_parameter(MOTOR_PIN_PARAM).get_parameter_value().integer_value)
         direction_pin = int(self.get_parameter(DIRECTION_PIN_PARAM).get_parameter_value().integer_value)
         channel = int(self.get_parameter(DISTANCE_SENSOR_CHANNEL_PARAM).get_parameter_value().integer_value)
+        for param_name, pin in (
+            (MOTOR_PIN_PARAM, motor_pin),
+            (DIRECTION_PIN_PARAM, direction_pin),
+            (DISTANCE_SENSOR_CHANNEL_PARAM, channel),
+        ):
+            if pin < 0:
+                raise ValueError(f"{param_name} must be >= 0, got {pin}")
         floor_value = float(self.get_parameter(TANK_FLOOR_VALUE_PARAM).get_parameter_value().double_value)
         ceiling_value = float(self.get_parameter(TANK_CEILING_VALUE_PARAM).get_parameter_value().double_value)
         if math.isnan(floor_value) or math.isnan(ceiling_value):
@@ -52,8 +64,12 @@ class TankHardwareNode(Node):
         self._pump = RealPump(motor_pin=motor_pin, direction_pin=direction_pin)
         self._distance = RealDistanceSensor(floor=floor_value, ceiling=ceiling_value, channel=channel)
         self._level_pub = self.create_publisher(Float32, level_topic, 10)
+        self.declare_parameter(SETPOINT_TIMEOUT_PARAM, DEFAULT_SETPOINT_TIMEOUT_S)
+        self._setpoint_timeout_s = require_positive_cmd_timeout(float(self.get_parameter(SETPOINT_TIMEOUT_PARAM).value))
+        self._last_setpoint_at: float | None = None
         self.create_subscription(Float32, pump_topic, self._handle_pump, 10)
         self.create_timer(1.0 / PUBLISH_HZ, self._publish_level)
+        self.create_timer(WATCHDOG_CHECK_PERIOD_S, self._watchdog_tick)
 
         self.get_logger().info(
             f"Tank hardware started. level={level_topic} pump={pump_topic} "
@@ -66,9 +82,17 @@ class TankHardwareNode(Node):
     def _handle_pump(self, msg: Float32) -> None:
         value = float(msg.data)
         if value == 0.0:
+            self._last_setpoint_at = None
             self._pump.stop()
-        else:
-            self._pump.run_motor(value)
+            return
+        self._last_setpoint_at = monotonic()
+        self._pump.run_motor(value)
+
+    def _watchdog_tick(self) -> None:
+        if command_is_stale(self._last_setpoint_at, monotonic(), self._setpoint_timeout_s):
+            self.get_logger().warning("tank pump_setpoint stale; stopping pump")
+            self._last_setpoint_at = None
+            self._pump.stop()
 
     def _publish_level(self) -> None:
         msg = Float32()

@@ -17,7 +17,7 @@ from ..utils.topics import (
     LOCALIZATION_DRIFT_BEARING,
     LOCALIZATION_DRIFT_SPEED,
     LOCALIZATION_STATUS,
-    MOTOR_CMD,
+    MOTOR_SETPOINT,
     PRESSURE_STATUS,
 )
 from .gnss_blackout import DEFAULT_GNSS_BLACKOUT_CONFIG, GnssBlackoutConfig, require_valid_gnss_blackout_config
@@ -58,7 +58,7 @@ class Localization(Node):
         self.declare_parameter(GNSS_REACQUIRE_TIMEOUT_PARAM, DEFAULT_GNSS_BLACKOUT_CONFIG.reacquire_timeout_sec)
         self.update_frequency_hz = 5
         self.gnss_subscription = self.create_subscription(Coordinate, GNSS_STATUS, self.handle_gnss_msg, 10)
-        self.motor_subscription = self.create_subscription(Float32, MOTOR_CMD, self.handle_motor_msg, 10)
+        self.motor_subscription = self.create_subscription(Float32, MOTOR_SETPOINT, self.handle_motor_msg, 10)
         self.imu_subscription = self.create_subscription(ImuStatus, IMU_STATUS, self.handle_imu_msg, 10)
         self.pressure_subscription = self.create_subscription(
             PressureStatus,

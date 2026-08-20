@@ -42,6 +42,8 @@ def get_pitch_velocity(
         return 0.0
     pitch_delta = pitch - previous_pitch
     time_delta = now - previous_pitch_at
+    if time_delta <= 0.0:
+        return 0.0
     velocity = pitch_delta / time_delta
     return velocity
 

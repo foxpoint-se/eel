@@ -15,6 +15,8 @@ from ..utils.node_runner import spin_node_until_shutdown
 from ..utils.topics import MODEM_RAW, MODEM_STATUS
 from .modem_ping import http_ping
 
+PING_INTERVAL_SEC = 15.0
+
 
 def noop_ping() -> bool:
     return False
@@ -24,15 +26,21 @@ class ModemNode(Node):
     def __init__(self, ping: Callable[[], bool]) -> None:
         super().__init__("modem")
         self._ping = ping
+        self._cached_connectivity = False
         self.create_subscription(ModemRaw, MODEM_RAW, self._handle_raw, 10)
         self._pub = self.create_publisher(ModemStatus, MODEM_STATUS, 10)
+        self.create_timer(PING_INTERVAL_SEC, self._refresh_connectivity)
         self.get_logger().info(f"Modem started (listening on {MODEM_RAW})")
+        self._refresh_connectivity()
+
+    def _refresh_connectivity(self) -> None:
+        self._cached_connectivity = self._ping()
 
     def _handle_raw(self, msg: ModemRaw) -> None:
         reg_status = int(msg.reg_status)
         signal_strength = int(msg.signal_strength)
         check_connectivity = reg_status == 1 and signal_strength > 10
-        connectivity = self._ping() if check_connectivity else False
+        connectivity = self._cached_connectivity if check_connectivity else False
 
         out = ModemStatus()
         out.reg_status = reg_status
