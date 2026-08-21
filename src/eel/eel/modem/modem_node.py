@@ -13,6 +13,7 @@ from eel_interfaces.msg import ModemRaw, ModemStatus
 
 from ..utils.node_runner import spin_node_until_shutdown
 from ..utils.topics import MODEM_RAW, MODEM_STATUS
+from .modem_logic import modem_connectivity
 from .modem_ping import http_ping
 
 PING_INTERVAL_SEC = 15.0
@@ -39,8 +40,7 @@ class ModemNode(Node):
     def _handle_raw(self, msg: ModemRaw) -> None:
         reg_status = int(msg.reg_status)
         signal_strength = int(msg.signal_strength)
-        check_connectivity = reg_status == 1 and signal_strength > 10
-        connectivity = self._cached_connectivity if check_connectivity else False
+        connectivity = modem_connectivity(reg_status, signal_strength, self._cached_connectivity)
 
         out = ModemStatus()
         out.reg_status = reg_status

@@ -9,6 +9,7 @@ from eel_interfaces.msg import ModemRaw
 
 from ..utils.node_runner import spin_node_until_shutdown
 from ..utils.topics import MODEM_RAW
+from .modem_logic import modem_readings
 from .modem_sensor import ModemSensor
 
 PUBLISH_PERIOD_S = 2.0
@@ -30,8 +31,10 @@ class ModemHardwareNode(Node):
     def _publish_raw(self) -> None:
         reg_status = self._sensor.get_registration_status()
         signal_strength = self._sensor.get_received_signal_strength_indicator()
-        if reg_status is None or signal_strength is None:
+        readings = modem_readings(reg_status, signal_strength)
+        if readings is None:
             return
+        reg_status, signal_strength = readings
         out = ModemRaw()
         out.reg_status = reg_status
         out.signal_strength = signal_strength

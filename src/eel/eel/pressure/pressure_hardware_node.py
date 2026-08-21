@@ -9,6 +9,7 @@ from std_msgs.msg import Float32
 
 from ..utils.node_runner import spin_node_until_shutdown
 from ..utils.topics import PRESSURE_DEPTH_M
+from .pressure_math import has_depth_sample
 from .pressure_serial_driver import PressureSerialDriver
 
 PUBLISH_HZ = 5.0
@@ -30,7 +31,7 @@ class PressureHardwareNode(Node):
 
     def _publish_depth(self) -> None:
         depth_m = self._driver.get_depth_m()
-        if depth_m is None:
+        if not has_depth_sample(depth_m):
             return
         if self._driver.is_calibrated and not self._logged_calibration:
             self.get_logger().info("Atmosphere offset set from first sample")

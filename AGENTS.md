@@ -63,6 +63,8 @@ Name: `test__when_<condition>__should_<outcome>` (double underscores).
 
 Prefer **pure unit tests** — extract logic from ROS callbacks/nodes into small functions, then test those. Don’t grow 50-line tests full of mocks; refactor production code until each test is ~10 lines: setup (helpers ok), act, assert.
 
+Reference: `navigation_goal_admission.py` + `navigation_goal_admission_test.py` (extract a pure helper, wire the node to call it, test reject/accept cases with `test__when_*__should_*` names).
+
 ## Typing
 
 Strict mypy runs on the file list in `pyproject.toml` (`make typecheck`, part of `make test`). Grow that list as files are clean.
