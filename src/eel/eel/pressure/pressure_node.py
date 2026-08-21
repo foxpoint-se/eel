@@ -11,7 +11,7 @@ from eel_interfaces.msg import ImuStatus, PressureStatus
 
 from ..utils.node_runner import spin_node_until_shutdown
 from ..utils.topics import IMU_STATUS, PRESSURE_DEPTH_M, PRESSURE_STATUS
-from .pressure_math import calculate_center_depth, get_depth_velocity
+from .pressure_math import calculate_center_depth, get_depth_velocity, has_depth_sample
 
 PUBLISH_HZ = 5.0
 
@@ -39,10 +39,11 @@ class PressureNode(Node):
         self._pitch_deg = float(msg.pitch)
 
     def _publish_status(self) -> None:
-        if self._sensor_depth_m is None:
+        sensor_depth_m = self._sensor_depth_m
+        if not has_depth_sample(sensor_depth_m):
             return
 
-        center_depth_m = calculate_center_depth(self._sensor_depth_m, self._pitch_deg)
+        center_depth_m = calculate_center_depth(sensor_depth_m, self._pitch_deg)
         now = time()
         depth_velocity = get_depth_velocity(
             center_depth_m,

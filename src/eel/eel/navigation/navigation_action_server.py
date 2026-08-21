@@ -16,6 +16,7 @@ from std_msgs.msg import Float32
 from eel_interfaces.action import Navigate
 from eel_interfaces.msg import Coordinate, DepthControlCmd, ImuStatus, PressureStatus
 
+from ..utils.actuator_bounds import is_valid_coordinate
 from ..utils.node_runner import spin_node_until_shutdown
 from ..utils.topics import (
     DEPTH_CONTROL_CMD,
@@ -27,6 +28,7 @@ from ..utils.topics import (
 )
 from .assignments import Assignment, SurfaceAssignment, WaypointAndDepth
 from .common import LatLon, get_2d_distance
+from .navigation_goal_admission import NavigateGoalDecision, evaluate_navigate_goal
 from .navigation_pose import has_navigation_pose
 
 if TYPE_CHECKING:
@@ -117,39 +119,59 @@ class NavigationActionServer(Node):
 
     def goal_callback(self, goal_request: Navigate.Goal) -> GoalResponse:
         with self._goal_lock:
-            if self._goal_in_progress:
-                self.logger.info("Goal in progress. Rejecting new goal.")
-                return GoalResponse.REJECT
+            goal_in_progress = self._goal_in_progress
 
-        if not has_navigation_pose(self.current_position):
-            self.logger.info("No gps position has been acquired yet, rejecting goal.")
+        if goal_in_progress:
+            self.logger.info("Goal in progress. Rejecting new goal.")
             return GoalResponse.REJECT
 
-        distance_to_target = get_2d_distance(
-            pos1=LatLon(lat=self.current_position.lat, lon=self.current_position.lon),
-            pos2=LatLon(
-                lat=goal_request.goal.lat,
-                lon=goal_request.goal.lon,
-            ),
-        )
+        current_position = self.current_position
+        pose = current_position if has_navigation_pose(current_position) else None
+        coordinates_valid = False
+        distance_to_target = 0.0
+        if pose is not None:
+            coordinates_valid = is_valid_coordinate(pose.lat, pose.lon) and is_valid_coordinate(
+                goal_request.goal.lat,
+                goal_request.goal.lon,
+            )
+            if coordinates_valid:
+                distance_to_target = get_2d_distance(
+                    pos1=LatLon(lat=pose.lat, lon=pose.lon),
+                    pos2=LatLon(
+                        lat=goal_request.goal.lat,
+                        lon=goal_request.goal.lon,
+                    ),
+                )
 
-        # Simple sanity check that the target is not to far away, could be removed
-        if distance_to_target < TARGET_DISTANCE_LIMIT:
-            with self._goal_lock:
-                if self._goal_in_progress:
-                    self.logger.info("Goal in progress. Rejecting new goal.")
-                    return GoalResponse.REJECT
-                self._goal_in_progress = True
-            self.logger.info(f"Accepted new target, lat: {goal_request.goal.lat} lon: {goal_request.goal.lon}")
-            self.logger.info(f"Distance to new target: {distance_to_target}m")
-            return GoalResponse.ACCEPT
-        else:
+        decision = evaluate_navigate_goal(
+            goal_in_progress=False,
+            has_pose=pose is not None,
+            coordinates_valid=coordinates_valid,
+            distance_to_target_m=distance_to_target,
+            distance_limit_m=TARGET_DISTANCE_LIMIT,
+        )
+        if decision is NavigateGoalDecision.REJECT_NO_POSE:
+            self.logger.info("No gps position has been acquired yet, rejecting goal.")
+            return GoalResponse.REJECT
+        if decision is NavigateGoalDecision.REJECT_INVALID_COORDINATES:
+            self.logger.info("Invalid navigation coordinates, rejecting goal.")
+            return GoalResponse.REJECT
+        if decision is NavigateGoalDecision.REJECT_TOO_FAR:
             self.logger.info(
                 f"Goal rejected - Distance to target {distance_to_target} is larger "
                 f"than set limit {TARGET_DISTANCE_LIMIT}"
             )
-
             return GoalResponse.REJECT
+
+        with self._goal_lock:
+            if self._goal_in_progress:
+                self.logger.info("Goal in progress. Rejecting new goal.")
+                return GoalResponse.REJECT
+            self._goal_in_progress = True
+
+        self.logger.info(f"Accepted new target, lat: {goal_request.goal.lat} lon: {goal_request.goal.lon}")
+        self.logger.info(f"Distance to new target: {distance_to_target}m")
+        return GoalResponse.ACCEPT
 
     def cancel_callback(self, goal_handle: NavigateGoalHandle) -> CancelResponse:
         self.logger.info("Goal cancel request received, turning off motors.")

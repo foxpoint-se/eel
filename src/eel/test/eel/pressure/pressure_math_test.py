@@ -1,6 +1,6 @@
 import math
 
-from eel.pressure.pressure_math import calculate_center_depth, get_depth_velocity
+from eel.pressure.pressure_math import calculate_center_depth, get_depth_velocity, has_depth_sample
 
 
 def test__when_pitch_is_zero__should_return_sensor_depth() -> None:
@@ -26,3 +26,15 @@ def test__when_time_delta_is_zero__should_report_zero_velocity() -> None:
 
 def test__when_clock_goes_backwards__should_report_zero_velocity() -> None:
     assert get_depth_velocity(2.0, previous_depth=1.0, now=0.5, previous_depth_at=1.0) == 0.0
+
+
+def test__when_depth_is_zero__should_count_as_present_sample() -> None:
+    assert has_depth_sample(0.0)
+
+
+def test__when_depth_is_missing__should_not_count_as_present_sample() -> None:
+    assert not has_depth_sample(None)
+
+
+def test__when_depth_is_nan__should_not_count_as_present_sample() -> None:
+    assert not has_depth_sample(float("nan"))

@@ -2,6 +2,7 @@
 
 import serial
 
+from .pressure_math import has_depth_sample
 from .pressure_serial_frames import FLOAT32_SIZE, take_float32_le
 
 
@@ -21,7 +22,7 @@ class PressureSerialDriver:
     def get_depth_m(self) -> float | None:
         """Depth in meters relative to the first good sample (surface offset)."""
         sample_m = self._read_depth_sample()
-        if sample_m is None:
+        if not has_depth_sample(sample_m):
             return None
         if self._atmosphere_offset_m is None:
             self._atmosphere_offset_m = sample_m

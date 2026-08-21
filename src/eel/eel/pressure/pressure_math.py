@@ -1,6 +1,14 @@
 """Pure depth helpers for pressure app logic (no ROS)."""
 
 import math
+from typing import TypeGuard
+
+
+def has_depth_sample(depth_m: float | None) -> TypeGuard[float]:
+    """True when a depth reading is present, including 0.0 at the surface."""
+    if depth_m is None:
+        return False
+    return math.isfinite(depth_m)
 
 
 def calculate_center_depth(main_depth: float, pitch_deg: float, displacement: float = 0.375) -> float:
