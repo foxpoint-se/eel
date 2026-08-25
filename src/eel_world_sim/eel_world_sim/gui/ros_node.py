@@ -35,6 +35,7 @@ from eel_world_sim.gui.motor_slider import MOTOR_SLIDER_DEADZONE, motor_slider_t
 from eel_world_sim.gui.widgets.battery_status import BatteryStatusView
 from eel_world_sim.gui.widgets.depth_control import DEPTH_TARGET_MAX_M, DepthControlStatusView
 from eel_world_sim.gui.widgets.imu_status import ImuStatusView
+from eel_world_sim.gui.widgets.map_view import MapMarkerPose, MapViewState
 from eel_world_sim.gui.widgets.nav_status import NavStatusView
 from eel_world_sim.gui.widgets.tank_status import TankStatusView
 from eel_world_sim.local_geo import latlon_to_meters
@@ -69,6 +70,7 @@ class WorldSimGuiNode(Node):
         self.declare_parameter("rudder_status_topic", "rudder/status")
         self.declare_parameter("odom_topic", "odom")
         self.declare_parameter("gnss_status_topic", "gnss/status")
+        self.declare_parameter("localization_status_topic", "localization/status")
         self.declare_parameter("pressure_status_topic", "pressure/status")
         self.declare_parameter("imu_status_topic", "imu/status")
         self.declare_parameter("battery_status_topic", "battery/status")
@@ -86,6 +88,10 @@ class WorldSimGuiNode(Node):
         rudder_status_topic = self._string_param("rudder_status_topic")
         odom_topic = self._string_param("odom_topic")
         gnss_status_topic = self._string_param("gnss_status_topic")
+        localization_status_topic = self._string_param("localization_status_topic")
+        self._odom_topic = odom_topic
+        self._gnss_status_topic = gnss_status_topic
+        self._localization_status_topic = localization_status_topic
         status_topic = self._string_param("pressure_status_topic")
         imu_topic = self._string_param("imu_status_topic")
         battery_topic = self._string_param("battery_status_topic")
@@ -136,6 +142,13 @@ class WorldSimGuiNode(Node):
         self._gnss_lat = 0.0
         self._gnss_lon = 0.0
         self._has_gnss = False
+        self._localization_east_m = 0.0
+        self._localization_north_m = 0.0
+        self._has_localization = False
+        self._has_odom = False
+        self._show_map_odom = True
+        self._show_map_gnss = True
+        self._show_map_localization = True
         self._trail: list[tuple[float, float]] = []
         self._show_live_trail = True
         self._follow_boat = True
@@ -153,6 +166,7 @@ class WorldSimGuiNode(Node):
         self.create_subscription(TankStatus, tank_rear_topic, self._on_tank_rear_status, 10)
         self.create_subscription(Odometry, odom_topic, self._on_odom, 10)
         self.create_subscription(Coordinate, gnss_status_topic, self._on_gnss_status, 10)
+        self.create_subscription(Coordinate, localization_status_topic, self._on_localization_status, 10)
         self.create_subscription(Vector3, rudder_status_topic, self._on_rudder_status, 10)
         self.create_subscription(DepthControlStatus, depth_status_topic, self._on_depth_control_status, 10)
         self._depth_cmd_pub = self.create_publisher(DepthControlCmd, depth_cmd_topic, 10)
@@ -162,7 +176,7 @@ class WorldSimGuiNode(Node):
         self.get_logger().info(
             "GUI topics "
             f"motor={motor_cmd_topic} rudder_x={rudder_x_topic} rudder_y={rudder_y_topic} "
-            f"odom={odom_topic} gnss={gnss_status_topic} status={status_topic}"
+            f"odom={odom_topic} gnss={gnss_status_topic} localization={localization_status_topic} "
         )
 
     def _string_param(self, name: str) -> str:
@@ -209,6 +223,7 @@ class WorldSimGuiNode(Node):
         self._odom_y_m = float(msg.pose.pose.position.y)
         q = msg.pose.pose.orientation
         self._odom_yaw_deg = math.degrees(math.atan2(2.0 * q.w * q.z, 1.0 - 2.0 * q.z * q.z))
+        self._has_odom = True
 
     def _on_gnss_status(self, msg: Coordinate) -> None:
         self._gnss_lat = float(msg.lat)
@@ -216,6 +231,10 @@ class WorldSimGuiNode(Node):
         self._gnss_east_m, self._gnss_north_m = latlon_to_meters(self._gnss_lat, self._gnss_lon)
         self._has_gnss = True
         self._append_trail(self._gnss_east_m, self._gnss_north_m)
+
+    def _on_localization_status(self, msg: Coordinate) -> None:
+        self._localization_east_m, self._localization_north_m = latlon_to_meters(float(msg.lat), float(msg.lon))
+        self._has_localization = True
 
     def _append_trail(self, east_m: float, north_m: float) -> None:
         if self._trail:
@@ -364,6 +383,44 @@ class WorldSimGuiNode(Node):
     def odom_pose(self) -> tuple[float, float, float]:
         return self._odom_x_m, self._odom_y_m, self._odom_yaw_deg
 
+    def map_odom_topic(self) -> str:
+        return self._odom_topic
+
+    def map_gnss_topic(self) -> str:
+        return self._gnss_status_topic
+
+    def map_localization_topic(self) -> str:
+        return self._localization_status_topic
+
+    def map_view_state(self) -> MapViewState:
+        return MapViewState(
+            truth=MapMarkerPose(
+                east_m=self._odom_x_m,
+                north_m=self._odom_y_m,
+                yaw_deg=self._odom_yaw_deg,
+                available=self._has_odom,
+            ),
+            gnss=MapMarkerPose(
+                east_m=self._gnss_east_m,
+                north_m=self._gnss_north_m,
+                yaw_deg=self._odom_yaw_deg,
+                available=self._has_gnss,
+            ),
+            localization=MapMarkerPose(
+                east_m=self._localization_east_m,
+                north_m=self._localization_north_m,
+                yaw_deg=self._odom_yaw_deg,
+                available=self._has_localization,
+            ),
+            show_truth=self._show_map_odom,
+            show_gnss=self._show_map_gnss,
+            show_localization=self._show_map_localization,
+            trail=self._trail,
+            show_live_trail=self._show_live_trail,
+            follow_boat=self._follow_boat,
+            visible_m=self._map_visible_m,
+        )
+
     def gnss_map_pose(self) -> tuple[float, float, float, bool]:
         """East/north meters from map origin, yaw from odom, and whether a fix exists."""
         return self._gnss_east_m, self._gnss_north_m, self._odom_yaw_deg, self._has_gnss
@@ -381,6 +438,15 @@ class WorldSimGuiNode(Node):
 
     def set_show_live_trail(self, enabled: bool) -> None:
         self._show_live_trail = enabled
+
+    def set_show_map_odom(self, enabled: bool) -> None:
+        self._show_map_odom = enabled
+
+    def set_show_map_gnss(self, enabled: bool) -> None:
+        self._show_map_gnss = enabled
+
+    def set_show_map_localization(self, enabled: bool) -> None:
+        self._show_map_localization = enabled
 
     def follow_boat(self) -> bool:
         return self._follow_boat
