@@ -3,6 +3,7 @@ from math import cos, isclose, radians
 from eel.motion.planar_motion import (
     DEFAULT_FORWARD_CRUISE_MPS,
     DEFAULT_REVERSE_CRUISE_MPS,
+    enu_yaw_deg_from_compass_bearing,
     motor_to_speed_mps,
     nonlinear_motor_fraction,
     pitch_horizontal_scale,
@@ -64,20 +65,28 @@ def test__when_motor_forward_and_pitch_down__should_reduce_speed() -> None:
     assert isclose(motor_to_speed_mps(1.0, pitch_deg=45.0), DEFAULT_FORWARD_CRUISE_MPS * cos(radians(45.0)))
 
 
-def test__when_heading_zero_and_forward__should_advance_along_x() -> None:
-    dx, dy = planar_delta_m(1.0, 0.0, 1.0)
-    assert isclose(dx, DEFAULT_FORWARD_CRUISE_MPS)
-    assert isclose(dy, 0.0)
+def test__when_heading_zero_and_forward__should_advance_along_north() -> None:
+    east_m, north_m = planar_delta_m(1.0, 0.0, 1.0)
+    assert isclose(east_m, 0.0)
+    assert isclose(north_m, DEFAULT_FORWARD_CRUISE_MPS)
 
 
-def test__when_heading_zero_and_reverse__should_move_along_negative_x() -> None:
-    dx, dy = planar_delta_m(-1.0, 0.0, 1.0)
-    assert isclose(dx, -DEFAULT_REVERSE_CRUISE_MPS)
-    assert isclose(dy, 0.0)
+def test__when_heading_zero_and_reverse__should_move_along_negative_north() -> None:
+    east_m, north_m = planar_delta_m(-1.0, 0.0, 1.0)
+    assert isclose(east_m, 0.0)
+    assert isclose(north_m, -DEFAULT_REVERSE_CRUISE_MPS)
 
 
 def test__when_pitched_down_and_forward__should_reduce_planar_delta() -> None:
-    dx, dy = planar_delta_m(1.0, 0.0, 1.0, pitch_deg=45.0)
+    east_m, north_m = planar_delta_m(1.0, 0.0, 1.0, pitch_deg=45.0)
     expected = DEFAULT_FORWARD_CRUISE_MPS * cos(radians(45.0))
-    assert isclose(dx, expected)
-    assert isclose(dy, 0.0)
+    assert isclose(east_m, 0.0)
+    assert isclose(north_m, expected)
+
+
+def test__when_compass_heading_north__should_give_enu_yaw_ninety() -> None:
+    assert enu_yaw_deg_from_compass_bearing(0.0) == 90.0
+
+
+def test__when_compass_heading_east__should_give_enu_yaw_zero() -> None:
+    assert enu_yaw_deg_from_compass_bearing(90.0) == 0.0

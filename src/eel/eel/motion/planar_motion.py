@@ -1,4 +1,7 @@
-"""Shared motor+heading → planar Δmeters for sim plant and localization DR."""
+"""Shared motor+heading → planar Δmeters for sim plant and localization DR.
+
+Heading is compass bearing (0° = north, 90° = east). Returns (east_m, north_m).
+"""
 
 from math import copysign, cos, radians, sin
 
@@ -76,8 +79,15 @@ def planar_delta_from_speed_mps(
 ) -> tuple[float, float]:
     if dt_s <= 0.0 or speed_mps == 0.0:
         return 0.0, 0.0
-    yaw_rad = radians(heading_deg)
-    return speed_mps * cos(yaw_rad) * dt_s, speed_mps * sin(yaw_rad) * dt_s
+    bearing_rad = radians(heading_deg)
+    east_m = speed_mps * sin(bearing_rad) * dt_s
+    north_m = speed_mps * cos(bearing_rad) * dt_s
+    return east_m, north_m
+
+
+def enu_yaw_deg_from_compass_bearing(heading_deg: float) -> float:
+    """ROS ENU yaw for odom/TF: 0° = east, 90° = north. Heading is compass bearing."""
+    return (90.0 - heading_deg) % 360.0
 
 
 def planar_delta_m(

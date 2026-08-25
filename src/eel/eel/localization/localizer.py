@@ -3,7 +3,7 @@ from typing import Optional
 
 from geopy import distance
 
-from ..motion.planar_motion import motor_to_speed_mps
+from ..motion.planar_motion import motor_to_speed_mps, planar_delta_from_speed_mps, planar_delta_m
 from .gnss_blackout import (
     DEFAULT_GNSS_BLACKOUT_CONFIG,
     GnssBlackoutConfig,
@@ -16,6 +16,22 @@ from .gnss_blackout import (
 )
 
 __all__ = ["LatLon", "Localizer"]
+
+
+def _position_after_enu_delta(lat: float, lon: float, east_m: float, north_m: float) -> LatLon:
+    if north_m != 0.0:
+        point = distance.distance(meters=abs(north_m)).destination(
+            (lat, lon),
+            bearing=0.0 if north_m > 0.0 else 180.0,
+        )
+        lat, lon = point.latitude, point.longitude
+    if east_m != 0.0:
+        point = distance.distance(meters=abs(east_m)).destination(
+            (lat, lon),
+            bearing=90.0 if east_m > 0.0 else 270.0,
+        )
+        lat, lon = point.latitude, point.longitude
+    return {"lat": lat, "lon": lon}
 
 
 class Localizer:
@@ -105,24 +121,25 @@ class Localizer:
         if self._current_position:
             time_delta = current_time_sec - self._last_recorded_at
             if time_delta > 0:
-                drift_meters = self._drift_speed * time_delta
-
+                motor_east_m, motor_north_m = planar_delta_m(
+                    self._motor_cmd,
+                    self._current_heading,
+                    time_delta,
+                    pitch_deg=self._pitch_deg,
+                )
+                drift_east_m, drift_north_m = planar_delta_from_speed_mps(
+                    self._drift_speed,
+                    self._drift_bearing,
+                    time_delta,
+                )
                 speed_mps = motor_to_speed_mps(self._motor_cmd, pitch_deg=self._pitch_deg)
-                meters_traveled = speed_mps * time_delta
-                self._total_meters_traveled += meters_traveled
-                new_position = distance.distance(meters=meters_traveled).destination(
-                    (self._current_position["lat"], self._current_position["lon"]),
-                    bearing=self._current_heading,
+                self._total_meters_traveled += speed_mps * time_delta
+                self._current_position = _position_after_enu_delta(
+                    self._current_position["lat"],
+                    self._current_position["lon"],
+                    motor_east_m + drift_east_m,
+                    motor_north_m + drift_north_m,
                 )
-
-                final_position = distance.distance(meters=drift_meters).destination(
-                    (new_position.latitude, new_position.longitude), bearing=self._drift_bearing
-                )
-
-                self._current_position = {
-                    "lat": final_position.latitude,
-                    "lon": final_position.longitude,
-                }
 
         self._advance_last_recorded_at(current_time_sec)
 

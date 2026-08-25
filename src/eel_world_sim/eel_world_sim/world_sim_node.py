@@ -11,6 +11,7 @@ from time import time
 from typing import Optional
 
 import rclpy
+from eel.motion.planar_motion import enu_yaw_deg_from_compass_bearing
 from geometry_msgs.msg import Quaternion, TransformStamped, Vector3
 from nav_msgs.msg import Odometry
 from rclpy.node import Node
@@ -201,7 +202,7 @@ class WorldSimNode(Node):
         self._gnss_fix_pub.publish(msg)
 
     def _publish_odom_and_tf(self, x_m: float, y_m: float, heading_deg: float) -> None:
-        yaw_rad = radians(heading_deg)
+        yaw_rad = radians(enu_yaw_deg_from_compass_bearing(heading_deg))
         orientation = _yaw_to_quaternion(yaw_rad)
         stamp = self.get_clock().now().to_msg()
 
