@@ -163,6 +163,7 @@ class WorldSimNode(Node):
         self._depth.set_pitch_deg(pitch_deg)
         depth_m = self._depth.step(dt_s)
         self._motion.set_heading_deg(heading_deg)
+        self._motion.set_pitch_deg(pitch_deg)
         x_m, y_m = self._motion.step(dt_s)
 
         depth_msg = Float32()

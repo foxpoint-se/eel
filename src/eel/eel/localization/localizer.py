@@ -3,6 +3,7 @@ from typing import Optional
 
 from geopy import distance
 
+from ..motion.planar_motion import motor_to_speed_mps
 from .gnss_blackout import (
     DEFAULT_GNSS_BLACKOUT_CONFIG,
     GnssBlackoutConfig,
@@ -26,7 +27,8 @@ class Localizer:
         self._gnss_config = gnss_config
         self._current_position: Optional[LatLon] = None
         self._last_recorded_at = time.time() if start_time_sec is None else start_time_sec
-        self._current_speed_mps: float = 0.0
+        self._motor_cmd: float = 0.0
+        self._pitch_deg: float = 0.0
         self._current_heading: float = 0.0
         self._total_meters_traveled: float = 0.0
         self._current_depth: float = 0.0
@@ -36,8 +38,11 @@ class Localizer:
         self._pending_gnss_fixes: list[LatLon] = []
         self._reacquiring_since_sec: Optional[float] = None
 
-    def update_speed_mps(self, new_speed_mps: float) -> None:
-        self._current_speed_mps = new_speed_mps
+    def update_motor_cmd(self, motor_cmd: float) -> None:
+        self._motor_cmd = motor_cmd
+
+    def update_pitch_deg(self, pitch_deg: float) -> None:
+        self._pitch_deg = pitch_deg
 
     def update_heading(self, new_heading: float) -> None:
         self._current_heading = new_heading
@@ -102,7 +107,8 @@ class Localizer:
             if time_delta > 0:
                 drift_meters = self._drift_speed * time_delta
 
-                meters_traveled = self._current_speed_mps * time_delta
+                speed_mps = motor_to_speed_mps(self._motor_cmd, pitch_deg=self._pitch_deg)
+                meters_traveled = speed_mps * time_delta
                 self._total_meters_traveled += meters_traveled
                 new_position = distance.distance(meters=meters_traveled).destination(
                     (self._current_position["lat"], self._current_position["lon"]),

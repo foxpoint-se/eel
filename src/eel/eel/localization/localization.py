@@ -8,7 +8,7 @@ from std_msgs.msg import Float32
 
 from eel_interfaces.msg import Coordinate, ImuStatus, PressureStatus
 
-from ..motion.planar_motion import DEFAULT_FORWARD_CRUISE_MPS, motor_to_speed_mps
+from ..motion.planar_motion import DEFAULT_FORWARD_CRUISE_MPS
 from ..utils.actuator_bounds import is_valid_coordinate
 from ..utils.node_runner import spin_node_until_shutdown
 from ..utils.topics import (
@@ -86,11 +86,11 @@ class Localization(Node):
         self.localizer.update_known_position({"lat": msg.lat, "lon": msg.lon})
 
     def handle_motor_msg(self, msg: Float32) -> None:
-        current_speed_mps = motor_to_speed_mps(msg.data)
-        self.localizer.update_speed_mps(current_speed_mps)
+        self.localizer.update_motor_cmd(float(msg.data))
 
     def handle_imu_msg(self, msg: ImuStatus) -> None:
         self.localizer.update_heading(msg.heading)
+        self.localizer.update_pitch_deg(float(msg.pitch))
 
     def handle_pressure_status_msg(self, msg: PressureStatus) -> None:
         self.localizer.update_depth(msg.depth)
