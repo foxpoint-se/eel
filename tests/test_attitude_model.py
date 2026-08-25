@@ -1,6 +1,7 @@
 from math import isclose
 
 from eel_world_sim.attitude_model import (
+    ANGULAR_VELOCITY_DEGPS,
     MAX_PITCH_DEG,
     TERMINAL_PITCH_ANGULAR_VELOCITY_DEGPS,
     AttitudeModel,
@@ -48,3 +49,19 @@ def test__when_tanks_unbalanced__should_change_pitch_without_motor() -> None:
     assert isclose(momentum_difference(1.0, 0.0), 1.0)
     _, pitch = model.step(1.0)
     assert isclose(pitch, TERMINAL_PITCH_ANGULAR_VELOCITY_DEGPS)
+
+
+def test__when_rudder_right_cmd__should_increase_compass_heading() -> None:
+    model = AttitudeModel()
+    model.set_motor_cmd(1.0)
+    model.set_rudder(1.0, 0.0)
+    heading, _ = model.step(1.0)
+    assert isclose(heading, ANGULAR_VELOCITY_DEGPS)
+
+
+def test__when_rudder_left_cmd__should_decrease_compass_heading() -> None:
+    model = AttitudeModel()
+    model.set_motor_cmd(1.0)
+    model.set_rudder(-1.0, 0.0)
+    heading, _ = model.step(1.0)
+    assert isclose(heading, 360.0 - ANGULAR_VELOCITY_DEGPS)

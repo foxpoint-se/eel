@@ -1,4 +1,4 @@
-from math import isclose, radians, tan
+from math import isclose, radians, sin
 
 from eel_world_sim.depth_model import (
     FLOAT_VELOCITY_MPS,
@@ -28,9 +28,19 @@ def test__when_diving_nose_down__should_go_deeper() -> None:
     model = DepthModel()
     model.set_motor_cmd(1.0)
     model.set_pitch_deg(45.0)
-    dive = tan(radians(45.0)) * TERMINAL_VELOCITY_MPS
+    dive = sin(radians(45.0)) * TERMINAL_VELOCITY_MPS
     expected = FLOAT_VELOCITY_MPS + dive
     assert isclose(model.step(1.0), expected)
+
+
+def test__when_pitch_near_vertical__should_not_explode_dive_rate() -> None:
+    model = DepthModel()
+    model.set_motor_cmd(1.0)
+    model.set_pitch_deg(89.0)
+    dive = sin(radians(89.0)) * TERMINAL_VELOCITY_MPS
+    expected = FLOAT_VELOCITY_MPS + dive
+    assert isclose(model.step(1.0), expected)
+    assert dive < TERMINAL_VELOCITY_MPS * 2.0
 
 
 def test__when_depth_would_exceed_max__should_cap() -> None:

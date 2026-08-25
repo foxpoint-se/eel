@@ -3,7 +3,7 @@
 Lifted from eel.pressure.pressure_sim (same crude dive model).
 """
 
-from math import radians, tan
+from math import radians, sin
 
 TERMINAL_VELOCITY_MPS = 0.3
 FLOAT_VELOCITY_MPS = -0.05  # slight positive buoyancy
@@ -12,7 +12,7 @@ MIN_DEPTH_M = 0.0
 
 
 def _pitch_speed_velocity_mps(terminal_velocity_mps: float, pitch_deg: float) -> float:
-    return tan(radians(pitch_deg)) * terminal_velocity_mps
+    return sin(radians(pitch_deg)) * terminal_velocity_mps
 
 
 def _cap_depth_m(depth_m: float) -> float:

@@ -20,9 +20,9 @@ def build_rudder_panel(node: WorldSimGuiNode) -> None:
     )
     dpg.add_text("Rudder yaw (x)")
     with dpg.group(horizontal=True):
-        dpg.add_button(label="L", width=40, callback=lambda: node.set_rudder_x(1.0))
+        dpg.add_button(label="L", width=40, callback=lambda: node.set_rudder_x(-1.0))
         dpg.add_button(label="0", width=40, callback=lambda: node.set_rudder_x(0.0))
-        dpg.add_button(label="R", width=40, callback=lambda: node.set_rudder_x(-1.0))
+        dpg.add_button(label="R", width=40, callback=lambda: node.set_rudder_x(1.0))
     dpg.add_slider_float(
         tag="rudder_x_slider",
         default_value=0.0,

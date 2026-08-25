@@ -11,9 +11,9 @@ def test__when_instantiated__should_not_have_a_position() -> None:
     assert instance_to_test.get_calculated_position(0) is None
 
 
-def test__when_instantiated__should_have_speed_zero() -> None:
+def test__when_instantiated__should_have_motor_zero() -> None:
     instance_to_test = Localizer()
-    assert instance_to_test._current_speed_mps == 0.0
+    assert instance_to_test._motor_cmd == 0.0
 
 
 def test__when_instantiated__should_have_heading_zero() -> None:
@@ -35,7 +35,7 @@ def test__when_new_known_position__should_return_that_one_as_current_pos() -> No
 
 def test__when_speed_zero__should_not_change_position() -> None:
     instance_to_test = Localizer()
-    instance_to_test.update_speed_mps(0.0)
+    instance_to_test.update_motor_cmd(0.0)
     instance_to_test.update_known_position({"lat": 0, "lon": 0})
     actual = instance_to_test.get_calculated_position(time.time())
     assert actual and actual["lat"] == 0.0
@@ -44,7 +44,7 @@ def test__when_speed_zero__should_not_change_position() -> None:
 
 def test__when_speed_zero__should_not_travel_any_distance() -> None:
     instance_to_test = Localizer()
-    instance_to_test.update_speed_mps(0.0)
+    instance_to_test.update_motor_cmd(0.0)
     instance_to_test.get_calculated_position(time.time() + 10.0)
     assert instance_to_test.get_total_meters_traveled() == 0.0
 
@@ -52,15 +52,26 @@ def test__when_speed_zero__should_not_travel_any_distance() -> None:
 def test__when_speed_1_mps__should_travel_1_m_after_1_second() -> None:
     instance_to_test = Localizer(start_time_sec=0)
     instance_to_test.update_known_position({"lat": 0, "lon": 0}, now_sec=0.0)
-    instance_to_test.update_speed_mps(1.0)
+    instance_to_test.update_motor_cmd(1.0)
     instance_to_test.get_calculated_position(1)
     assert instance_to_test.get_total_meters_traveled() == 1.0
+
+
+def test__when_motor_full_and_pitch_forty_five__should_scale_distance() -> None:
+    from math import cos, radians
+
+    instance_to_test = Localizer(start_time_sec=0)
+    instance_to_test.update_known_position({"lat": 0, "lon": 0}, now_sec=0.0)
+    instance_to_test.update_motor_cmd(1.0)
+    instance_to_test.update_pitch_deg(45.0)
+    instance_to_test.get_calculated_position(1)
+    assert instance_to_test.get_total_meters_traveled() == cos(radians(45.0))
 
 
 def test__when_speed_1_mps_and_heading_zero__should_keep_same_lon() -> None:
     instance_to_test = Localizer(start_time_sec=0)
     instance_to_test.update_known_position({"lat": 20, "lon": 10}, now_sec=0.0)
-    instance_to_test.update_speed_mps(1.0)
+    instance_to_test.update_motor_cmd(1.0)
     actual = instance_to_test.get_calculated_position(100.0)
     assert actual and actual["lon"] == 10
 
@@ -68,7 +79,7 @@ def test__when_speed_1_mps_and_heading_zero__should_keep_same_lon() -> None:
 def test__when_speed_1_mps_and_heading_zero__lat_should_be_slightly_bigger() -> None:
     instance_to_test = Localizer(start_time_sec=0)
     instance_to_test.update_known_position({"lat": 0, "lon": 10}, now_sec=0.0)
-    instance_to_test.update_speed_mps(1.0)
+    instance_to_test.update_motor_cmd(1.0)
     actual = instance_to_test.get_calculated_position(1.0)
     assert actual and 9.043695e-06 > actual["lat"] > 9.043693e-06
 
@@ -76,7 +87,7 @@ def test__when_speed_1_mps_and_heading_zero__lat_should_be_slightly_bigger() -> 
 def test__when_speed_1_mps_and_heading_90__should_keep_same_lat() -> None:
     instance_to_test = Localizer()
     instance_to_test.update_known_position({"lat": 0, "lon": 10})
-    instance_to_test.update_speed_mps(1.0)
+    instance_to_test.update_motor_cmd(1.0)
     instance_to_test.update_heading(90)
     actual = instance_to_test.get_calculated_position(time.time() + 1.0)
     assert actual and actual["lat"] == 0.0
@@ -86,7 +97,7 @@ def test__when_speed_1_mps_and_heading_45__lat_and_lon_should_be_slightly_bigger
     instance_to_test = Localizer(start_time_sec=0)
     instance_to_test.get_calculated_position(0)
     instance_to_test.update_known_position({"lat": 0, "lon": 0}, now_sec=0.0)
-    instance_to_test.update_speed_mps(1.0)
+    instance_to_test.update_motor_cmd(1.0)
     instance_to_test.update_heading(45)
 
     actual = instance_to_test.get_calculated_position(1.0)
@@ -97,7 +108,7 @@ def test__when_speed_1_mps_and_heading_45__lat_and_lon_should_be_slightly_bigger
 def test__when_speed_1mps_and_heading_45_and_100s_travel__should_move_a_fair_bit() -> None:
     instance_to_test = Localizer(start_time_sec=0)
     instance_to_test.update_known_position({"lat": 0, "lon": 0}, now_sec=0.0)
-    instance_to_test.update_speed_mps(1.0)
+    instance_to_test.update_motor_cmd(1.0)
     instance_to_test.update_heading(45)
     actual = instance_to_test.get_calculated_position(100.0)
     assert actual and 0.000639486 > actual["lat"] > 0.00063947
@@ -108,7 +119,7 @@ def test__when_one_known_and_sequence_of_moves__should_move_as_specified() -> No
     current_time = time.time()
     instance_to_test = Localizer(start_time_sec=current_time)
     instance_to_test.update_known_position({"lat": 0, "lon": 0}, now_sec=current_time)
-    instance_to_test.update_speed_mps(1.0)
+    instance_to_test.update_motor_cmd(1.0)
     # move north 10 seconds
     current_time += 10.0
     instance_to_test.update_heading(0)
@@ -133,7 +144,7 @@ def test__when_one_known_and_sequence_of_moves__should_move_as_specified() -> No
 def test__when_moving_from_two_very_distant_knowns__distance_traveled_should_not_be_huge() -> None:
     instance_to_test = Localizer(start_time_sec=0)
     instance_to_test.update_known_position({"lat": 0, "lon": 0}, now_sec=0.0)
-    instance_to_test.update_speed_mps(1.0)
+    instance_to_test.update_motor_cmd(1.0)
     instance_to_test.update_heading(0)
     instance_to_test.get_calculated_position(10)
 
@@ -154,7 +165,7 @@ def positions_are_close(pos_1: LatLon, pos_2: LatLon) -> bool:
 def test__when_depth_at_blackout_enter__should_discard_gps_position() -> None:
     instance_to_test = Localizer(start_time_sec=0)
     instance_to_test.update_known_position({"lat": 0, "lon": 0}, now_sec=0.0)
-    instance_to_test.update_speed_mps(1.0)
+    instance_to_test.update_motor_cmd(1.0)
     instance_to_test.update_heading(0)
 
     position_before_dive = instance_to_test.get_calculated_position(time.time())
@@ -231,7 +242,7 @@ def test__when_surfacing_with_agreeing_fixes__should_snap_to_cluster() -> None:
 def test__when_gnss_fix_arrives_between_ticks__should_not_overshoot_from_new_anchor() -> None:
     localizer = Localizer(start_time_sec=0)
     localizer.update_known_position({"lat": 0.0, "lon": 0.0}, now_sec=0.0)
-    localizer.update_speed_mps(1.0)
+    localizer.update_motor_cmd(1.0)
     localizer.update_heading(0.0)
     localizer.get_calculated_position(10.0)
     localizer.update_known_position({"lat": 0.0001, "lon": 0.0}, now_sec=15.0)
@@ -244,7 +255,7 @@ def test__when_gnss_fix_arrives_between_ticks__should_not_overshoot_from_new_anc
 def test__when_position_tick_is_out_of_order__should_not_rewind_clock() -> None:
     localizer = Localizer(start_time_sec=0)
     localizer.update_known_position({"lat": 0.0, "lon": 0.0}, now_sec=0.0)
-    localizer.update_speed_mps(1.0)
+    localizer.update_motor_cmd(1.0)
     localizer.get_calculated_position(10.0)
     localizer.get_calculated_position(5.0)
     localizer.get_calculated_position(20.0)
@@ -255,7 +266,7 @@ def test__when_position_tick_is_out_of_order__should_not_rewind_clock() -> None:
 def test__when_gnss_fix_timestamp_is_older_than_last_tick__should_not_rewind_clock() -> None:
     localizer = Localizer(start_time_sec=0)
     localizer.update_known_position({"lat": 0.0, "lon": 0.0}, now_sec=0.0)
-    localizer.update_speed_mps(1.0)
+    localizer.update_motor_cmd(1.0)
     localizer.get_calculated_position(10.0)
     localizer.update_known_position({"lat": 0.0001, "lon": 0.0}, now_sec=5.0)
     localizer.get_calculated_position(20.0)

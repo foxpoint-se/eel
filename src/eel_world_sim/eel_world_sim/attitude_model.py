@@ -7,7 +7,7 @@ TERMINAL_PITCH_ANGULAR_VELOCITY_DEGPS = 12.5
 MOMENTUM_TOLERANCE = 0.03
 # Matches eel.motion.planar_motion DEFAULT_FORWARD_CRUISE_MPS (1.0 m/s).
 ANGULAR_VELOCITY_DEGPS = 10.0
-MAX_PITCH_DEG = 45.0
+MAX_PITCH_DEG = 90.0
 
 
 def momentum_difference(front_tank_level: float, rear_tank_level: float) -> float:

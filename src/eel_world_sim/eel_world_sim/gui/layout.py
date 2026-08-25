@@ -81,18 +81,7 @@ def tick_ui(node: WorldSimGuiNode) -> None:
     tick_nav_status(node)
     tick_tank_status(node)
     tick_depth_control(node)
+    tick_map_view(node.map_view_state())
     x_m, y_m, yaw_deg = node.odom_pose()
-    east_m, north_m, map_yaw_deg, has_gnss = node.gnss_map_pose()
-    tick_map_view(
-        east_m,
-        north_m,
-        map_yaw_deg,
-        has_gnss,
-        node.trail(),
-        node.show_live_trail(),
-        node.follow_boat(),
-        node.map_visible_m(),
-        node.gnss_latlon(),
-    )
     tick_chase_view(x_m, y_m, yaw_deg)
     tick_side_view(node.depth_m(), node.pitch_deg(), x_m, y_m)
