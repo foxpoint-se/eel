@@ -28,10 +28,10 @@ from eel_world_sim.gui.constants import (
     MAP_ZOOM_DEFAULT_M,
     MAP_ZOOM_MAX_M,
     MAP_ZOOM_MIN_M,
-    MOTOR_OFF,
     TRAIL_MAX_POINTS,
     TRAIL_MIN_STEP_M,
 )
+from eel_world_sim.gui.motor_slider import MOTOR_SLIDER_DEADZONE, motor_slider_to_cmd
 from eel_world_sim.gui.widgets.battery_status import BatteryStatusView
 from eel_world_sim.gui.widgets.depth_control import DEPTH_TARGET_MAX_M, DepthControlStatusView
 from eel_world_sim.gui.widgets.imu_status import ImuStatusView
@@ -97,7 +97,8 @@ class WorldSimGuiNode(Node):
         depth_enabled_topic = self._string_param("depth_control_enabled_cmd_topic")
         depth_status_topic = self._string_param("depth_control_status_topic")
 
-        self._motor_cmd = MOTOR_OFF
+        self._motor_cmd = 0.0
+        self._motor_slider = 0.0
         self._rudder_x_cmd = 0.0
         self._rudder_y_cmd = 0.0
         self._manual_rudder = True
@@ -232,6 +233,16 @@ class WorldSimGuiNode(Node):
     def _on_depth_control_status(self, msg: DepthControlStatus) -> None:
         self._depth_control_enabled = bool(msg.is_enabled)
         self._depth_control_target_m = float(msg.depth_target)
+
+    def set_motor_slider(self, slider: float) -> None:
+        if abs(slider) <= MOTOR_SLIDER_DEADZONE:
+            self._motor_slider = 0.0
+            if dpg.does_item_exist("motor_slider") and int(dpg.get_value("motor_slider")) != 0:
+                dpg.set_value("motor_slider", 0)
+            self.set_motor(0.0)
+            return
+        self._motor_slider = slider
+        self.set_motor(motor_slider_to_cmd(slider))
 
     def set_motor(self, value: float) -> None:
         self._motor_cmd = value
